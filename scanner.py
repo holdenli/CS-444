@@ -21,7 +21,7 @@ singleline_patterns = {
     'Keyword': r'^(synchronized|implements|instanceof|protected|transient|interface|abstract|strictfp|volatile|continue|default|private|boolean|extends|finally|package|double|import|public|throws|return|static|native|switch|throw|break|short|catch|final|class|float|super|while|const|this|byte|else|case|void|char|long|goto|int|try|for|new|if|do)',
     
     # integer literals
-    'DecimalIntegerLiteral': r'^(0|[1-9][0-9]+[lL]?)',
+    'DecimalIntegerLiteral': r'^('+DIGITS+'[lL]?)',
     'HexIntegerLiteral': r'^(0[xX][0-9abcedfABCDEF]+[lL]?)',
     'OctalIntegerLiteral': r'^(0[0-7]+[lL]?)',
     
