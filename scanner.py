@@ -9,7 +9,7 @@ MULTILINE_PATTERNS = {
     #'LineTerminator': r'^(\r|\n)',
     'WhiteSpace': [r'^((?:\t|\n|\r|\f| )+)'],
     
-    'MultiComment': [r'^(\/\*(?:.+?)\*\/)'],  
+    'MultiComment': [r'^(\/\*(?:.*?)\*\/)'],  
 }
 
 # Commented lines are from spec but unused in Joos.
@@ -189,24 +189,40 @@ def scan(program: "Joos program as a string") -> "list of tokens":
                         for k in MULTILINE_PATTERNS})
 
     while pos != len(program):
+        is_identifier = False
+        
+        # In the event we have more than 1 regex that matches, we keep a list
+        # of matches and pick the greediest match
+        matches = []
+        
         # first, we try to match string tokens from STRINGS dict.
         # this is pretty inefficient.  TODO:  use a trie
         prefix = find_prefix(program, strings, pos)
         if prefix != None:
-            pos += len(prefix)
-            tokens.append((STRINGS[prefix], prefix, len(prefix), line))
-            continue
+            matches.append((STRINGS[prefix], prefix))
     
-        # now, we match regex patterns.  In the event we have more than 1 regex
-        # that matches, keep a list of matches and pick the greediest match
-        matches = []
+        # now, we match regex patterns.
         for token_label in patterns:
             for pattern in patterns[token_label]:
                 match = pattern.match(program[pos:])
                 if match != None:
+                    if token_label == 'Identifier':
+                        is_identifier = True 
                     matches.append((token_label, match.group(1)))
         
         if len(matches) > 0:
+            
+            # if we have a match for an Identifier and a different token type,
+            # the different token type trumps it!
+            if is_identifier and len(matches) >= 2:
+                # find and remove the identifier
+                found = 0
+                for (n, (token_type,_)) in enumerate(matches):
+                    if token_type == 'Identifier':
+                        found = n
+                        break
+                matches.pop(found)
+
             # find the match that consumes the most characters in program
             (token_label, token_value) = max(matches, key=lambda x: len(x[1]))
             line += token_value.count('\n')
