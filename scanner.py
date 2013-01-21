@@ -6,23 +6,23 @@ DIGITS=r'(?:0|[1-9][0-9]*)'
 ESCAPE_SEQUENCE=r'\\(?:[btnfr"\'\\]|[0-3][0-7]{2}|[0-7]{1,2})'
 
 MULTILINE_PATTERNS = {
-    #'LineTerminator': r'^(\r|\n)',
-    'WhiteSpace': [r'^((?:\t|\n|\r|\f| )+)'],
+    #'LineTerminator': r'(\r|\n)',
+    'WhiteSpace': [r'((?:\t|\n|\r|\f| )+)'],
     
-    'MultiComment': [r'^(\/\*(?:.*?)\*\/)'],  
+    'MultiComment': [r'(\/\*(?:.*?)\*\/)'],  
 }
 
 # Commented lines are from spec but unused in Joos.
 SINGLELINE_PATTERNS = {
-    'SingleComment': [r'^(\/\/.*)'],
+    'SingleComment': [r'(\/\/.*)'],
     
-    'Identifier': [r'^([a-zA-Z_$][a-zA-Z0-9_$]*)'],
+    'Identifier': [r'([a-zA-Z_$][a-zA-Z0-9_$]*)'],
     
     # integer literals
-    #'DecimalIntegerLiteral': [r'^('+DIGITS+'[lL]?)'],
-    'DecimalIntegerLiteral': [r'^('+DIGITS+')'], # No Longs in Joos.
-    # 'HexIntegerLiteral': [r'^(0[xX][0-9abcedfABCDEF]+[lL]?)'],
-    # 'OctalIntegerLiteral': [r'^(0[0-7]+[lL]?)'],
+    #'DecimalIntegerLiteral': [r'('+DIGITS+'[lL]?)'],
+    'DecimalIntegerLiteral': [r'('+DIGITS+')'], # No Longs in Joos.
+    # 'HexIntegerLiteral': [r'(0[xX][0-9abcedfABCDEF]+[lL]?)'],
+    # 'OctalIntegerLiteral': [r'(0[0-7]+[lL]?)'],
     
     # floating point literals (unused in Joos):
     #     Digits . Digitsopt ExponentPartopt FloatTypeSuffixopt
@@ -30,22 +30,22 @@ SINGLELINE_PATTERNS = {
     #     Digits ExponentPart FloatTypeSuffixopt
     #     Digits ExponentPartopt FloatTypeSuffix
     # 'FloatingPointLiteral': [
-    #     r'^('+DIGITS+'\.'+DIGITS+'?(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
-    #     r'^(\.'+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
-    #     r'^('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)[dDfF]?)',
-    #     r'^('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
+    #     r'('+DIGITS+'\.'+DIGITS+'?(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
+    #     r'(\.'+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
+    #     r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)[dDfF]?)',
+    #     r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
     # ],
     
-    'BooleanLiteral': [r'^(true|false)'],
+    'BooleanLiteral': [r'(true|false)'],
     
     # this one was a bit confusing to write:
     #   (?!\\|\') rejects ' and \ and new lines,
     #   while [\x00-\x7F] matches all other ascii
-    'CharacterLiteral': [r'^(\'(?:(?!\\|\'|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')\')'],
+    'CharacterLiteral': [r'(\'(?:(?!\\|\'|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')\')'],
     
-    'StringLiteral': [r'^("(?:(?!\\|\"|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')*")'],
+    'StringLiteral': [r'("(?:(?!\\|\"|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')*")'],
     
-    'NullLiteral': [r'^(null)'],
+    'NullLiteral': [r'(null)'],
 }
 
 # this is a token string -> token label mapping
@@ -173,13 +173,13 @@ def scan(program: "Joos program as a string") -> "list of tokens":
     - Then, the single and multiline patterns
     """
     
-    # type of (TOKEN LABEL, token value, position, line)
+    # tuple of (TOKEN LABEL, token value, position, line)
     tokens = []
     pos = 0
     line = 0
     
     # get the list of tokens to match for, sorted by length of token (desc)
-    strings = sorted(STRINGS, reverse=True, key=lambda x: len(x))
+    strings = sorted(STRINGS, reverse=True, key=len)
     
     # compile the regex and merge them into one `patterns` dict
     patterns = {k: [re.compile(p, re.ASCII)
@@ -206,14 +206,13 @@ def scan(program: "Joos program as a string") -> "list of tokens":
         # now, we match regex patterns.
         for token_label in patterns:
             for pattern in patterns[token_label]:
-                match = pattern.match(program[pos:])
+                match = pattern.match(program, pos)
                 if match != None:
                     if token_label == 'Identifier':
                         is_identifier = True 
                     matches.append((token_label, match.group(1)))
         
         if len(matches) > 0:
-            
             # if we have a match for an Identifier and a different token type,
             # the different token type trumps it!
             if is_identifier and len(matches) >= 2:
@@ -233,10 +232,8 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             # ignore whitespace and comments
             if token_label not in THROWAWAY_TOKENS:
                 tokens.append((token_label, token_value, pos, line))
-            
-            continue
-
-        print(tokens, "pos = %d, line = %d, next few chars: %s" % (pos, line, program[pos:pos+10]))
-        sys.exit(42)
+        else:
+            print(tokens, "pos = %d, line = %d, next few chars: %s" % (pos, line, program[pos:pos+10]))
+            sys.exit(42)
     
     return tokens
