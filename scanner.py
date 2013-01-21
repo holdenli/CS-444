@@ -156,6 +156,8 @@ STRINGS = {
     '.': 'Dot',
 }
 
+THROWAWAY_TOKENS = {'WhiteSpace', 'SingleComment', 'MultiComment'}
+
 def find_prefix(string: "body of text we are matching prefixes of",
                 prefixes: "list/iterable of prefixes",
                 pos: "an offset of string") -> "prefix":
@@ -228,8 +230,8 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             line += token_value.count('\n')
             pos += len(token_value)
             
-            # ignore whitespace
-            if token_label != 'WhiteSpace':
+            # ignore whitespace and comments
+            if token_label not in THROWAWAY_TOKENS:
                 tokens.append((token_label, token_value, pos, line))
             
             continue
