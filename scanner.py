@@ -88,7 +88,7 @@ STRINGS = {
     '>=': 'GreatherThanEqualOperator',
     # '>>': 'RightShiftOperator',
     # '>>>': 'UnsignedRightShiftOperator',
-    '?': 'QuestionOperator',
+    # '?': 'QuestionOperator',
     # '^': 'InverseOperator',
     # '|': 'BinaryOrOperator',
     '||': 'OrOperator',
