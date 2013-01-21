@@ -12,27 +12,29 @@ MULTILINE_PATTERNS = {
     'MultiComment': [r'^(\/\*(?:.+?)\*\/)'],  
 }
 
+# Commented lines are from spec but unused in Joos.
 SINGLELINE_PATTERNS = {
     'SingleComment': [r'^(\/\/.*)'],
     
     'Identifier': [r'^([a-zA-Z_$][a-zA-Z0-9_$]*)'],
     
     # integer literals
-    'DecimalIntegerLiteral': [r'^('+DIGITS+'[lL]?)'],
-    'HexIntegerLiteral': [r'^(0[xX][0-9abcedfABCDEF]+[lL]?)'],
-    'OctalIntegerLiteral': [r'^(0[0-7]+[lL]?)'],
+    #'DecimalIntegerLiteral': [r'^('+DIGITS+'[lL]?)'],
+    'DecimalIntegerLiteral': [r'^('+DIGITS+')'], # No Longs in Joos.
+    # 'HexIntegerLiteral': [r'^(0[xX][0-9abcedfABCDEF]+[lL]?)'],
+    # 'OctalIntegerLiteral': [r'^(0[0-7]+[lL]?)'],
     
-    # floating point literals:
+    # floating point literals (unused in Joos):
     #     Digits . Digitsopt ExponentPartopt FloatTypeSuffixopt
     #     . Digits ExponentPartopt FloatTypeSuffixopt
     #     Digits ExponentPart FloatTypeSuffixopt
     #     Digits ExponentPartopt FloatTypeSuffix
-    'FloatingPointLiteral': [
-        r'^('+DIGITS+'\.'+DIGITS+'?(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
-        r'^(\.'+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
-        r'^('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)[dDfF]?)',
-        r'^('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
-    ],
+    # 'FloatingPointLiteral': [
+    #     r'^('+DIGITS+'\.'+DIGITS+'?(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
+    #     r'^(\.'+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
+    #     r'^('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)[dDfF]?)',
+    #     r'^('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
+    # ],
     
     'BooleanLiteral': [r'^(true|false)'],
     
@@ -47,69 +49,70 @@ SINGLELINE_PATTERNS = {
 }
 
 # this is a token string -> token label mapping
+# Commented lines are specific to Java, but not in Joos.
 STRINGS = {
     
     # assignment operators
-    '%=': 'AssignmentOperator',
-    '&=': 'AssignmentOperator',
-    '*=': 'AssignmentOperator',
-    '+=': 'AssignmentOperator',
-    '-=': 'AssignmentOperator',
-    '/=': 'AssignmentOperator',
-    '<<<=': 'AssignmentOperator',
-    '<<=': 'AssignmentOperator',
+    # '%=': 'AssignmentOperator',
+    # '&=': 'AssignmentOperator',
+    # '*=': 'AssignmentOperator',
+    # '+=': 'AssignmentOperator',
+    # '-=': 'AssignmentOperator',
+    # '/=': 'AssignmentOperator',
+    # '<<<=': 'AssignmentOperator',
+    # '<<=': 'AssignmentOperator',
     '=': 'AssignmentOperator',
-    '>>=': 'AssignmentOperator',
-    '>>>=': 'AssignmentOperator',
-    '^=': 'AssignmentOperator',
-    '|=': 'AssignmentOperator',
+    # '>>=': 'AssignmentOperator',
+    # '>>>=': 'AssignmentOperator',
+    # '^=': 'AssignmentOperator',
+    # '|=': 'AssignmentOperator',
     
     # all other expression operators
     '!': 'NotOperator',
     '!=': 'NotEqualOperator',
     '%': 'ModuloOperator',
-    '&': 'BinaryAndOperator',
+    # '&': 'BinaryAndOperator',
     '&&': 'AndOperator',
     '*': 'MultiplyOperator',
     '+': 'AddOperator',
-    '++': 'IncrementOperator',
+    # '++': 'IncrementOperator',
     '-': 'SubtractOperator',
-    '--': 'DecrementOperator',
+    # '--': 'DecrementOperator',
     '/': 'DivideOperator',
-    ':': 'ColonOperator',
+    # ':': 'ColonOperator',
     '<': 'LessThanOperator',
-    '<<': 'LeftShiftOperator',
+    # '<<': 'LeftShiftOperator',
     '<=': 'LessThanEqualOperator',
     '==': 'EqualOperator',
     '>': 'GreaterThanOperator',
     '>=': 'GreatherThanEqualOperator',
-    '>>': 'RightShiftOperator',
-    '>>>': 'UnsignedRightShiftOperator',
+    # '>>': 'RightShiftOperator',
+    # '>>>': 'UnsignedRightShiftOperator',
     '?': 'QuestionOperator',
-    '^': 'InverseOperator',
-    '|': 'BinaryOrOperator',
+    # '^': 'InverseOperator',
+    # '|': 'BinaryOrOperator',
     '||': 'OrOperator',
-    '~': 'BinaryNotOperator',
+    # '~': 'BinaryNotOperator',
     
     # keywords
     'abstract': 'Abstract',
     'boolean': 'Boolean',
-    'break': 'Break',
+    # 'break': 'Break',
     'byte': 'Byte',
-    'case': 'Case',
-    'catch': 'Catch',
+    # 'case': 'Case',
+    # 'catch': 'Catch',
     'char': 'Char',
     'class': 'Class',
-    'const': 'Const',
-    'continue': 'Continue',
-    'default': 'Default',
-    'do': 'Do',
-    'double': 'Double',
+    'const': 'Const', # Unused in Java, keep in Joos?
+    # 'continue': 'Continue',
+    # 'default': 'Default',
+    # 'do': 'Do',
+    # 'double': 'Double',
     'else': 'Else',
     'extends': 'Extends',
-    'final': 'Final',
-    'finally': 'Finally',
-    'float': 'Float',
+    # 'final': 'Final',
+    # 'finally': 'Finally',
+    # 'float': 'Float',
     'for': 'For',
     'goto': 'Goto',
     'if': 'If',
@@ -118,27 +121,27 @@ STRINGS = {
     'instanceof': 'Instanceof',
     'int': 'Int',
     'interface': 'Interface',
-    'long': 'Long',
-    'native': 'Native',
+    # 'long': 'Long',
+    # 'native': 'Native',
     'new': 'New',
     'package': 'Package',
-    'private': 'Private',
+    # 'private': 'Private',
     'protected': 'Protected',
     'public': 'Public',
     'return': 'Return',
     'short': 'Short',
     'static': 'Static',
-    'strictfp': 'Strictfp',
-    'super': 'Super',
-    'switch': 'Switch',
-    'synchronized': 'Synchronized',
+    # 'strictfp': 'Strictfp',
+    # 'super': 'Super',
+    # 'switch': 'Switch',
+    # 'synchronized': 'Synchronized',
     'this': 'This',
-    'throw': 'Throw',
-    'throws': 'Throws',
-    'transient': 'Transient',
-    'try': 'Try',
+    # 'throw': 'Throw',
+    # 'throws': 'Throws',
+    # 'transient': 'Transient',
+    # 'try': 'Try',
     'void': 'Void',
-    'volatile': 'Volatile',
+    # 'volatile': 'Volatile',
     'while': 'While',
     
     # separators
