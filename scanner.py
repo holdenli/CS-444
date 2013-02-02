@@ -85,7 +85,7 @@ STRINGS = {
     '<=': 'LessThanEqualOperator',
     '==': 'EqualOperator',
     '>': 'GreaterThanOperator',
-    '>=': 'GreatherThanEqualOperator',
+    '>=': 'GreaterThanEqualOperator',
     # '>>': 'RightShiftOperator',
     # '>>>': 'UnsignedRightShiftOperator',
     # '?': 'QuestionOperator',
@@ -103,7 +103,7 @@ STRINGS = {
     # 'catch': 'Catch',
     'char': 'Char',
     'class': 'Class',
-    'const': 'Const', # Unused in Java, keep in Joos?
+    'const': 'Const', # TODO: Unused in Java, keep in Joos?
     # 'continue': 'Continue',
     # 'default': 'Default',
     # 'do': 'Do',
