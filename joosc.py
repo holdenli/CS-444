@@ -31,6 +31,6 @@ if __name__ == "__main__":
         
         print("compiled successfully", file=sys.stderr)
     except SystemExit as e:
-        print("exited with %s" % e, file=sys.stderr)
-        sys.exit(e)
+        print("exited with %d" % e.code, file=sys.stderr)
+        sys.exit(e.code)
 
