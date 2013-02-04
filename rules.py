@@ -11,91 +11,91 @@
 # For now, all "opts" are expanded. That means for a given rule with k "opt"
 # elements in the expansion, that will correspond to 2^k rules.
 # TODO: If we no duplicate A's, use a dict.
-RULES = [
+RULES = {
     # Literals (S3.10)
-    ['Literal', [
+    'Literal': [
         ['IntegerLiteral'],
         # ['FloatingPointLiteral'],
         ['BooleanLiteral'],
         ['CharacterLiteral'],
         ['StringLiteral'],
         ['NullLiteral'],
-    ]],
+    ],
 
     # Types (S4.1)
-    ['Type', [
+    'Type': [
         ['PrimitiveType'],
         ['ReferenceType'],
-    ]],
+    ],
 
     # Primitive types (S4.2)
-    ['PrimitiveType', [
+    'PrimitiveType': [
         ['NumericType'],
         ['Boolean'],
-    ]],
-    ['NumericType', [
+    ],
+    'NumericType': [
         ['IntegralType'],
     #     ['FloatingPointType'],
-    ]],
-    ['IntegralType', [
+    ],
+    'IntegralType': [
         ['Byte'],
         ['Short'],
         ['Int'],
         ['Long'],
         ['Char'],
-    ]],
-    # ['FloatingPointType', [
+    ],
+    # 'FloatingPointType': [
     #     ['Float'],
     #     ['Double'],
-    # ]],
+    # ],
     
     # Reference types (S4.3)
-    ['ReferenceType', [
+    'ReferenceType': [
         ['ClassOrInterfaceType'],
         ['ArrayType'],
-    ]],
-    ['ClassOrInterfaceType', [
+    ],
+    'ClassOrInterfaceType': [
         ['ClassType'],
         ['InterfaceType'],
-    ]],
-    ['ClassType', [
+    ],
+    'ClassType': [
         ['TypeName'],
     ],
-    ['InterfaceType', [
+    'InterfaceType': [
         ['TypeName'],
-    ]],
-    ['ArrayType', [
+    ],
+    'ArrayType': [
         ['Type', 'LeftBracket', 'RightBracket'],
-    ]],
+    ],
    
     # Naming (S6.5)
-    ['Identifier', [
+    'Identifier': [
         ['Identifier'],
         ['PackageName', 'Dot', 'Identifier'],
-    ]],
-    ['TypeName', [
+    ],
+    'TypeName': [
         ['Identifier'],
         ['PackageOrTypeName', 'Dot', 'Identifier'],
-    ]],
-    ['ExpressionName', [
+    ],
+    'ExpressionName': [
         ['Identifier'],
         ['AmbiguousName', 'Dot', 'Identifier'],
-    ]],
-    ['MethodName', [
+    ],
+    'MethodName': [
         ['Identifier'],
         ['AmbiguousName', 'Dot', 'Identifier'],
-    ]],
-    ['PackageOrTypeName', [
+    ],
+    'PackageOrTypeName': [
         ['Identifier'],
         ['PackageOrTypeName', 'Dot', 'Identifier'],
-    ]],
-    ['AmbiguousName', [
+    ],
+    'AmbiguousName': [
         ['Identifier'],
         ['AmbiguousName', 'Dot', 'Identifier'],
-    ]],
+    ],
     
     # Compilation units (S7.3)
-    ['CompilationUnit', [
+    'CompilationUnit': [
         [],
         ['PackageDeclaration'],
         ['ImportDeclarations'],
@@ -104,45 +104,45 @@ RULES = [
         ['PackageDeclaration', 'TypeDeclarations'],
         ['ImportDeclarations', 'TypeDeclarations'],
         ['PacakgeDeclaration', 'ImportDeclarations', 'TypeDeclarations'],
-    ]],
-    ['ImportDeclarations', [
+    ],
+    'ImportDeclarations': [
         ['ImportDeclaration'],
         ['ImportDeclarations', 'ImportDeclaration'],
-    ]],
-    ['TypeDeclarations', [
+    ],
+    'TypeDeclarations': [
         ['TypeDeclaration'],
         ['TypeDeclarations', 'TypeDeclarations'],
-    ]],
+    ],
 
     # Package declarations (S7.4)
-    ['PackageDeclaration', [
+    'PackageDeclaration': [
         ['Package', 'PackageName', 'SemiColon'],
-    ]],
+    ],
 
     # Import declarations (S7.5)
-    ['ImportDeclaration', [
+    'ImportDeclaration': [
         ['SingleTypeImportDeclaration'],
         ['TypeImportOnDemandDeclaration'],
-    ]],
-    ['SingleTypeImportDeclaration', [
+    ],
+    'SingleTypeImportDeclaration': [
         ['Import', 'TypeName', 'SemiColon'],
-    ]],
-    ['TypeImportOnDemandDeclaration', [
+    ],
+    'TypeImportOnDemandDeclaration': [
         ['Import', 'PackageOrTypeName', 'Dot', 'MultiplyOperator',
             'SemiColon'],
-    ]],
+    ],
     
     # Top level type declarations (S7.6)
     # TODO: This one's kind of weird. Check this.
-    ['TypeDeclaration', [
+    'TypeDeclaration': [
         ['ClassDeclaration'],
         ['InterfaceDeclaration'],
         ['SemiColon'],
-    ]],
+    ],
 
     # Class declaration (S8.1)
     # Note: "Super(Stmt)" is not to be confused with the "Super" token.
-    ['ClassDeclaration', [
+    'ClassDeclaration': [
         ['Class', 'Identifier', 'ClassBody'],
         ['ClassModifiers', 'Class', 'Identifier', 'ClassBody'],
         # ['Class', 'Identifier', 'Super(Stmt)', 'ClassBody'],
@@ -152,12 +152,12 @@ RULES = [
         # ['Class', 'Identifier', 'Super', 'Interfaces',  'ClassBody'],
         # ['ClassModifiers', 'Class', 'Identifier', 'Super(Stmt)', 'Interfaces',
         #     'ClassBody'],
-    ]],
-    ['ClassModifiers', [
+    ],
+    'ClassModifiers': [
         ['ClassModifier'],
         ['ClassModifiers', 'ClassModifier'],
-    ]],
-    ['ClassModifier', [
+    ],
+    'ClassModifier': [
         ['Public'],
         ['Protected'],
         # ['Private'],
@@ -165,71 +165,71 @@ RULES = [
         ['Static'],
         # ['Final'],
         # ['Strictfp'],
-    ]],
+    ],
     # ['Super(Stmt)', [
     #     ['Extends', 'ClassType'],
-    # ]],
-    ['ClassType', [
+    # ],
+    'ClassType': [
         ['TypeName'],
-    ]],
-    ['Interfaces', [
+    ],
+    'Interfaces': [
         ['Implements', 'InterfaceTypeList'],
-    ]],
-    ['InterfaceTypeList',
+    ],
+    'InterfaceTypeList': [
         ['InterfaceType'],
         ['InterfaceTypeList', 'Comma', 'InterfaceType'],
-    ]],
-    ['InterfaceType', [
+    ],
+    'InterfaceType': [
         ['TypeName'],
-    ]],
-    ['ClassBody', [
+    ],
+    'ClassBody': [
         ['LeftBrace', 'RightBrace'],
         ['LeftBrace', 'ClassBodyDeclarations', 'RightBrace'],
-    ]],
-    ['ClassBodyDeclarations', [
+    ],
+    'ClassBodyDeclarations': [
         ['ClassBodyDeclaration'],
         ['ClassBodyDeclarations', 'ClassBodyDeclaration'],
-    ]],
-    ['ClassBodyDeclaration', [
+    ],
+    'ClassBodyDeclaration': [
         ['ClassMemberDeclaration'],
         ['InstanceInitializer'],
         ['StaticInitializer'],
         ['ConstructorDeclaration'],
-    ]],
-    ['ClassMemberDeclaration', [
+    ],
+    'ClassMemberDeclaration': [
         ['FieldDeclaration'],
         ['MethodDeclaration'],
         ['ClassDeclaration'],
         ['InterfaceDeclaration'],
         ['SemiColon'],
-    ]],
+    ],
     
     # Field declarations (S8.3)
-    ['FieldDeclaration', [
+    'FieldDeclaration': [
         ['Type', 'VariableDeclarators', 'SemiColon'],
         ['FieldModifiers', 'Type', 'VariableDeclarators', 'SemiColon'],
-    ]],
-    ['VariableDeclarators', [
+    ],
+    'VariableDeclarators': [
         ['VariableDeclarators'],
         ['VariableDeclarators', 'Comma', 'VariableDeclarator'],
-    ]],
-    ['VariableDeclarator', [
+    ],
+    'VariableDeclarator': [
         ['VariableDeclaratorId'],
         ['VariableDeclaratorId', 'AssignmentOperator', 'VariableInitializer'],
-    ]],
-    ['VariableDeclaratorId', [
+    ],
+    'VariableDeclaratorId': [
         ['Identifier'],
         ['VariableDeclaratorId', 'LeftBracket', 'RightBracket'],
-    ]],
-    ['VariableInitializer', [
+    ],
+    'VariableInitializer': [
         ['Expression'],
         ['ArrayInitializer'],
-    ]],
-    ['FieldModifiers', [
+    ],
+    'FieldModifiers': [
         ['FieldModifier'],
         ['FieldModifiers', 'FieldModifier'],
-    ]],
-    ['FieldModifier', [
+    ],
+    'FieldModifier': [
         ['Public'],
         ['Protected'],
         # ['Private'],
@@ -237,44 +237,44 @@ RULES = [
         # ['Final'],
         # ['Transient'],
         # ['Volatile'],
-    ]],
+    ],
     
     # Method declarations (S8.4)
-    ['MethodDeclaration', [
+    'MethodDeclaration': [
         ['MethodHeader', 'MethodBody'],
-    ]],
-    ['MethodHeader', [
+    ],
+    'MethodHeader': [
         ['ResultType', 'MethodDeclarator'],
         ['MethodModifiers', 'ResultType', 'MethodDeclarator'],
         # ['ResultType', 'MethodDeclarator', 'Throws'],
         # ['MethodModifiers', 'ResultType', 'MethodDeclarator', 'Throws'],
-    ]],
-    ['ResultType', [
+    ],
+    'ResultType': [
         ['Type'],
         ['Void'],
     ],
-    ['MethodDeclarator', [
+    'MethodDeclarator': [
         ['Identifier', 'LeftParenthesis', 'RightParenthesis'],
         ['Identifier', 'LeftParenthesis', 'FormalParameterList',
             'RightParenthesis'],
-    ]],
+    ],
     # TODO: Metioned in spec for "legacy" code.
-    # ['MethodDeclarator', [
+    # 'MethodDeclarator': [
     #     ['MethodDeclarator', 'LeftBracket', 'RightBracket'],
-    # ]],
-    ['FormalParameterList', [
+    # ],
+    'FormalParameterList': [
         ['FormalParameter'],
         ['FormalParameterList', 'Comma', 'FormalParameter'],
-    ]],
-    ['FormalParameter', [
+    ],
+    'FormalParameter': [
         ['Type', 'VariableDeclaratorId'],
     #     ['Final', 'Type', 'VariableDeclaratorId'],
-    ]],
-    ['MethodModifiers', [
+    ],
+    'MethodModifiers': [
         ['MethodModifier'],
         ['MethodModifiers', 'MethodModifier'],
-    ]],
-    ['MethodModifier', [
+    ],
+    'MethodModifier': [
         ['Public'],
         ['Protected'],
         # ['Private'],
@@ -284,58 +284,58 @@ RULES = [
         # ['Synchronized'],
         # ['Native'],
         # ['Strictfp'],
-    ]],
-    # ['Throws(Stmt)', [
+    ],
+    # 'Throws(Stmt)': [
     #     ['Throws', 'ClassTypeList']
-    # ]],
-    # ['ClassTypeList', [
+    # ],
+    # 'ClassTypeList': [
     #     ['ClassTypeList', 'Comma', 'ClassType'],
-    # ]],
-    ['MethodBody', [
+    # ],
+    'MethodBody': [
         ['Block'],
         ['SemiColon'],
-    ]],
+    ],
     
     # Instance initializers (S8.6)
-    ['InstanceInitializer', [
+    'InstanceInitializer': [
         ['Block'],
-    ]],
+    ],
     
     # Static initializers (S8.7)
-    # ['StaticInitializer', [
+    # 'StaticInitializer': [
     #     ['Block'],
-    # ]],
+    # ],
 
     # Constructor declarations (S8.8)
-    ['ConstructorDeclaration', [
+    'ConstructorDeclaration': [
         ['ConstructorDeclarator', 'ConstructorBody'],
         ['ConstructorModifiers', 'ConstructorDeclarator', 'ConstructorBody'],
         # ['ConstructorDeclarator', 'Throws(Stmt)', 'ConstructorBody'],
         # ['ConstructorModifiers', 'ConstructorDeclarator', 'Throws(Stmt)',
         #     'ConstructorBody'],
-    ]],
-    ['ConstructorDeclarator', [
+    ],
+    'ConstructorDeclarator': [
         ['SimpleTypeName', 'LeftParenthesis', 'RightParenthesis'],
         ['SimpleTypeName', 'LeftParenthesis', 'FormalParameterList',
             'RightParenthesis'],
-    ]],
-    ['ConstructorModifiers', [
+    ],
+    'ConstructorModifiers': [
         ['ConstructorModifier'],
         ['ConstructorModifiers', 'ConstructorModifier'],
-    ]],
-    ['ConstructorModifier', [
+    ],
+    'ConstructorModifier': [
         ['Public'],
         ['Protected'],
         # ['Private'],
-    ]],
-    ['ConstructorBody', [
+    ],
+    'ConstructorBody': [
         ['LeftBrace', 'RightBrace'],
         # ['LeftBrace', 'ExplicitConstructorInvocation', 'RightBrace'],
         ['LeftBrace', 'BlockStatements', 'RightBrace'],
         # ['LeftBrace', 'ExplicitConstructorInvocation', 'BlockStatements',
         #     'RightBrace'],
-    ]],
-    # ['ExplicitConstructorInvocation', [
+    ],
+    # 'ExplicitConstructorInvocation': [
     #     ['This', 'LeftParenthesis', 'RightParenthesis', 'SemiColon'],
     #     ['This', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis',
     #         'SemiColon'],
@@ -346,127 +346,127 @@ RULES = [
     #         'SemiColon'],
     #     ['Primary', 'Dot', 'Super(stmt)', 'LeftParenthesis', 'ArgumentList',
     #         'RightParenthesis', 'SemiColon'],
-    # ]],
+    # ],
     
     # Interface declarations (S9.1)
-    ['InterfaceDeclaration', [
+    'InterfaceDeclaration': [
         ['Interace', 'Identifier', 'InterfaceBody'],
         ['InterfaceModifiers', 'Identifier', 'InterfaceBody'],
         ['Interface', 'Identifier', 'ExtendsInterfaces', 'InterfaceBody'],
         ['InterfaceModifiers', 'Identifier', 'ExtendsInterfaces',
             'InterfaceBody'],
-    ]],
-    ['InterfaceModifiers', [
+    ],
+    'InterfaceModifiers': [
         ['InterfaceModifier'],
         ['InterfaceModiflers', 'InterfaceModifier'],
     ],
-    ['InterfaceModifier', [
+    'InterfaceModifier': [
         ['Public'],
         ['Protected'],
         # ['Private'],
         ['Abstract'],
         ['Static'],
         # ['Strictfp'],
-    ]],
-    ['ExtendsInterfaces', [
+    ],
+    'ExtendsInterfaces': [
         ['Extends', 'InterfaceType'],
         ['ExtendsInterfaces', 'Comma', 'InterfaceType'],
-    ]],
-    ['InterfaceBody', [
+    ],
+    'InterfaceBody': [
         ['LeftBrace', 'RightBrace'],
         ['LeftBrace', 'InterfaceMemberDeclarations', 'RightBrace'],
-    ]],
-    ['InterfaceMemberDeclarations', [
+    ],
+    'InterfaceMemberDeclarations': [
         ['InterfaceMemberDeclaration'],
         ['InterfaceMemberDeclarations', 'InterfaceMemberDeclaration'],
-    ]],
-    ['InterfaceMemberDelaration', [
+    ],
+    'InterfaceMemberDelaration': [
         ['ConstantDeclaration'],
         ['AbstractMethodDeclaration'],
         ['ClassDeclaration'],
         ['InterfaceDeclaration'],
         ['SemiColon'],
-    ]],
+    ],
     
     # Field (constant) declarations (S9.3)
-    ['ConstantDeclaration', [
+    'ConstantDeclaration': [
         ['Type', 'VariableDeclarators'],
         ['ConstantModifiers', 'Type', 'VariableDeclarators'],
-    ]],
-    ['ConstantModifiers', [
+    ],
+    'ConstantModifiers': [
         ['ConstantModifier'],
         ['ConstantModifiers', 'ConstantModifier'],
-    ]],
-    ['ConstantModifier', [
+    ],
+    'ConstantModifier': [
         ['Public'],
         ['Static'],
         # ['Final'],
-    ]],
+    ],
 
     # Abstract method declarations (S9.4)
-    ['AbstractMethodDeclaration', [
+    'AbstractMethodDeclaration': [
         ['ResultType', 'MethodDeclarator', 'SemiColon'],
         ['AbstractMethodModifiers', 'ResultType', 'MethodDeclarator',
             'SemiColon'],
         # ['ResultType', 'MethodDeclarator', 'Throws(Stmt)', 'SemiColon'],
         # ['AbstractMethodModifiers', 'ResultType', 'MethodDeclarator',
         #     'Throws(Stmt)', 'SemiColon'],
-    ]],
-    ['AbstractMethodModifiers', [
+    ],
+    'AbstractMethodModifiers': [
         ['AbstractMethodModifier'],
         ['AbstractMethodModifiers', 'AbstractMethodModifier'],
-    ]],
-    ['AbstractMethodModifier', [
+    ],
+    'AbstractMethodModifier': [
         ['Public'],
         ['Abstract'],
-    ]],
+    ],
     
     # Array intializers (S10.6)
-    ['ArrayInitializer', [
+    'ArrayInitializer': [
         ['LeftBrace', 'RightBrace'],
         ['LeftBrace', 'VariableInitializers', 'RightBrace'],
         ['LeftBrace', 'Comma', 'RightBrace'],
         ['LeftBrace', 'VariableInitializers', 'Commap', 'RightBrace'],
-    ]],
-    ['VariableInitializers', [
+    ],
+    'VariableInitializers': [
         ['VariableInitializer'],
         ['VariableInitializers', 'Comma', 'VariableInitializer'],
-    ]],
+    ],
     
     # Blocks (S14.2)
-    ['Block', [
+    'Block': [
         ['LeftBrace', 'RightBrace'],
         ['LeftBrace', 'BlockStatements', 'RightBrace'],
-    ]],
-    ['BlockStatements', [
+    ],
+    'BlockStatements': [
         ['BlockStatement'],
         ['BlockStatements', 'BlockStatement'],
-    ]],
-    ['BlockStatement', [
+    ],
+    'BlockStatement': [
         ['LocalVariableDeclarationStatement'],
         ['ClassDeclaration'],
         ['Statement'],
-    ]],
+    ],
 
     # Local variable declaration statements (S14.4)
-    ['LocalVariableDeclarationStatement', [
+    'LocalVariableDeclarationStatement': [
         ['LocalVariableDeclaration', 'SemiColon'],
-    ]],
-    ['LocalVariableDeclaration', [
+    ],
+    'LocalVariableDeclaration': [
         ['Type', 'VariableDeclarators'],
         # ['Final', 'Type', 'VariableDeclarators'],
-    ]],
+    ],
     
     # Statements (S14.5)
-    ['Statement', [
+    'Statement': [
         ['StatementWithoutTrailingSubstatement'],
         # ['LabeledStatement'],
         ['IfThenStatement'],
         ['IfThenElseStatement'],
         ['WhileStatement'],
         ['ForStatement'],
-    ]],
-    ['StatementWithoutTrailingSubstatement', [
+    ],
+    'StatementWithoutTrailingSubstatement': [
         ['Block'],
         ['EmptyStatement'],
         ['ExpressionStatement'],
@@ -478,44 +478,44 @@ RULES = [
         # ['SynchronizedStatement'],
         # ['ThrowStatement'],
         # ['TryStatement'],
-    ]],
-    ['StatementNoShortIf', [
+    ],
+    'StatementNoShortIf': [
         ['StatementWithoutTrailingSubstatement'],
         # ['LabeledStatementNoShortIf'],
         ['IfThenElseStatementNoShortIf'],
         ['ForStatementNoShortIf'],
-    ]],
-    ['IfThenStatement', [
+    ],
+    'IfThenStatement': [
         ['If', 'LeftParenthesis', 'Expression', 'RightParenthesis',
             'Statement'],
-    ]],
-    ['IfThenElseStatement', [
+    ],
+    'IfThenElseStatement': [
         ['If', 'LeftParenthesis', 'Expression', 'RightParenthesis',
             'StatementNoShortIf', 'Else', 'Statement'],
-    ]],
-    ['IfThenElseStatementNoShortIf', [
+    ],
+    'IfThenElseStatementNoShortIf': [
         ['If', 'LeftParenthesis', 'Expression', 'RightParenthesis',
             'StatementNoShortIf', 'Else', 'StatementNoShortIf'],
-    ]],
+    ],
     
     # The empty statement (S14.6)
-    ['EmptyStatement', [
+    'EmptyStatement': [
         ['SemiColon'],
-    ]],
+    ],
 
     # Labeled statements (S16.7)
-    # ['LabeledStatement', [
+    # 'LabeledStatement': 
     #     ['Identifier', 'ColonOperator', 'Statement'],
-    # ]],
-    # ['LabeledStatementNoShortIf', [
+    # ],
+    # 'LabeledStatementNoShortIf': 
     #     ['Identifier', 'ColonOperator', 'StatementNoShortIf'],
-    # ]],
+    # ],
 
     # Expression statements (S14.8)
-    ['ExpressionStatement', [
+    'ExpressionStatement': [
         ['StatementExpression', 'SemiColon'],
-    ]],
-    ['StatementExpression', [
+    ],
+    'StatementExpression': [
         ['Assignment'],
         # ['PreIncrementExpression'],
         # ['PreDecrementExpression'],
@@ -523,39 +523,39 @@ RULES = [
         # ['PostDecrementExpression'],
         ['MethodInvocation'],
         ['ClassInstanceCreationExpression'],
-    ]],
+    ],
 
     # The if statement (S14.9)
-    ['IfThenStatement', [
+    'IfThenStatement': [
         ['If', 'LeftParenthesis', 'Expression', 'Statement'],
-    ]],
-    ['IfThenElseStatement', [
+    ],
+    'IfThenElseStatement': [
         ['If', 'LeftParenthesis', 'Expression', 'StatementNoShortIf', 'Else',
             'Statement'],
-    ]],
-    ['IfThenElseStatementNoShortIf', [
+    ],
+    'IfThenElseStatementNoShortIf': [
         ['If', 'LeftParenthesis', 'Expression', 'StatementNoShortIf', 'Else',
             'StatementNoShortIf'],
-    ]],
+    ],
     
     # The switch statement (S14.10)
     # Note: Section omitted.
 
     # The while statement (S14.11)
-    ['WhileStatement', [
+    'WhileStatement': [
         ['While', 'LeftParenthesis', 'Expression', 'RightParenthesis',
             'Statement'],
-    ]],
-    ['WhileStatementNoShortIf', [
+    ],
+    'WhileStatementNoShortIf': [
         ['While', 'LeftParenthesis', 'Expression', 'RightParenthesis',
             'StatementNoShortIf'],
-    ]],
+    ],
     
     # The do statement (S14.12)
     # Note: Section omitted.
 
     # The for statement (S14.13)
-    ['ForStatement', [
+    'ForStatement': [
         ['For', 'LeftParenthesis', 'SemiColon', 'SemiColon',
             'RightParenthesis', 'Statement'],
         ['For', 'LeftParenthesis', 'ForInit', 'SemiColon', 'SemiColon',
@@ -572,8 +572,8 @@ RULES = [
             'ForUpdate', 'RightParenthesis', 'Statement'],
         ['For', 'LeftParenthesis', 'ForInit', 'SemiColon', 'Expression',
             'SemiColon', 'ForUpdate', 'RightParenthesis', 'Statement'],
-    ]],
-    ['ForStatementNoShortIf', [
+    ],
+    'ForStatementNoShortIf': [
         ['For', 'LeftParenthesis', 'SemiColon', 'SemiColon',
             'RightParenthesis', 'StatementNoShortIf'],
         ['For', 'LeftParenthesis', 'ForInit', 'SemiColon', 'SemiColon',
@@ -590,18 +590,18 @@ RULES = [
             'ForUpdate', 'RightParenthesis', 'StatementNoShortIf'],
         ['For', 'LeftParenthesis', 'ForInit', 'SemiColon', 'Expression',
             'SemiColon', 'ForUpdate', 'RightParenthesis', 'StatementNoShortIf'],
-    ]],
-    ['ForInit', [
+    ],
+    'ForInit': [
         ['StatementExpressionList'],
         ['LocalVariableDeclaration'],
-    ]],
-    ['ForUpdate', [
+    ],
+    'ForUpdate': [
         ['StatementExpressionList'],
-    ]],
-    ['StatementExpressionList', [ # Note, we do not allow for (general)s.
+    ],
+    'StatementExpressionList': [ # Note, we do not allow for (general)s.
         ['StatementExpression'],
         # ['StatementExpressionList', 'Comma', 'StatementExpression'],
-    ]],
+    ],
 
     # The break statement (S14.14)
     # Note: Section omitted
@@ -610,10 +610,10 @@ RULES = [
     # Note: Section omitted
 
     # The return statement (S14.16)
-    ['ReturnStatement', [
+    'ReturnStatement': [
         ['Return'],
         ['Return', 'Expression'],
-    ]],
+    ],
 
     # The throw statement (S14.17)
     # Note: Section omitted
@@ -625,11 +625,11 @@ RULES = [
     # Note: Section omitted
 
     # Primary expressions (S15.8)
-    ['Primary', [
+    'Primary': [
         ['PrimaryNoNewArray'],
         ['ArrayCreationExpression'],
-    ]],
-    ['PrimaryNoNewArray', [
+    ],
+    'PrimaryNoNewArray': [
         ['Literal'],
         ['Type', 'Dot', 'Class'], # TODO: check if class is a terminal
         ['Void', 'Dot', 'Class'], # TODO: check if class is a terminal
@@ -640,10 +640,10 @@ RULES = [
         ['FieldAccess'],
         ['MethodInvocation'],
         ['ArrayAccess'],
-    ]],
+    ],
     
     # Class instance creation expressions (S15.9)
-    ['ClassInstanceCreationExpression', [
+    'ClassInstanceCreationExpression': [
         ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'RightParenthesis'],
         ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'ArgumentList',
             'RightParenthesis'],
@@ -659,42 +659,42 @@ RULES = [
             'RightParenthesis', 'ClassBody'],
         ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
             'ArgumentList', 'RightParenthesis', 'ClassBody'],
-    ]],
-    ['ArgumentList', [
+    ],
+    'ArgumentList': [
         ['Expression'],
         ['ArgumentList', 'Comma', 'Expression'],
-    ]],
+    ],
 
     # Array creation expressions (S15.10)
-    ['ArrayCreationExpression', [
+    'ArrayCreationExpression': [
         ['New', 'PrimitiveType', 'DimExprs'],
         ['New', 'PrimitiveType', 'DimExprs', 'Dims'],
         ['New', 'TypeName', 'DimExprs'],
         ['New', 'TypeName', 'DimExprs', 'Dims'],
         ['New', 'PrimitiveType', 'Dims', 'ArrayInitializer'],
         ['New', 'TypeName', 'Dims', 'ArrayInitializer'],
-    ]],
-    ['DimExprs', [
+    ],
+    'DimExprs': [
         ['DimExpr'],
         ['DimExprs', 'DimExpr'],
-    ]],
-    ['DimExpr', [
+    ],
+    'DimExpr': [
         ['LeftBracket', 'Expression', 'RightBracket'],
-    ]],
-    ['Dims', [
+    ],
+    'Dims': [
         ['LeftBracket', 'RightBracket'],
         ['Dims', 'LeftBracket', 'RightBracket'],
-    ]],
+    ],
 
     # Field access expressions (S15.11)
-    ['FieldAccess', [
+    'FieldAccess': [
         ['Primary', 'Dot', 'Identifier'],
         # ['Super', 'Dot', 'Identifier'],
         # ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier'],
-    ]],
+    ],
     
     # Method invocation expressions (S15.12)
-    ['MethodInvocation', [
+    'MethodInvocation': [
         ['MethodName', 'LeftParenthesis', 'RightParenthesis'],
         ['MethodName', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis',
@@ -708,85 +708,85 @@ RULES = [
             'RightParenthesis'],
         ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
             'ArgumentList', 'RightParenthesis'],
-    ]],
+    ],
     
     # Array access expressions (S15.13)
-    ['ArrayAccess', [
+    'ArrayAccess': [
         ['ExpressionName', 'LeftBracket', 'Expression', 'RightBracket'],
         ['PrimaryNoNewArray', 'LeftBracket', 'Expression', 'RightBracket'],
-    ]],
+    ],
     
     # Postfix expressions (S15.14)
-    ['PostfixExpression', [
+    'PostfixExpression': [
         ['Primary'],
         ['ExpressionName'],
         # ['PostIncrementExpression'],
         # ['PostDecrementExpression'],
-    ]],
-    # ['PostIncrementExpression', [
+    ],
+    # 'PostIncrementExpression': [
     #     ['PostfixExpression', 'IncrementOperator'],
-    # ]],
-    # ['PostDecrementExpression', [
+    # ],
+    # 'PostDecrementExpression': [
     #     ['PostfixExpression', 'DecrementOperator'],
-    # ]],
+    # ],
 
     # Unary operators (S15.15)
-    ['UnaryExpression', [
+    'UnaryExpression': [
         ['PreIncrementExpression'],
         ['PreDecrementExpression'],
         ['AddOperator', 'UnaryExpression'],
         ['SubtractOperator', 'UnaryExpression'],
         ['UnaryExpressionNotPlusMinus'],
-    ]],
-    # ['PreIncrementExpression', [
+    ],
+    # 'PreIncrementExpression': [
     #     ['IncrementOperator', 'UnaryExpression'],
-    # ]],
-    # ['PreDecrementExpression', [
+    # ],
+    # 'PreDecrementExpression': [
     #     ['DecrementOperator', 'UnaryExpression'],
-    # ]],
-    ['UnaryExpressionNotPlusMinus', [
+    # ],
+    'UnaryExpressionNotPlusMinus': [
         ['PostfixExpression'],
         # ['BinaryNotOperator', 'UnaryExpression'],
         ['NotOperator', 'UnaryExpression'],
         ['CastExpression'],
-    ]],
+    ],
 
     # Cast expressions (S15.16)
-    ['CastExpression', [
+    'CastExpression': [
         ['LeftParenthesis', 'PrimitiveType', 'RightParenthesis',
             'UnaryExpression'],
         ['LeftParenthesis', 'PrimitiveType', 'Dims', 'RightParenthesis',
             'UnaryExpression'],
         ['LeftParenthesis', 'ReferenceType', 'RightParenthesis',
             'UnaryExpressionNotPlusMinus'],
-    ]],
+    ],
     
     # Multiplicative operators (S15.17)
-    ['MultiplicativeExpression', [
+    'MultiplicativeExpression': [
         ['UnaryExpression'],
         ['MultiplicativeExpression', 'MultiplyOperator', 'UnaryExpression'],
         ['MultiplicativeExpression', 'DivideOperator', 'UnaryExpression'],
         ['MultiplicativeExpression', 'ModuloOperator', 'UnaryExpression'],
-    ]],
+    ],
 
     # Additive operators (S15.18)
-    ['AdditiveExpression', [
+    'AdditiveExpression': [
         ['MultiplicativeExpression'],
         ['AdditiveExpression', 'AddOperator', 'MultiplicativeExpression'],
         ['AdditiveExpression', 'SubtractOperator', 'MultiplicativeExpression'],
-    ]],
+    ],
 
     # Shift operators (S15.19)
-    ['ShiftExpression', [
+    'ShiftExpression': [
         ['AdditiveExpression'],
         # ['ShiftExpression', 'LeftShiftOperator', 'AdditiveExpression'],
         # ['ShiftExpression', 'RightShiftOperator', 'AdditiveExpression'],
         # ['ShiftExpression', 'UnsignedRightShiftOperator',
         #     'AdditiveExpression'],
-    ]],
+    ],
 
     # Relational operators (S15.20)
-    ['RelationalExpression', [
+    'RelationalExpression': [
         ['ShiftExpression'],
         ['RelationalExpression', 'LessThanOperator', 'ShiftExpression'],
         ['RelationalExpression', 'GreaterThanOperator', 'ShiftExpression'],
@@ -794,70 +794,69 @@ RULES = [
         ['RelationalExpression', 'GreaterThanEqualOperator',
             'ShiftExpression'],
         ['RelationalExpression', 'Instanceof', 'ReferenceType'],
-    ]],
+    ],
 
     # Equality operators (S15.21)
-    ['EqualityExpression', [
+    'EqualityExpression': [
         ['RelationalExpression'],
         ['EqualityExpression', 'EqualOperator', 'RelationalExpression'],
         ['EqualityExpression', 'NotEqualOperator', 'RelationalExpression'],
-    ]],
+    ],
 
     # Bitwise and logical operators (S15.22)
-    ['AndExpression', [
+    'AndExpression': [
         ['EqualityExpression'],
         # ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
-    ]],
-    ['ExclusiveOrExpression', [
+    ],
+    'ExclusiveOrExpression': [
         ['AndExpression'],
         # ['ExclusiveOrExpression', 'InverseOperator', 'AndExpression'],
-    ]],
-    ['InclusiveOrExpression', [
+    ],
+    'InclusiveOrExpression': [
         ['ExclusiveOrExpression'],
         # ['InclusiveOrExpression', 'BinaryOrOperator',  'ExclusiveOrExpression'],
-    ]],
+    ],
 
     # Conditional-and operator && (S15.23)
-    ['ConditionalAndExpression', [
+    'ConditionalAndExpression': [
         ['InclusiveOrExpression'],
         ['ConditionalAndExpression', 'AndOperator', 'InclusiveOrExpression'],
-    ]],
+    ],
 
     # Conditional-or operator || (S15.24)
-    ['ConditionalOrExpression', [
+    'ConditionalOrExpression': [
         ['ConditionalAndExpression'],
         ['ConditionalOpExpression', 'OrOperator', 'ConditionalAndExpression'],
-    ]],
+    ],
 
     # Condtional operator ? : (S15.25)
-    ['ConditionalExpression', [
+    'ConditionalExpression': [
         ['ConditionalOrExpression'],
         # ['ConditionalOrExpression', 'QuestionOperator', 'Expression',
         #     'ConditionalExpression'],
-    ]],
+    ],
 
     # Assignment operators (S15.26)
-    ['AssignmentExpression', [
+    'AssignmentExpression': [
         ['ConditionalExpression'],
         ['Assignment'],
-    ]],
-    ['Assignment', [ # Note: Only one assignment operator in Joos.
+    ],
+    'Assignment': [ # Note: Only one assignment operator in Joos.
         ['LeftHandSide', 'AssignmentOperator', 'AssignmentExpression'],
-    ]],
-    ['LeftHandSide', [
+    ],
+    'LeftHandSide': [
         ['ExpressionName'],
         ['FieldAccess'],
         ['ArrayAccess'],
-    ]],
+    ],
 
     # Expression (S15.27)
-    ['Expression', [
+    'Expression': [
         ['AssignmentExpression'],
-    ]],
+    ],
 
     # Constant expression (S15.28)
-    ['ConstantExpression', [
+    'ConstantExpression': [
         ['Expression'],
-    ]],
-]
-
+    ],
+}
