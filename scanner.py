@@ -233,7 +233,24 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             if token_label not in THROWAWAY_TOKENS:
                 tokens.append((token_label, token_value, pos, line))
         else:
-            print(tokens, "pos = %d, line = %d, next few chars: %s" % (pos, line, program[pos:pos+10]))
+            print(tokens)
+            print("pos = %d, line = %d, next few chars: %s" % (pos, line, program[pos:pos+10]))
             sys.exit(42)
     
     return tokens
+
+# TESTING:
+if __name__ == "__main__":
+    import test
+    def test_work(path):
+        try:
+            with open(path, 'r') as f:
+                scan(f.read())
+            return 0
+        except SystemExit as e:
+            print("FAILED")
+            return 1
+
+    ts = test.TestRunner("Scanner", test_work)
+    ts.run()
+
