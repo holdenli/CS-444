@@ -7,8 +7,8 @@ ${TARGET}: ${SOURCE}
 	cp ${SOURCE} ${TARGET}
 	chmod +x ${TARGET}
 
-test:
-	./scanner.py
+test: ${TARGET}
+	./${TARGET} -t
 
 jlalr/:
 	javac -d `pwd` Jlalr1.java
