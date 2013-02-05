@@ -50,6 +50,7 @@ class TestRunner:
                 if re.search(self.re_type, line):
                     if re.search(self.re_expected, line):
                         return value != 0
+                    break
         return value == 0
 
     # Run test batch

@@ -20,22 +20,22 @@ SINGLELINE_PATTERNS = {
     'Identifier': [r'([a-zA-Z_$][a-zA-Z0-9_$]*)'],
     
     # integer literals
-    #'DecimalIntegerLiteral': [r'('+DIGITS+'[lL]?)'],
-    'DecimalIntegerLiteral': [r'('+DIGITS+')'], # No Longs in Joos.
-    # 'HexIntegerLiteral': [r'(0[xX][0-9abcedfABCDEF]+[lL]?)'],
-    # 'OctalIntegerLiteral': [r'(0[0-7]+[lL]?)'],
+    'DecimalIntegerLiteral': [r'('+DIGITS+'[lL]?)'],
+    #'DecimalIntegerLiteral': [r'('+DIGITS+')'], # No Longs in Joos.
+    'HexIntegerLiteral': [r'(0[xX][0-9abcedfABCDEF]+[lL]?)'],
+    'OctalIntegerLiteral': [r'(0[0-7]+[lL]?)'],
     
     # floating point literals (unused in Joos):
     #     Digits . Digitsopt ExponentPartopt FloatTypeSuffixopt
     #     . Digits ExponentPartopt FloatTypeSuffixopt
     #     Digits ExponentPart FloatTypeSuffixopt
     #     Digits ExponentPartopt FloatTypeSuffix
-    # 'FloatingPointLiteral': [
-    #     r'('+DIGITS+'\.'+DIGITS+'?(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
-    #     r'(\.'+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
-    #     r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)[dDfF]?)',
-    #     r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
-    # ],
+    'FloatingPointLiteral': [
+        r'('+DIGITS+'\.'+DIGITS+'?(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
+        r'(\.'+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF]?)',
+        r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)[dDfF]?)',
+        r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
+    ],
     
     'BooleanLiteral': [r'(true|false)'],
     
@@ -54,46 +54,46 @@ SINGLELINE_PATTERNS = {
 STRINGS = {
     
     # assignment operators
-    # '%=': 'AssignmentOperator',
-    # '&=': 'AssignmentOperator',
-    # '*=': 'AssignmentOperator',
-    # '+=': 'AssignmentOperator',
-    # '-=': 'AssignmentOperator',
-    # '/=': 'AssignmentOperator',
-    # '<<<=': 'AssignmentOperator',
-    # '<<=': 'AssignmentOperator',
+    '%=': 'AssignmentOperator',
+    '&=': 'AssignmentOperator',
+    '*=': 'AssignmentOperator',
+    '+=': 'AssignmentOperator',
+    '-=': 'AssignmentOperator',
+    '/=': 'AssignmentOperator',
+    '<<<=': 'AssignmentOperator',
+    '<<=': 'AssignmentOperator',
     '=': 'AssignmentOperator',
-    # '>>=': 'AssignmentOperator',
-    # '>>>=': 'AssignmentOperator',
-    # '^=': 'AssignmentOperator',
-    # '|=': 'AssignmentOperator',
+    '>>=': 'AssignmentOperator',
+    '>>>=': 'AssignmentOperator',
+    '^=': 'AssignmentOperator',
+    '|=': 'AssignmentOperator',
     
     # all other expression operators
     '!': 'NotOperator',
     '!=': 'NotEqualOperator',
     '%': 'ModuloOperator',
-    # '&': 'BinaryAndOperator',
+    '&': 'BinaryAndOperator',
     '&&': 'AndOperator',
     '*': 'MultiplyOperator',
     '+': 'AddOperator',
-    # '++': 'IncrementOperator',
+    '++': 'IncrementOperator',
     '-': 'SubtractOperator',
-    # '--': 'DecrementOperator',
+    '--': 'DecrementOperator',
     '/': 'DivideOperator',
-    # ':': 'ColonOperator',
+    ':': 'ColonOperator',
     '<': 'LessThanOperator',
-    # '<<': 'LeftShiftOperator',
+    '<<': 'LeftShiftOperator',
     '<=': 'LessThanEqualOperator',
     '==': 'EqualOperator',
     '>': 'GreaterThanOperator',
     '>=': 'GreaterThanEqualOperator',
-    # '>>': 'RightShiftOperator',
-    # '>>>': 'UnsignedRightShiftOperator',
-    # '?': 'QuestionOperator',
-    # '^': 'InverseOperator',
-    # '|': 'BinaryOrOperator',
+    '>>': 'RightShiftOperator',
+    '>>>': 'UnsignedRightShiftOperator',
+    '?': 'QuestionOperator',
+    '^': 'InverseOperator',
+    '|': 'BinaryOrOperator',
     '||': 'OrOperator',
-    # '~': 'BinaryNotOperator',
+    '~': 'BinaryNotOperator',
     
     # keywords
     'abstract': 'Abstract',
