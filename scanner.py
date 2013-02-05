@@ -248,9 +248,11 @@ if __name__ == "__main__":
                 scan(f.read())
             return 0
         except SystemExit as e:
-            print("FAILED")
             return 1
 
     ts = test.TestRunner("Scanner", test_work)
+    ts.assignment = 1
+    ts.re_expected = "LEXER_EXCEPTION"
+
     ts.run()
 
