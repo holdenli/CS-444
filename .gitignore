@@ -1,2 +1,6 @@
 *.pyc
 joosc
+.project
+.pydevproject
+.swp
+jlalr/

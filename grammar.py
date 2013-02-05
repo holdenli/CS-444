@@ -11,6 +11,10 @@
 # For now, all "opts" are expanded. That means for a given rule with k "opt"
 # elements in the expansion, that will correspond to 2^k rules.
 # TODO: If we no duplicate A's, use a dict.
+
+import scanner
+
+START_SYMBOL = 'CompilationUnit'
 RULES = {
     # Literals (S3.10)
     'Literal': [
@@ -69,7 +73,7 @@ RULES = {
     ],
    
     # Naming (S6.5)
-    'Identifier': [
+    'PackageName': [
         ['Identifier'],
         ['PackageName', 'Dot', 'Identifier'],
     ],
@@ -350,7 +354,7 @@ RULES = {
     
     # Interface declarations (S9.1)
     'InterfaceDeclaration': [
-        ['Interace', 'Identifier', 'InterfaceBody'],
+        ['Interface', 'Identifier', 'InterfaceBody'],
         ['InterfaceModifiers', 'Identifier', 'InterfaceBody'],
         ['Interface', 'Identifier', 'ExtendsInterfaces', 'InterfaceBody'],
         ['InterfaceModifiers', 'Identifier', 'ExtendsInterfaces',
@@ -358,7 +362,7 @@ RULES = {
     ],
     'InterfaceModifiers': [
         ['InterfaceModifier'],
-        ['InterfaceModiflers', 'InterfaceModifier'],
+        ['InterfaceModifiers', 'InterfaceModifier'],
     ],
     'InterfaceModifier': [
         ['Public'],
@@ -633,8 +637,8 @@ RULES = {
         ['Literal'],
         ['Type', 'Dot', 'Class'], # TODO: check if class is a terminal
         ['Void', 'Dot', 'Class'], # TODO: check if class is a terminal
-        ['this'],
-        ['ClassName', 'Dot', 'this'],
+        ['This'],
+        ['ClassName', 'Dot', 'This'],
         ['LeftParenthesis', 'Expression', 'RightParenthesis'],
         ['ClassInstanceCreationExpression'],
         ['FieldAccess'],
@@ -732,8 +736,8 @@ RULES = {
 
     # Unary operators (S15.15)
     'UnaryExpression': [
-        ['PreIncrementExpression'],
-        ['PreDecrementExpression'],
+        #['PreIncrementExpression'],
+        #['PreDecrementExpression'],
         ['AddOperator', 'UnaryExpression'],
         ['SubtractOperator', 'UnaryExpression'],
         ['UnaryExpressionNotPlusMinus'],
@@ -860,3 +864,17 @@ RULES = {
         ['Expression'],
     ],
 }
+
+def symbols():
+    return terminals() | nonterminals()
+
+def terminals():
+    terminals = set()
+    terminals.update(scanner.MULTILINE_PATTERNS.keys())
+    terminals.update(scanner.SINGLELINE_PATTERNS.keys())
+    terminals.update(scanner.STRINGS.values())
+
+    return terminals
+
+def nonterminals():
+    return set(RULES.keys())
