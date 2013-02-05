@@ -13,8 +13,13 @@
 
 import scanner
 
-START_SYMBOL = 'CompilationUnit'
+START_SYMBOL = 'START'
 RULES = {
+    # Augmented grammar starting rule.
+    'START' : [
+        ['BOF', 'CompilationUnit', 'EOF'],
+    ],
+
     # Literals (S3.10)
     'Literal': [
         ['IntegerLiteral'],
@@ -23,6 +28,11 @@ RULES = {
         ['CharacterLiteral'],
         ['StringLiteral'],
         ['NullLiteral'],
+    ],
+    'IntegerLiteral': [
+        ['DecimalIntegerLiteral'],
+        # ['HexIntegerLiteral'],
+        # ['OctalIntegerLiteral'],
     ],
 
     # Types (S4.1)
@@ -96,6 +106,9 @@ RULES = {
         ['Identifier'],
         ['AmbiguousName', 'Dot', 'Identifier'],
     ],
+    'SimpleTypeName': [ # Note: Not explicit in spec.
+        ['Identifier'],
+    ],
     
     # Compilation units (S7.3)
     'CompilationUnit': [
@@ -106,7 +119,7 @@ RULES = {
         ['PackageDeclaration', 'ImportDeclarations'],
         ['PackageDeclaration', 'TypeDeclarations'],
         ['ImportDeclarations', 'TypeDeclarations'],
-        ['PacakgeDeclaration', 'ImportDeclarations', 'TypeDeclarations'],
+        ['PackageDeclaration', 'ImportDeclarations', 'TypeDeclarations'],
     ],
     'ImportDeclarations': [
         ['ImportDeclaration'],
@@ -196,7 +209,7 @@ RULES = {
     'ClassBodyDeclaration': [
         ['ClassMemberDeclaration'],
         ['InstanceInitializer'],
-        ['StaticInitializer'],
+        # ['StaticInitializer'],
         ['ConstructorDeclaration'],
     ],
     'ClassMemberDeclaration': [
@@ -829,7 +842,7 @@ RULES = {
     # Conditional-or operator || (S15.24)
     'ConditionalOrExpression': [
         ['ConditionalAndExpression'],
-        ['ConditionalOpExpression', 'OrOperator', 'ConditionalAndExpression'],
+        ['ConditionalOrExpression', 'OrOperator', 'ConditionalAndExpression'],
     ],
 
     # Condtional operator ? : (S15.25)
@@ -872,6 +885,7 @@ def terminals():
     terminals.update(scanner.MULTILINE_PATTERNS.keys())
     terminals.update(scanner.SINGLELINE_PATTERNS.keys())
     terminals.update(scanner.STRINGS.values())
+    terminals.update(scanner.AUGMENTS)
 
     return terminals
 

@@ -157,6 +157,8 @@ STRINGS = {
     '.': 'Dot',
 }
 
+AUGMENTS = ['BOF', 'EOF']
+
 THROWAWAY_TOKENS = {'WhiteSpace', 'SingleComment', 'MultiComment'}
 
 def find_prefix(string: "body of text we are matching prefixes of",
@@ -175,10 +177,10 @@ def scan(program: "Joos program as a string") -> "list of tokens":
     """
     
     # tuple of (TOKEN LABEL, token value, position, line)
-    tokens = []
     pos = 0
     line = 0
-    
+    tokens = [('BOF', '', pos, line)]
+
     # get the list of tokens to match for, sorted by length of token (desc)
     strings = sorted(STRINGS, reverse=True, key=len)
     
@@ -238,7 +240,7 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             print("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
                 % (pos, line, program[pos:pos+20].replace("\n", "\\n")))
             sys.exit(42)
-    
+    tokens.append(('EOF', '', pos, line)) # End of file augmentation token.
     return tokens
 
 if __name__ == "__main__":
