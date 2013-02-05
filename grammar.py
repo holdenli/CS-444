@@ -185,18 +185,12 @@ RULES = {
     # ['Super(Stmt)', [
     #     ['Extends', 'ClassType'],
     # ],
-    'ClassType': [
-        ['TypeName'],
-    ],
     'Interfaces': [
         ['Implements', 'InterfaceTypeList'],
     ],
     'InterfaceTypeList': [
         ['InterfaceType'],
         ['InterfaceTypeList', 'Comma', 'InterfaceType'],
-    ],
-    'InterfaceType': [
-        ['TypeName'],
     ],
     'ClassBody': [
         ['LeftBrace', 'RightBrace'],
@@ -500,18 +494,6 @@ RULES = {
         # ['LabeledStatementNoShortIf'],
         ['IfThenElseStatementNoShortIf'],
         ['ForStatementNoShortIf'],
-    ],
-    'IfThenStatement': [
-        ['If', 'LeftParenthesis', 'Expression', 'RightParenthesis',
-            'Statement'],
-    ],
-    'IfThenElseStatement': [
-        ['If', 'LeftParenthesis', 'Expression', 'RightParenthesis',
-            'StatementNoShortIf', 'Else', 'Statement'],
-    ],
-    'IfThenElseStatementNoShortIf': [
-        ['If', 'LeftParenthesis', 'Expression', 'RightParenthesis',
-            'StatementNoShortIf', 'Else', 'StatementNoShortIf'],
     ],
     
     # The empty statement (S14.6)
