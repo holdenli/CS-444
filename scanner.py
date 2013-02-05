@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import re
 import sys
+import pprint
 
 DIGITS=r'(?:0|[1-9][0-9]*)'
 ESCAPE_SEQUENCE=r'\\(?:[btnfr"\'\\]|[0-3][0-7]{2}|[0-7]{1,2})'
@@ -233,13 +234,13 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             if token_label not in THROWAWAY_TOKENS:
                 tokens.append((token_label, token_value, pos, line))
         else:
-            print(tokens)
-            print("pos = %d, line = %d, next few chars: %s" % (pos, line, program[pos:pos+10]))
+            pprint.pprint(tokens)
+            print("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
+                % (pos, line, program[pos:pos+20].replace("\n", "\\n")))
             sys.exit(42)
     
     return tokens
 
-# TESTING:
 if __name__ == "__main__":
     import test
     def test_work(path):
@@ -251,8 +252,9 @@ if __name__ == "__main__":
             return 1
 
     ts = test.TestRunner("Scanner", test_work)
-    ts.assignment = 1
+    ts.assignment = "a1"
     ts.re_expected = "LEXER_EXCEPTION"
+    #ts.verbose = True
 
     ts.run()
 

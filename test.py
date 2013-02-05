@@ -29,8 +29,8 @@ class TestRunner:
     _name = "Unknown"
     _foo = None
     
-    assignment = 1
-    re_type = "JOOS2:"
+    assignment = "a1"
+    re_type = "JOOSW:|JOOS2:"
     re_expected = "_EXCEPTION"
     
     verbose = False
@@ -54,7 +54,7 @@ class TestRunner:
 
     # Run test batch
     def run(self):
-        tests_path = "assignment_testcases/a{}".format(self.assignment)
+        tests_path = "assignment_testcases/{}".format(self.assignment)
         test_total = 0
         test_fails = 0
 
