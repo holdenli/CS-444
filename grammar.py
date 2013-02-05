@@ -5,12 +5,11 @@
 # was used.
 #
 # Representation:
-# Each rule is represented by a two-element pair [A, B], where A is a
+# Each rule is represented by a key-value-pair [A, B], where A is a
 # non-terminal and B is a (possibly empty) list of lists. Each sublist
 # is an expansion for A.
 # For now, all "opts" are expanded. That means for a given rule with k "opt"
 # elements in the expansion, that will correspond to 2^k rules.
-# TODO: If we no duplicate A's, use a dict.
 
 import scanner
 
@@ -203,8 +202,8 @@ RULES = {
     'ClassMemberDeclaration': [
         ['FieldDeclaration'],
         ['MethodDeclaration'],
-        ['ClassDeclaration'],
-        ['InterfaceDeclaration'],
+        # ['ClassDeclaration'],
+        # ['InterfaceDeclaration'],
         ['SemiColon'],
     ],
     
@@ -384,7 +383,7 @@ RULES = {
         ['InterfaceMemberDeclaration'],
         ['InterfaceMemberDeclarations', 'InterfaceMemberDeclaration'],
     ],
-    'InterfaceMemberDelaration': [
+    'InterfaceMemberDeclaration': [
         ['ConstantDeclaration'],
         ['AbstractMethodDeclaration'],
         ['ClassDeclaration'],
@@ -430,7 +429,7 @@ RULES = {
         ['LeftBrace', 'RightBrace'],
         ['LeftBrace', 'VariableInitializers', 'RightBrace'],
         ['LeftBrace', 'Comma', 'RightBrace'],
-        ['LeftBrace', 'VariableInitializers', 'Commap', 'RightBrace'],
+        ['LeftBrace', 'VariableInitializers', 'Comma', 'RightBrace'],
     ],
     'VariableInitializers': [
         ['VariableInitializer'],
@@ -638,7 +637,7 @@ RULES = {
         ['Type', 'Dot', 'Class'], # TODO: check if class is a terminal
         ['Void', 'Dot', 'Class'], # TODO: check if class is a terminal
         ['This'],
-        ['ClassName', 'Dot', 'This'],
+        # ['ClassName', 'Dot', 'This'],
         ['LeftParenthesis', 'Expression', 'RightParenthesis'],
         ['ClassInstanceCreationExpression'],
         ['FieldAccess'],
@@ -708,10 +707,10 @@ RULES = {
         ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
         ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
             'RightParenthesis'],
-        ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
-            'RightParenthesis'],
-        ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
-            'ArgumentList', 'RightParenthesis'],
+        # ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
+        #     'RightParenthesis'],
+        # ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
+        #     'ArgumentList', 'RightParenthesis'],
     ],
     
     # Array access expressions (S15.13)
