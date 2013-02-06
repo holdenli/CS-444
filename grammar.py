@@ -127,7 +127,7 @@ RULES = {
     ],
     'TypeDeclarations': [
         ['TypeDeclaration'],
-        ['TypeDeclarations', 'TypeDeclarations'],
+        ['TypeDeclarations', 'TypeDeclaration'],
     ],
 
     # Package declarations (S7.4)
