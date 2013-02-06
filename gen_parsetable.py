@@ -1,14 +1,15 @@
-#!/usr/bin/python3
+from grammar import Grammar
+import simplified_rules as SimplifiedRules
 
-import grammar
-import scanner
+# Script for generating the parse table used by the parser.
 
 def main():
-    
-    # see https://www.student.cs.uwaterloo.ca/~cs444/jlalr/cfg.html for format
+    grammar = Grammar(SimplifiedRules.RULES, SimplifiedRules.START_SYMBOL)
+
+    # See https://www.student.cs.uwaterloo.ca/~cs444/jlalr/cfg.html for format
     terminals = grammar.terminals()
     nonterminals = grammar.nonterminals()
-    start_symbol = grammar.START_SYMBOL
+    start_symbol = grammar.start_symbol
 
     print(len(terminals))
     for terminal in terminals:
@@ -20,12 +21,13 @@ def main():
 
     print(start_symbol)
 
-    print(sum([len(grammar.RULES[nonterm])
-                    for nonterm in grammar.RULES]))
+    print(sum([len(grammar.rules[nonterm])
+                    for nonterm in grammar.rules]))
 
     for nonterm in nonterminals:
-        for rule in grammar.RULES[nonterm]:
+        for rule in grammar.rules[nonterm]:
             print("%s %s" % (nonterm, ' '.join(rule)))
 
 if __name__ == '__main__':
     main()
+
