@@ -35,6 +35,22 @@ RULES = {
         # ['OctalIntegerLiteral'],
     ],
 
+    # Operators (S3.12)
+    'AssignmentOperator': [
+        # ['ModuloAssignmentOperator'],
+        # ['BinaryAndAssignmentOperator'],
+        # ['MultiplyAssignmentOperator'],
+        # ['AddAssignmentOperator'],
+        # ['SubtractAssignmentOperator'],
+        # ['DivideAssignmentOperator'],
+        # ['LeftShiftAssignmentOperator'],
+        ['DirectAssignmentOperator'],
+        # ['RightShiftAssignmentOperator'],
+        # ['UnsignedRightShiftAssignmentOperator'],
+        # ['InverseAssignmentOperator'],
+        # ['BinaryOrAssignmentOperator'],
+    ],
+
     # Types (S4.1)
     'Type': [
         ['PrimitiveType'],

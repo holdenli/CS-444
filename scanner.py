@@ -54,19 +54,18 @@ SINGLELINE_PATTERNS = {
 STRINGS = {
     
     # assignment operators
-    '%=': 'AssignmentOperator',
-    '&=': 'AssignmentOperator',
-    '*=': 'AssignmentOperator',
-    '+=': 'AssignmentOperator',
-    '-=': 'AssignmentOperator',
-    '/=': 'AssignmentOperator',
-    '<<<=': 'AssignmentOperator',
-    '<<=': 'AssignmentOperator',
-    '=': 'AssignmentOperator',
-    '>>=': 'AssignmentOperator',
-    '>>>=': 'AssignmentOperator',
-    '^=': 'AssignmentOperator',
-    '|=': 'AssignmentOperator',
+    '%=': 'ModuloAssignmentOperator',
+    '&=': 'BinaryAndAssignmentOperator',
+    '*=': 'MultiplyAssignmentOperator',
+    '+=': 'AddAssignmentOperator',
+    '-=': 'SubtractAssignmentOperator',
+    '/=': 'DivideAssignmentOperator',
+    '<<=': 'LeftShiftAssignmentOperator',
+    '=': 'DirectAssignmentOperator',
+    '>>=': 'RightShiftAssignmentOperator',
+    '>>>=': 'UnsignedRightShiftAssignmentOperator',
+    '^=': 'InverseAssignmentOperator',
+    '|=': 'BinaryOrAssignmentOperator',
     
     # all other expression operators
     '!': 'NotOperator',
