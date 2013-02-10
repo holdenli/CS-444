@@ -1,5 +1,13 @@
 #!/usr/bin/python3
 
+# parser.py
+# 
+# ParseTable uses symbol names throughout but
+# all parse functions hold symbols in a tuple where
+# the first element is the symbol name.
+# If the second element is None then then it is a nonterminal
+# otherwise it is a terminal (a token with line number)
+
 import sys
 from pprint import pprint
 
@@ -60,8 +68,8 @@ def read_parse_table(parse_table):
         lr1_states = int(lr1_[0])
         lr1_t = int(lr1_[1])
         if lr1_t != len(lr1_[2:]):
-            print("ERROR: Invalid LR1", file=sys.stderr)
-            sys.exit(42)
+            print("PARSE ERROR: Invalid LR1", file=sys.stderr)
+            sys.exit(1)
 
         return ParseTable(
                 (cfg[1:1+t], cfg[t+2:t+2+n],  S, cfg[t+n+4:t+n+4+r])
@@ -75,25 +83,24 @@ def reduce(parse_table, stack, a):
     # traverse DFA
     state = 0
     for symbol in stack:
-        state = parse_table.next_state(state, symbol, False)
+        state = parse_table.next_state(state, symbol[0], False)
         if state == False:
             return False
 
-    rule = parse_table.next_state(state, a, True)
+    rule = parse_table.next_state(state, a[0], True)
     
     if rule == False:
         return False
     
     rule = parse_table.productions[rule]
     return rule
-    #print("ERROR: Reduce failed with stack: {}".format(stack))
 
 # reject
 # True if stack is not a viable prefix and False otherwise
 def reject(parse_table, stack):
     state = 0
     for symbol in stack:
-        state = parse_table.next_state(state, symbol, False)
+        state = parse_table.next_state(state, symbol[0], False)
         if state == False:
             return True
     
@@ -104,12 +111,8 @@ def reject(parse_table, stack):
 #
 # Dev Notes:
 #   Currently only returns true or false
-#   Need to do pop properly
-#   Input must be list of strings instead of list of token tuples
-#       This can be fixed but it's kinda messy...
-#   So the two options are:
-#       - fill in the parse tree with matching tokens in parallel
-#       - change it to handle tokens and fill in the tree naturally
+#       TODO: Build parse tree
+#   Should it error 42 instead of false?
 def parse(input, parse_table):
     print("PARSE:")
     print(input)
@@ -118,18 +121,18 @@ def parse(input, parse_table):
     stack = []
     for a in input:
         print("PARSE LOOP:")
-        print(a)
-        print(stack)
+        print("  " + str(a))
+        print("    " + str(stack))
         while reduce(parse_table, stack, a) != False:
             production = reduce(parse_table, stack, a)
-            stack.pop() # TODO pop everything in rule
-            stack.append(production[0])
-            print("REDUCE!")
-            print(stack)
-        print("REJECT?")
-        print(stack + [a])
+            for p in production[1]:
+                if stack.pop()[0] != p:
+                    print("PARSE ERROR: Stack did not match production")
+                    sys.exit(1)
+            stack.append((production[0], None))
+            print("    " + str(stack))
+        print("####" + str(stack + [a]))
         if reject(parse_table, stack + [a]):
-            "REJECTED!"
             return False
         stack.append(a)
     return True
@@ -138,7 +141,7 @@ if __name__ == "__main__":
     import scanner
     t = scanner.scan("assignment_testcases/others/sample.java")
     t = [("BOF", "BOF"), ("id", "fat"), ("EOF", "EOF")]
-    t = ["BOF", "id", "EOF"]
+    #t = ["BOF", "id", "EOF"]
     z = read_parse_table("assignment_testcases/others/sample.lr1")
     print(parse(t, z))
 
