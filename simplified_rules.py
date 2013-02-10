@@ -55,8 +55,10 @@ RULES = {
     ],
 
     'Type': [
-        ['QualifiedIdentifier', 'BracketsOpt'], # Hack
+        # ['QualifiedIdentifier', 'BracketsOpt'], # Hack
         ['BasicType'],
+        ['QualifiedIdentifier'],
+        ['QualifiedIdentifier', 'LeftBracket', 'RightBracket'],
     ],
 
     'StatementExpression': [
@@ -120,7 +122,7 @@ RULES = {
         ['PrefixOp', 'Expression3'],
         ['LeftParenthesis', 'Expression', 'RightParenthesis', 'Expression3'],
         ['LeftParenthesis', 'Type', 'RightParenthesis', 'Expression3'],
-        # ['Primary'],
+        ['Primary'],
         ['Primary', 'Selectors'],
         # ['Primary', 'PostfixOps'],
         # ['Primary', 'Selectors', 'PostfixOps'],
@@ -134,8 +136,7 @@ RULES = {
 
     # Hack.
     'Selectors': [
-        # ['Selector'],
-        [],
+        ['Selector'],
         ['Selectors', 'Selector'],
     ],
 
@@ -218,10 +219,11 @@ RULES = {
         ['ArgumentSubexpressions', 'Comma', 'Expression'],
     ],
 
-    'BracketsOpt': [
-        [],
-        ['BracketsOpt', 'LeftBracket', 'RightBracket'],
-    ],
+    # Only 1 or 2 brackets permitted.
+    # 'BracketsOpt': [
+    #     [],
+    #     ['BracketsOpt', 'LeftBracket', 'RightBracket'],
+    # ],
 
     'Creator': [
         ['QualifiedIdentifier', 'ArrayCreatorRest'],
@@ -236,16 +238,15 @@ RULES = {
         # ['LeftBracket', 'RightBracket', 'BracketsOpt', 'ArrayInitializer'],
         # ['LeftBracket', 'Expression', 'RightBracket',
         #     'BracketedExpressionsOpt', 'BracketsOpt'],
-        ['LeftBracket', 'Expression', 'RightBracket',
-            'BracketedExpressionsOpt'], # No multi-dim arrays in Joos.
+        ['LeftBracket', 'Expression', 'RightBracket'],
     ],
 
     # Hack.
-    'BracketedExpressionsOpt': [
-        [],
-        ['BracketedExpressionsOpt', 'LeftBracket', 'Expression',
-            'RightBracket'],
-    ],
+    # 'BracketedExpressionsOpt': [
+    #     [],
+    #     ['BracketedExpressionsOpt', 'LeftBracket', 'Expression',
+    #         'RightBracket'],
+    # ],
 
     'ClassCreatorRest': [
         ['Arguments'],
@@ -375,9 +376,13 @@ RULES = {
         # ['StatementExpression', 'MoreStatementExpressions'],
     ],
 
-    'ModifiersOpt': [
-        [],
-        ['ModifiersOpt', 'Modifier'],
+    # 'ModifiersOpt': [
+    #     [],
+    #     ['ModifiersOpt', 'Modifier'],
+    # ],
+    'Modifiers': [ # No package private in Joos => must have modifier.
+        ['Modifier'],
+        ['Modifiers', 'Modifier'],
     ],
 
     'Modifier': [
@@ -418,6 +423,7 @@ RULES = {
     ],
 
     'VariableDeclarator': [
+        ['Identifier'],
         ['Identifier', 'VariableDeclaratorRest'],
     ],
 
@@ -426,12 +432,18 @@ RULES = {
     ],
 
     'VariableDeclaratorRest': [
-        ['BracketsOpt'],
-        ['BracketsOpt', 'AssignmentOperator', 'VariableInitializer'],
+        # ['BracketsOpt'],
+        # ['BracketsOpt', 'DirectAssignmentOperator', 'VariableInitializer'],
+        ['DirectAssignmentOperator', 'VariableInitializer'],
+        ['LeftBracket', 'RightBracket', 'DirectAssignmentOperator',
+            'VariableInitializer'],
     ],
 
     'ConstantDeclaratorRest': [
-        ['BracketsOpt', 'AssignmentOperator', 'VariableInitializer'],
+        # ['BracketsOpt', 'DirectAssignmentOperator', 'VariableInitializer'],
+        ['DirectAssignmentOperator', 'VariableInitializer'],
+        ['LeftBracket', 'RightBracket', 'DirectAssignmentOperator',
+            'VariableInitializer'],
     ],
 
     'VariableDeclaratorId': [
@@ -468,8 +480,10 @@ RULES = {
     ],
 
     'ClassOrInterfaceDeclaration': [
-        ['ModifiersOpt', 'ClassDeclaration'],
-        ['ModifiersOpt', 'InterfaceDeclaration'],
+        # ['ModifiersOpt', 'ClassDeclaration'],
+        # ['ModifiersOpt', 'InterfaceDeclaration'],
+        ['Modifiers', 'ClassDeclaration'],
+        ['Modifiers', 'InterfaceDeclaration'],
     ],
 
     'ClassDeclaration': [
@@ -514,7 +528,9 @@ RULES = {
         ['SemiColon'],
         # ['Block'],
         # ['Static', 'Block'],
-        ['ModifiersOpt', 'MemberDecl'],
+        # ['MemberDecl'], # Joos must have modifier.
+        # ['ModifiersOpt', 'MemberDecl'],
+        ['Modifiers', 'MemberDecl'],
     ],
 
     'MemberDecl': [
@@ -535,7 +551,8 @@ RULES = {
 
     'InterfaceBodyDeclaration': [
         ['SemiColon'],
-        ['ModifiersOpt', 'InterfaceMemberDecl'],
+        # ['ModifiersOpt', 'InterfaceMemberDecl'],
+        ['Modifiers', 'InterfaceMemberDecl'],
     ],
 
     'InterfaceMemberDecl': [
@@ -554,12 +571,16 @@ RULES = {
     ],
 
     'MethodDeclaratorRest': [
-        ['FormalParameters', 'BracketsOpt', 'MethodBody'],
+        # ['FormalParameters', 'BracketsOpt', 'MethodBody'],
         # ['FormalParameters', 'BracketsOpt', 'Throws', 'QualifiedIdentifierList',
         #     'MethodBody'],
-        ['FormalParameters', 'BracketsOpt', 'SemiColon'],
+        # ['FormalParameters', 'BracketsOpt', 'SemiColon'],
         # ['FormalParameters', 'BracketsOpt', 'Throws', 'QualifiedIdentifierList',
         #     'SemiColon'],
+        ['FormalParameters', 'MethodBody'],
+        ['FormalParameters', 'LeftBracket', 'RightBracket', 'MethodBody'],
+        ['FormalParameters', 'SemiColon'],
+        ['FormalParameters', 'LeftBracket', 'RightBracket', 'SemiColon'],
     ],
 
     'VoidMethodDeclaratorRest': [
@@ -570,9 +591,11 @@ RULES = {
     ],
 
     'InterfaceMethodDeclaratorRest': [
-        ['FormalParameters', 'BracketsOpt', 'SemiColon'],
+        # ['FormalParameters', 'BracketsOpt', 'SemiColon'],
         # ['FormalParameters', 'BracketsOpt', 'Throws',
         #     'QualifiedIdentifierList', 'SemiColon'],
+        ['FormalParameters', 'SemiColon'],
+        ['FormalParameters', 'LeftBracket', 'RightBracket', 'SemiColon'],
     ],
 
     'VoidInterfaceMethodDeclaratorRest': [
