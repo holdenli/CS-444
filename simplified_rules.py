@@ -85,9 +85,10 @@ RULES = {
     ],
 
     'Expression2Rest': [
-        [],
+        # [], Hack. Removes ambiguity with above.
         ['Expression2Follow'], # Hack.
-        ['Expression3', 'Instanceof', 'Type'],
+        # ['Expression3', 'Instanceof', 'Type'] Check this.
+        ['Instanceof', 'Type'],
     ],
 
     # Hack.
