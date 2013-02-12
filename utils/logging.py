@@ -9,7 +9,8 @@ LEVELS = {
     'INFO': 2,
     'WARNING': 3,
     'WARN': 3,
-    'ERROR': 4
+    'ERROR': 4,
+    'NONE': 5
 }
 
 # default level

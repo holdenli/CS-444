@@ -10,7 +10,7 @@ import scanner
 
 def parse_options(args=sys.argv):
     parser = optparse.OptionParser()
-    parser.add_option('-l', '--loglevel', action='store', default='INFO',
+    parser.add_option('-l', '--loglevel', action='store', default='WARNING',
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
         help="""Logging level. Choices: DEBUG, INFO, WARNING, ERROR.
             [default: INFO]""")

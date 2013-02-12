@@ -256,6 +256,7 @@ if __name__ == "__main__":
         except SystemExit as e:
             return 1
 
+    logging.setLogLevel("NONE")
     ts = test.TestRunner("Scanner", test_work)
     ts.assignment = "a1"
     ts.re_expected = "LEXER_EXCEPTION"
