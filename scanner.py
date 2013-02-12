@@ -1,7 +1,7 @@
 import re
 import sys
 import pprint
-import logging
+from utils import logging
 
 DIGITS=r'(?:0|[1-9][0-9]*)'
 ESCAPE_SEQUENCE=r'\\(?:[btnfr"\'\\]|[0-3][0-7]{2}|[0-7]{1,2})'

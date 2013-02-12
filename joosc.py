@@ -3,7 +3,7 @@
 import sys
 import optparse
 import pprint
-import logging
+from utils import logging
 
 import test
 import scanner
@@ -37,8 +37,7 @@ def test_work(path):
 def main(argv=sys.argv):
     (opts, args) = parse_options(argv)
 
-    logging.basicConfig(level=opts.loglevel,
-        format='[%(filename)s/%(funcName)s:%(lineno)d %(levelname)s] %(message)s')
+    logging.setLogLevel(level=opts.loglevel)
     
     if opts.test:
         logging.info("TESTING")
