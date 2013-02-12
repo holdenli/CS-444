@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import inspect
+#import inspect
 import sys
 import os.path
 
@@ -16,19 +16,19 @@ LEVELS = {
 current_level='INFO'
 
 def debug(*args):
-    log(*args, level='DEBUG', stack=inspect.stack()[1])
+    log(*args, level='DEBUG', stack=None)
 
 def info(*args):
-    log(*args, level='INFO', stack=inspect.stack()[1])
+    log(*args, level='INFO', stack=None)
 
 def warn(*args):
-    log(*args, level='WARNING', stack=inspect.stack()[1])
+    log(*args, level='WARNING', stack=None)
 
 def warning(*args):
-    log(*args, level='WARNING', stack=inspect.stack()[1])
+    log(*args, level='WARNING', stack=None)
 
 def error(*args):
-    log(*args, level='ERROR', stack=inspect.stack()[1])
+    log(*args, level='ERROR', stack=None)
 
 def log(*args, level, stack=None):
     global current_level
@@ -37,10 +37,11 @@ def log(*args, level, stack=None):
         return
 
     if stack == None:
-        stack = inspect.stack()[1]
+        pass #stack = inspect.stack()[1]
 
     # [file/funcName:lineno loglevel] message
-    print('[%s:%s/%s %s]' % (os.path.basename(stack[1]), stack[2], stack[3], LEVELS[level]),
+    print('[LOG %s]'
+        % (LEVELS[level]),
         *args, file=sys.stderr)
 
 def setLogLevel(level):
@@ -48,3 +49,8 @@ def setLogLevel(level):
 
     if level in LEVELS:
         current_level = level
+
+if __name__ == "__main__":
+    setLogLevel('DEBUG')
+    debug("FACK")
+
