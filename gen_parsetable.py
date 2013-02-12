@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from grammar import Grammar
 import simplified_rules as SimplifiedRules
 

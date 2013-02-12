@@ -1,6 +1,7 @@
 import re
 import sys
 import pprint
+import logging
 
 DIGITS=r'(?:0|[1-9][0-9]*)'
 ESCAPE_SEQUENCE=r'\\(?:[btnfr"\'\\]|[0-3][0-7]{2}|[0-7]{1,2})'
@@ -234,10 +235,12 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             if token_label not in THROWAWAY_TOKENS:
                 tokens.append((token_label, token_value, pos, line))
         else:
-            pprint.pprint(tokens)
-            print("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
+            logging.error("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
                 % (pos, line, program[pos:pos+20].replace("\n", "\\n")))
+            logging.error(pprint.pformat(tokens))
+
             sys.exit(42)
+
     tokens.append(('EOF', '', pos, line)) # End of file augmentation token.
     return tokens
 
