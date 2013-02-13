@@ -151,7 +151,7 @@ def parse(tokens, parse_table):
         logging.info("#NODE STACK   : %s" % (node_stack))
     
     # Accept
-    return node.Node("ROOT", c=node_stack)
+    return node.Node("ROOT", children=node_stack)
 
 if __name__ == "__main__":
     import scanner
