@@ -20,23 +20,20 @@ import pprint
 # WARNING:
 #   MAN, the parse table code is disgusting. Just let Holden deal with it.
 class ParseTable:
-    terminals = []
-    nonterminals = []
-    start = None
-    productions = [] # ( nonterm, productions )
-    lr1_states = None
-    lr1_t = [] # ( state, term/symbol, reduce?, rule/state )
-
     # Really only to be used with read_parse_table
     def __init__(self, cfg, lr1):
+        # CFG
         self.terminals = cfg[0]
         self.nonterminals = cfg[1]
         self.start = cfg[2]
+        self.productions = [] # ( nonterm, productions )
         for p in cfg[3]:
             pp = p.split()
             self.productions.append((pp[0], pp[1:]))
 
+        # LR1
         self.lr1_states = lr1[0]
+        self.lr1_t = [] # ( state, term/symbol, reduce?, rule/state )
         for t in lr1[1]:
             tt = t.split()
             self.lr1_t.append((
@@ -82,7 +79,6 @@ def read_parse_table(parse_table):
                 (cfg[1:1+t], cfg[t+2:t+2+n],  S, cfg[t+n+4:t+n+4+r])
                 , (lr1_states, lr1_[2:])
             )
-    pass
 
 # reduce
 # Returns the production rule or False if it can't be found
@@ -118,39 +114,41 @@ def parse_reject(parse_table, stack):
 # Notes:
 # - Should it error 42 instead of false?
 def parse(tokens, parse_table):
-    logging.debug("PARSE: %s" % (pprint.pformat(tokens)))
+    logging.info("PARSE: %s" % (pprint.pformat(tokens)))
 
     tree = None
     stack = []
     node_stack = [] # keep nodes in a parallel stack cause its easier suck it
     for a in tokens:
-        logging.debug(">>PARSE LOOP")
-        logging.debug("  " + str(a))
-        logging.debug("  " + str(stack))
+        logging.info(">>PARSE LOOP")
+        logging.info("  " + str(a))
+        logging.info("  " + str(stack))
         
         # Reduce
         while parse_reduce(parse_table, stack, a) != False:
             production = parse_reduce(parse_table, stack, a)
             children = []
-            for p in production[1]:
+            # Remove RHS from stack
+            for p in reversed(production[1]):
                 if stack.pop()[0] != p:
-                    logging.error("PARSE ERROR: Stack did not match production")
+                    logging.error("PARSE ERROR: Stack did not match production ('%s')" % (p))
                     sys.exit(1)
-                children += [node_stack.pop()]
+                children.insert(0, node_stack.pop())
             stack.append((production[0], None))
             node_stack.append(node.Node(production[0], None, children))
-            logging.debug("#PARSE REDUCE : %s" % (stack))
+            logging.info("#PARSE REDUCE : %s" % (stack))
         
         # Reject?
         if parse_reject(parse_table, stack + [a]):
+            logging.info("#FAIL         : %s" % (stack + [a]))
             return False
         
         # Shift
         stack.append(a)
         node_stack.append(node.Node(a[0], a, []))
         
-        logging.debug("#PARSE SHIFT  : %s" % (stack + [a]))
-        logging.debug("#NODE STACK   : %s" % (node_stack))
+        logging.info("#PARSE SHIFT  : %s" % (stack))
+        logging.info("#NODE STACK   : %s" % (node_stack))
     
     # Accept
     return node.Node("ROOT", c=node_stack)
@@ -158,12 +156,21 @@ def parse(tokens, parse_table):
 if __name__ == "__main__":
     import scanner
     
-    logging.setLogLevel("DEBUG")
-    
-    t = scanner.scan("assignment_testcases/others/sample.java")
+    logging.setLogLevel("INFO")
+
     t = [("BOF", "BOF"), ("id", "fat"), ("EOF", "EOF")]
     z = read_parse_table("assignment_testcases/others/sample.lr1")
-
+    
+    parse_tree = parse(t, z)
+    print(parse_tree)
+    print("BFS List of all nodes:")
+    pprint.pprint(list(parse_tree.bfs_iter()))
+    print("List of all leafs:")
+    pprint.pprint(parse_tree.leafs())
+    
+    z = read_parse_table("grammar.lr1")
+    with open("assignment_testcases/others/sample.java", 'r') as f:
+       t = scanner.scan(f.read())
     parse_tree = parse(t, z)
     print(parse_tree)
     print("BFS List of all nodes:")

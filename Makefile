@@ -13,7 +13,7 @@ test: ${TARGET}
 jlalr/:
 	javac -d `pwd` Jlalr1.java
 
-rules/generated.py:
+rules/generated.py: rules/generate.rules
 	python3 rules/gen_rules.py < rules/generate.rules > rules/generated.py
 
 parsetable: jlalr/ rules/generated.py

@@ -1,5 +1,5 @@
 Goal:
-	CompilationUnit
+    BOF CompilationUnit EOF
 Literal:
 	DecimalIntegerLiteral
 	FloatingPointLiteral
