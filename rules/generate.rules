@@ -1,4 +1,5 @@
 Goal:
+    BOF EOF
     BOF CompilationUnit EOF
 Literal:
 	DecimalIntegerLiteral
@@ -46,7 +47,15 @@ SimpleName:
 QualifiedName:
 	Name Dot Identifier
 CompilationUnit:
-	PackageDeclarationopt ImportDeclarationsopt TypeDeclarationsopt
+	PackageDeclaration
+	ImportDeclarations
+	TypeDeclarations
+	
+    PackageDeclaration ImportDeclarations
+	PackageDeclaration TypeDeclarations
+	ImportDeclarations TypeDeclarations
+
+	PackageDeclaration ImportDeclarations TypeDeclarations
 	
 ImportDeclarations:
 	ImportDeclaration
@@ -79,9 +88,9 @@ Modifier:
 	Abstract
 	Final
 	Native
-	Synchronized
-	Transient
-	Volatile
+#	Synchronized
+#	Transient
+#	Volatile
 ClassDeclaration:
 	Class Identifier SuperStuff Interfaces ClassBody
 	Class Identifier Interfaces ClassBody
@@ -130,13 +139,13 @@ VariableInitializer:
 MethodDeclaration:
 	MethodHeader MethodBody
 MethodHeader:
-	Modifiers Type MethodDeclarator ThrowsStuff
+#	Modifiers Type MethodDeclarator ThrowsStuff
 	Modifiers Type MethodDeclarator
-	Type MethodDeclarator ThrowsStuff
+#	Type MethodDeclarator ThrowsStuff
 	Type MethodDeclarator
-	Modifiers Void MethodDeclarator ThrowsStuff
+#	Modifiers Void MethodDeclarator ThrowsStuff
 	Modifiers Void MethodDeclarator
-	Void MethodDeclarator ThrowsStuff
+#	Void MethodDeclarator ThrowsStuff
 	Void MethodDeclarator
 MethodDeclarator:
 	Identifier LeftParenthesis FormalParameterList RightParenthesis
@@ -147,8 +156,8 @@ FormalParameterList:
 	FormalParameterList Comma FormalParameter
 FormalParameter:
 	Type VariableDeclaratorId
-ThrowsStuff:
-	Throws ClassTypeList
+#ThrowsStuff:
+#	Throws ClassTypeList
 ClassTypeList:
 	ClassType
 	ClassTypeList Comma ClassType
@@ -159,9 +168,9 @@ MethodBody:
 StaticInitializer:
 	Static Block
 ConstructorDeclaration:
-	Modifiers ConstructorDeclarator ThrowsStuff ConstructorBody
+#	Modifiers ConstructorDeclarator ThrowsStuff ConstructorBody
 	Modifiers ConstructorDeclarator ConstructorBody
-	ConstructorDeclarator ThrowsStuff ConstructorBody
+#	ConstructorDeclarator ThrowsStuff ConstructorBody
 	ConstructorDeclarator ConstructorBody
 ConstructorDeclarator:
 	SimpleName LeftParenthesis FormalParameterList RightParenthesis
@@ -236,13 +245,13 @@ StatementWithoutTrailingSubstatement:
 	EmptyStatement
 	ExpressionStatement
 #	SwitchStatement
-	DoStatement
-	BreakStatement
-	ContinueStatement
+#	DoStatement
+#	BreakStatement
+#	ContinueStatement
 	ReturnStatement
-	SynchronizedStatement
-	ThrowStatement
-	TryStatement
+#	SynchronizedStatement
+#	ThrowStatement
+#	TryStatement
 EmptyStatement:
 	SemiColon
 LabeledStatement:
@@ -283,13 +292,33 @@ WhileStatement:
 	While LeftParenthesis Expression RightParenthesis Statement
 WhileStatementNoShortIf:
 	While LeftParenthesis Expression RightParenthesis StatementNoShortIf
-DoStatement:
-	Do Statement While LeftParenthesis Expression RightParenthesis SemiColon
+#DoStatement:
+#	Do Statement While LeftParenthesis Expression RightParenthesis SemiColon
 	
 ForStatement:
-	For LeftParenthesis ForInitopt SemiColon Expressionopt SemiColon ForUpdateopt RightParenthesis Statement
+	For LeftParenthesis SemiColon SemiColon RightParenthesis Statement
+
+	For LeftParenthesis ForInit SemiColon SemiColon RightParenthesis Statement
+	For LeftParenthesis SemiColon Expression SemiColon RightParenthesis Statement
+	For LeftParenthesis SemiColon SemiColon ForUpdate RightParenthesis Statement
+
+	For LeftParenthesis ForInit SemiColon Expression SemiColon RightParenthesis Statement
+	For LeftParenthesis ForInit SemiColon SemiColon ForUpdate RightParenthesis Statement
+	For LeftParenthesis SemiColon Expression SemiColon ForUpdate RightParenthesis Statement
+
+	For LeftParenthesis ForInit SemiColon Expression SemiColon ForUpdate RightParenthesis Statement
 ForStatementNoShortIf:
-	For LeftParenthesis ForInitopt SemiColon Expressionopt SemiColon ForUpdateopt RightParenthesis StatementNoShortIf
+	For LeftParenthesis SemiColon SemiColon RightParenthesis StatementNoShortIf
+
+	For LeftParenthesis ForInit SemiColon SemiColon RightParenthesis StatementNoShortIf
+	For LeftParenthesis SemiColon Expression SemiColon RightParenthesis StatementNoShortIf
+	For LeftParenthesis SemiColon SemiColon ForUpdate RightParenthesis StatementNoShortIf
+
+	For LeftParenthesis ForInit SemiColon Expression SemiColon RightParenthesis StatementNoShortIf
+	For LeftParenthesis ForInit SemiColon SemiColon ForUpdate RightParenthesis StatementNoShortIf
+	For LeftParenthesis SemiColon Expression SemiColon ForUpdate RightParenthesis StatementNoShortIf
+
+	For LeftParenthesis ForInit SemiColon Expression SemiColon ForUpdate RightParenthesis StatementNoShortIf
 ForInit:
 	StatementExpressionList
 	LocalVariableDeclaration
@@ -298,26 +327,27 @@ ForUpdate:
 StatementExpressionList:
 	StatementExpression
 	StatementExpressionList Comma StatementExpression
-BreakStatement:
-	Break Identifieropt SemiColon
-ContinueStatement:
-	Continue Identifieropt SemiColon
 ReturnStatement:
-	Return Expressionopt SemiColon
-ThrowStatement:
-	Throw Expression SemiColon
-SynchronizedStatement:
-	Synchronized LeftParenthesis Expression RightParenthesis Block
-TryStatement:
-	Try Block Catches
-	Try Block Catchesopt FinallyStuff
-Catches:
-	CatchClause
-	Catches CatchClause
-CatchClause:
-	Catch LeftParenthesis FormalParameter RightParenthesis Block
-FinallyStuff:
-	Finally Block
+	Return SemiColon
+	Return Expression SemiColon
+#BreakStatement:
+#	Break Identifieropt SemiColon
+#ContinueStatement:
+#	Continue Identifieropt SemiColon
+#ThrowStatement:
+#	Throw Expression SemiColon
+#SynchronizedStatement:
+#	Synchronized LeftParenthesis Expression RightParenthesis Block
+#TryStatement:
+#	Try Block Catches
+#	Try Block Catchesopt FinallyStuff
+#Catches:
+#	CatchClause
+#	Catches CatchClause
+#CatchClause:
+#	Catch LeftParenthesis FormalParameter RightParenthesis Block
+#FinallyStuff:
+#	Finally Block
 	
 Primary:
 	PrimaryNoNewArray
@@ -331,13 +361,16 @@ PrimaryNoNewArray:
 	MethodInvocation
 	ArrayAccess
 ClassInstanceCreationExpression:
-	New ClassType LeftParenthesis ArgumentListopt RightParenthesis
+	New ClassType LeftParenthesis RightParenthesis
+	New ClassType LeftParenthesis ArgumentList RightParenthesis
 ArgumentList:
 	Expression
 	ArgumentList Comma Expression
 ArrayCreationExpression:
-	New PrimitiveType DimExprs Dimsopt
-	New ClassOrInterfaceType DimExprs Dimsopt
+	New PrimitiveType DimExprs
+	New PrimitiveType DimExprs Dims
+	New ClassOrInterfaceType DimExprs
+	New ClassOrInterfaceType DimExprs Dims
 DimExprs:
 	DimExpr
 	DimExprs DimExpr
@@ -350,9 +383,13 @@ FieldAccess:
 	Primary Dot Identifier
 	Super Dot Identifier
 MethodInvocation:
-	Name LeftParenthesis ArgumentListopt RightParenthesis
-	Primary Dot Identifier LeftParenthesis ArgumentListopt RightParenthesis
-	Super Dot Identifier LeftParenthesis ArgumentListopt RightParenthesis
+	Name LeftParenthesis RightParenthesis
+	Primary Dot Identifier LeftParenthesis RightParenthesis
+	Super Dot Identifier LeftParenthesis RightParenthesis
+
+	Name LeftParenthesis ArgumentList RightParenthesis
+	Primary Dot Identifier LeftParenthesis ArgumentList RightParenthesis
+	Super Dot Identifier LeftParenthesis ArgumentList RightParenthesis
 ArrayAccess:
 	Name LeftBracket Expression RightBracket
 	PrimaryNoNewArray LeftBracket Expression RightBracket
@@ -369,7 +406,8 @@ UnaryExpressionNotPlusMinus:
 	NotOperator UnaryExpression
 	CastExpression
 CastExpression:
-	LeftParenthesis PrimitiveType Dimsopt RightParenthesis UnaryExpression
+	LeftParenthesis PrimitiveType RightParenthesis UnaryExpression
+	LeftParenthesis PrimitiveType Dims RightParenthesis UnaryExpression
 	LeftParenthesis Expression RightParenthesis UnaryExpressionNotPlusMinus
 	LeftParenthesis Name Dims RightParenthesis UnaryExpressionNotPlusMinus
 MultiplicativeExpression:
@@ -428,63 +466,3 @@ Expression:
 	AssignmentExpression
 ConstantExpression:
 	Expression
-ForInitopt :
-	__EPSILON__
-	 ForInit
-Expressionopt :
-	__EPSILON__
-	 Expression
-ForUpdateopt :
-	__EPSILON__
-	 ForUpdate
-ForInitopt :
-	__EPSILON__
-	 ForInit
-Expressionopt :
-	__EPSILON__
-	 Expression
-ForUpdateopt :
-	__EPSILON__
-	 ForUpdate
-Identifieropt :
-	__EPSILON__
-	 Identifier
-Identifieropt :
-	__EPSILON__
-	 Identifier
-Expressionopt :
-	__EPSILON__
-	 Expression
-Catchesopt :
-	__EPSILON__
-	 Catches
-ArgumentListopt :
-	__EPSILON__
-	 ArgumentList
-Dimsopt :
-	__EPSILON__
-	 Dims
-Dimsopt :
-	__EPSILON__
-	 Dims
-ArgumentListopt :
-	__EPSILON__
-	 ArgumentList
-ArgumentListopt :
-	__EPSILON__
-	 ArgumentList
-ArgumentListopt :
-	__EPSILON__
-	 ArgumentList
-Dimsopt :
-	__EPSILON__
-	Dims
-PackageDeclarationopt:
-	__EPSILON__
-	PackageDeclaration
-ImportDeclarationsopt:
-	__EPSILON__
-	ImportDeclarations
-TypeDeclarationsopt:
-	__EPSILON__
-	TypeDeclarations

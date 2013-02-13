@@ -19,6 +19,7 @@ for line in sys.stdin:
         g[nonterm] = []
     else:
         if line == '__EPSILON__':
+            print("WARNING: Don't use __EPSILON__", file=sys.stderr)
             g[nonterm].append([])
         else:
             g[nonterm].append(line.split())
