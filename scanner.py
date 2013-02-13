@@ -3,6 +3,8 @@
 import re
 import sys
 import pprint
+from collections import namedtuple
+
 from utils import logging
 
 DIGITS=r'(?:0|[1-9][0-9]*)'
@@ -162,6 +164,8 @@ AUGMENTS = ['BOF', 'EOF']
 
 THROWAWAY_TOKENS = {'WhiteSpace', 'SingleComment', 'MultiComment'}
 
+Token = namedtuple('Token', ['label', 'value', 'pos', 'line'])
+
 def find_prefix(string: "body of text we are matching prefixes of",
                 prefixes: "list/iterable of prefixes",
                 pos: "an offset of string") -> "prefix":
@@ -180,7 +184,7 @@ def scan(program: "Joos program as a string") -> "list of tokens":
     # tuple of (TOKEN LABEL, token value, position, line)
     pos = 0
     line = 0
-    tokens = [('BOF', '', pos, line)]
+    tokens = [Token('BOF', '', pos, line)]
 
     # get the list of tokens to match for, sorted by length of token (desc)
     strings = sorted(STRINGS, reverse=True, key=len)
@@ -235,7 +239,7 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             
             # ignore whitespace and comments
             if token_label not in THROWAWAY_TOKENS:
-                tokens.append((token_label, token_value, pos, line))
+                tokens.append(Token(token_label, token_value, pos, line))
         else:
             logging.error("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
                 % (pos, line, program[pos:pos+20].replace("\n", "\\n")))
@@ -243,7 +247,7 @@ def scan(program: "Joos program as a string") -> "list of tokens":
 
             sys.exit(42)
 
-    tokens.append(('EOF', '', pos, line)) # End of file augmentation token.
+    tokens.append(Token('EOF', '', pos, line)) # End of file augmentation token.
     return tokens
 
 if __name__ == "__main__":
