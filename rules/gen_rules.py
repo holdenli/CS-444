@@ -11,7 +11,7 @@ g = {}
 for line in sys.stdin:
     line = line.strip()
 
-    if line == '':
+    if line == '' or line[0] == '#':
         continue
 
     if line[-1] == ':':

@@ -235,7 +235,7 @@ StatementWithoutTrailingSubstatement:
 	Block
 	EmptyStatement
 	ExpressionStatement
-	SwitchStatement
+#	SwitchStatement
 	DoStatement
 	BreakStatement
 	ContinueStatement
@@ -261,24 +261,24 @@ IfThenElseStatement:
 	If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else Statement
 IfThenElseStatementNoShortIf:
 	If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else StatementNoShortIf
-SwitchStatement:
-	Switch LeftParenthesis Expression RightParenthesis SwitchBlock
-SwitchBlock:
-	LeftBrace SwitchBlockStatementGroups SwitchLabels RightBrace
-	LeftBrace SwitchBlockStatementGroups RightBrace
-	LeftBrace SwitchLabels RightBrace
-	LeftBrace RightBrace
-SwitchBlockStatementGroups:
-	SwitchBlockStatementGroup
-	SwitchBlockStatementGroups SwitchBlockStatementGroup
-SwitchBlockStatementGroup:
-	SwitchLabels BlockStatements
-SwitchLabels:
-	SwitchLabel
-	SwitchLabels SwitchLabel
-SwitchLabel:
-	Case ConstantExpression ColonOperator
-	Default ColonOperator
+#SwitchStatement:
+#	Switch LeftParenthesis Expression RightParenthesis SwitchBlock
+#SwitchBlock:
+#	LeftBrace SwitchBlockStatementGroups SwitchLabels RightBrace
+#	LeftBrace SwitchBlockStatementGroups RightBrace
+#	LeftBrace SwitchLabels RightBrace
+#	LeftBrace RightBrace
+#SwitchBlockStatementGroups:
+#	SwitchBlockStatementGroup
+#	SwitchBlockStatementGroups SwitchBlockStatementGroup
+#SwitchBlockStatementGroup:
+#	SwitchLabels BlockStatements
+#SwitchLabels:
+#	SwitchLabel
+#	SwitchLabels SwitchLabel
+#SwitchLabel:
+#	Case ConstantExpression ColonOperator
+#	Default ColonOperator
 WhileStatement:
 	While LeftParenthesis Expression RightParenthesis Statement
 WhileStatementNoShortIf:
