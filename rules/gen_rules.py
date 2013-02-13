@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import pprint
 import sys
@@ -23,5 +23,5 @@ for line in sys.stdin:
         else:
             g[nonterm].append(line.split())
 
-print 'START_SYMBOL="Goal"'
-print 'RULES = %s' % pprint.pformat(g)
+print('START_SYMBOL="Goal"')
+print('RULES = %s' % pprint.pformat(g, width=20))

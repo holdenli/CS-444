@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 
 from grammar import Grammar
-import simplified_rules as SimplifiedRules
-import extended_rules as ExtendedRules
+import rules.simplified as SimplifiedRules
+import rules.extended as ExtendedRules
+import rules.generated as NewRules
 
 # Script for generating the parse table used by the parser.
 
 def main():
     # grammar = Grammar(SimplifiedRules.RULES, SimplifiedRules.START_SYMBOL)
-    grammar = Grammar(ExtendedRules.RULES, ExtendedRules.START_SYMBOL)
+    # grammar = Grammar(ExtendedRules.RULES, ExtendedRules.START_SYMBOL)
+    grammar = Grammar(NewRules.RULES, NewRules.START_SYMBOL)
 
     # See https://www.student.cs.uwaterloo.ca/~cs444/jlalr/cfg.html for format
     terminals = grammar.terminals()

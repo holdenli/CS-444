@@ -3,4 +3,6 @@ joosc
 .project
 .pydevproject
 *.swp
+
 jlalr/
+rules/generated.py

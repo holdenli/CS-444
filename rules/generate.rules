@@ -41,7 +41,6 @@ ArrayType:
 Name:
 	SimpleName
 	QualifiedName
-	Identifier
 SimpleName:
 	Identifier
 QualifiedName:
@@ -84,15 +83,15 @@ Modifier:
 	Transient
 	Volatile
 ClassDeclaration:
-	Class Identifier SuperStuff Interfaces ClassBodyDeclaration
-	Class Identifier Interfaces ClassBodyDeclarations
-	Class Identifier SuperStuff ClassBodyDeclaration
-	Class Identifier ClassBodyDeclarations
+	Class Identifier SuperStuff Interfaces ClassBody
+	Class Identifier Interfaces ClassBody
+	Class Identifier SuperStuff ClassBody
+	Class Identifier ClassBody
 	
-	Modifiers Class Identifier Super Interfaces ClassBodyDeclaration
-	Modifiers Class Identifier Interfaces ClassBodyDeclarations
-	Modifiers Class Identifier Super ClassBodyDeclaration
-	Modifiers Class Identifier ClassBodyDeclarations
+	Modifiers Class Identifier Super Interfaces ClassBody
+	Modifiers Class Identifier Interfaces ClassBody
+	Modifiers Class Identifier Super ClassBody
+	Modifiers Class Identifier ClassBody
 SuperStuff:
 	Extends ClassType
 Interfaces:
@@ -265,9 +264,9 @@ IfThenElseStatementNoShortIf:
 SwitchStatement:
 	Switch LeftParenthesis Expression RightParenthesis SwitchBlock
 SwitchBlock:
-	LeftBrace SwitchBlockStatementGroupsopt SwitchLabelsopt RightBrace
-	LeftBrace SwitchBlockStatementGroupsopt RightBrace
-	LeftBrace SwitchLabelsopt RightBrace
+	LeftBrace SwitchBlockStatementGroups SwitchLabels RightBrace
+	LeftBrace SwitchBlockStatementGroups RightBrace
+	LeftBrace SwitchLabels RightBrace
 	LeftBrace RightBrace
 SwitchBlockStatementGroups:
 	SwitchBlockStatementGroup
@@ -429,18 +428,6 @@ Expression:
 	AssignmentExpression
 ConstantExpression:
 	Expression
-SwitchBlockStatementGroupsopt:
-	__EPSILON__
-	 SwitchBlockStatementGroups
-SwitchLabelsopt:
-	__EPSILON__
-	 SwitchLabels
-SwitchBlockStatementGroupsopt:
-	__EPSILON__
-	 SwitchBlockStatementGroups
-SwitchLabelsopt:
-	__EPSILON__
-	 SwitchLabels
 ForInitopt :
 	__EPSILON__
 	 ForInit
