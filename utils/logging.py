@@ -41,8 +41,7 @@ def log(*args, level, stack=None):
         pass #stack = inspect.stack()[1]
 
     # [file/funcName:lineno loglevel] message
-    print('[LOG %s]'
-        % (LEVELS[level]),
+    print('[LOG %s]' % (level),
         *args, file=sys.stderr)
 
 def setLogLevel(level):
