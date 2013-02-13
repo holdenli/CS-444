@@ -1,19 +1,24 @@
 #!/usr/bin/python3
 
-# parser.py
-# 
-# ParseTable uses symbol names throughout but
-# all parse functions hold symbols in a tuple where
-# the first element is the symbol name.
-# If the second element is None then then it is a nonterminal
-# otherwise it is a terminal (a token with line number)
-
 import sys
-from pprint import pprint
+from utils import node
+from utils import logging
+import pprint
 
 # ParseTable
 # The assumption is that the grammar and parse table here is
 # LR1 with no reduce-reduce or reduce-shift conflicts
+# ie. there is little error checking here...
+#
+# Impl Notes:
+# - ParseTable uses symbol names throughout but
+#   all parse functions hold symbols in a tuple where
+#   the first element is the symbol name.
+# - If the second element is None then then it is a nonterminal
+#   otherwise it is a terminal (a token with line number)
+#
+# WARNING:
+#   MAN, the parse table code is disgusting. Just let Holden deal with it.
 class ParseTable:
     terminals = []
     nonterminals = []
@@ -40,7 +45,9 @@ class ParseTable:
                     , tt[2] == "reduce"
                     , int(tt[3])
                 ))
-        pprint(self.lr1_t)
+        
+        logging.debug("ParseTable LR(1) Transitions:\n%s\n%s\n%s"
+            % ("*"*20, pprint.pformat(self.lr1_t), "*"*20))
 
     # False if no next state (could be reduce)
     def next_state(self, state, symbol, reduce):
@@ -68,7 +75,7 @@ def read_parse_table(parse_table):
         lr1_states = int(lr1_[0])
         lr1_t = int(lr1_[1])
         if lr1_t != len(lr1_[2:]):
-            print("PARSE ERROR: Invalid LR1", file=sys.stderr)
+            logging.error("PARSE ERROR: Invalid LR1")
             sys.exit(1)
 
         return ParseTable(
@@ -79,16 +86,16 @@ def read_parse_table(parse_table):
 
 # reduce
 # Returns the production rule or False if it can't be found
-def reduce(parse_table, stack, a):
-    # traverse DFA
+def parse_reduce(parse_table, stack, a):
+    # traverse DFA using stack as input
     state = 0
     for symbol in stack:
         state = parse_table.next_state(state, symbol[0], False)
         if state == False:
             return False
 
+    # get rule
     rule = parse_table.next_state(state, a[0], True)
-    
     if rule == False:
         return False
     
@@ -97,51 +104,70 @@ def reduce(parse_table, stack, a):
 
 # reject
 # True if stack is not a viable prefix and False otherwise
-def reject(parse_table, stack):
+def parse_reject(parse_table, stack):
     state = 0
     for symbol in stack:
         state = parse_table.next_state(state, symbol[0], False)
         if state == False:
             return True
-    
     return False
 
 # parse
 # takes list of tokens, returns parse tree or false
 #
-# Dev Notes:
-#   Currently only returns true or false
-#       TODO: Build parse tree
-#   Should it error 42 instead of false?
-def parse(input, parse_table):
-    print("PARSE:")
-    print(input)
+# Notes:
+# - Should it error 42 instead of false?
+def parse(tokens, parse_table):
+    logging.debug("PARSE: %s" % (pprint.pformat(tokens)))
 
     tree = None
     stack = []
-    for a in input:
-        print("PARSE LOOP:")
-        print("  " + str(a))
-        print("    " + str(stack))
-        while reduce(parse_table, stack, a) != False:
-            production = reduce(parse_table, stack, a)
+    node_stack = [] # keep nodes in a parallel stack cause its easier suck it
+    for a in tokens:
+        logging.debug(">>PARSE LOOP")
+        logging.debug("  " + str(a))
+        logging.debug("  " + str(stack))
+        
+        # Reduce
+        while parse_reduce(parse_table, stack, a) != False:
+            production = parse_reduce(parse_table, stack, a)
+            children = []
             for p in production[1]:
                 if stack.pop()[0] != p:
-                    print("PARSE ERROR: Stack did not match production")
+                    logging.error("PARSE ERROR: Stack did not match production")
                     sys.exit(1)
+                children += [node_stack.pop()]
             stack.append((production[0], None))
-            print("    " + str(stack))
-        print("####" + str(stack + [a]))
-        if reject(parse_table, stack + [a]):
+            node_stack.append(node.Node(production[0], None, children))
+            logging.debug("#PARSE REDUCE : %s" % (stack))
+        
+        # Reject?
+        if parse_reject(parse_table, stack + [a]):
             return False
+        
+        # Shift
         stack.append(a)
-    return True
+        node_stack.append(node.Node(a[0], a, []))
+        
+        logging.debug("#PARSE SHIFT  : %s" % (stack + [a]))
+        logging.debug("#NODE STACK   : %s" % (node_stack))
+    
+    # Accept
+    return node.Node("ROOT", c=node_stack)
 
 if __name__ == "__main__":
     import scanner
+    
+    logging.setLogLevel("DEBUG")
+    
     t = scanner.scan("assignment_testcases/others/sample.java")
     t = [("BOF", "BOF"), ("id", "fat"), ("EOF", "EOF")]
-    #t = ["BOF", "id", "EOF"]
     z = read_parse_table("assignment_testcases/others/sample.lr1")
-    print(parse(t, z))
+
+    parse_tree = parse(t, z)
+    print(parse_tree)
+    print("BFS List of all nodes:")
+    pprint.pprint(list(parse_tree.bfs_iter()))
+    print("List of all leafs:")
+    pprint.pprint(parse_tree.leafs())
 

@@ -2,11 +2,13 @@
 
 from grammar import Grammar
 import simplified_rules as SimplifiedRules
+import extended_rules as ExtendedRules
 
 # Script for generating the parse table used by the parser.
 
 def main():
-    grammar = Grammar(SimplifiedRules.RULES, SimplifiedRules.START_SYMBOL)
+    # grammar = Grammar(SimplifiedRules.RULES, SimplifiedRules.START_SYMBOL)
+    grammar = Grammar(ExtendedRules.RULES, ExtendedRules.START_SYMBOL)
 
     # See https://www.student.cs.uwaterloo.ca/~cs444/jlalr/cfg.html for format
     terminals = grammar.terminals()

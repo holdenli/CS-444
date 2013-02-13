@@ -120,13 +120,20 @@ RULES = {
     ],
 
     'Expression3': [
-        ['PrefixOp', 'Expression3'],
+        # ['PrefixOp', 'Expression3'],
         ['LeftParenthesis', 'Expression', 'RightParenthesis', 'Expression3'],
         ['LeftParenthesis', 'Type', 'RightParenthesis', 'Expression3'],
-        ['Primary'],
-        ['Primary', 'Selectors'],
+        # ['Primary'],
+        # ['Primary', 'Selectors'],
         # ['Primary', 'PostfixOps'],
         # ['Primary', 'Selectors', 'PostfixOps'],
+        ['Expression4'],
+    ],
+
+    'Expression4': [
+        ['PrefixOp', 'Expression4'],
+        ['Primary'],
+        ['Primary', 'Selectors'],
     ],
 
     # Hack.
@@ -148,21 +155,22 @@ RULES = {
         # ['Super', 'SuperSuffix'],
         ['Literal'],
         ['New', 'Creator'],
-        ['QualifiedIdentifier'], # Hack.
-        ['QualifiedIdentifier', 'IdentifierSuffix'], # Hack.
+        # ['QualifiedIdentifier'], # Hack.
+        ['Identifier'],
+        # ['QualifiedIdentifier', 'IdentifierSuffix'], # Hack.
         # ['BasicType', 'BracketsOpt', 'Dot', 'Class'],
         # ['Void', 'Dot', 'Class'],
     ],
 
-    'IdentifierSuffix': [
+    # 'IdentifierSuffix': [
         # ['LeftBracket', 'RightBracket', 'BracketsOpt', 'Dot', 'Class'],
         # ['LeftBracket', 'Expression', 'RightBracket'],
-        ['Arguments'],
+    #     ['Arguments'],
         # ['Dot', 'Class'],
         # ['Dot', 'This'],
         # ['Dot', 'Super', 'Arguments'],
-        ['Dot', 'New', 'InnerCreator'],
-    ],
+        # ['Dot', 'New', 'InnerCreator'],
+    # ],
 
     'PrefixOp': [
         # ['IncrementOperator'], 
@@ -183,7 +191,7 @@ RULES = {
         ['Dot', 'Identifier', 'Arguments'],
         # ['Dot', 'This'],
         # ['Dot', 'Super', 'SuperSuffix'],
-        ['Dot', 'New', 'InnerCreator'],
+        # ['Dot', 'New', 'InnerCreator'],
         ['LeftBracket', 'Expression', 'RightBracket'],
     ],
 
@@ -231,9 +239,9 @@ RULES = {
         ['QualifiedIdentifier', 'ClassCreatorRest'],
     ],
 
-    'InnerCreator': [
-        ['Identifier', 'ClassCreatorRest'],
-    ],
+    # 'InnerCreator': [
+    #     ['Identifier', 'ClassCreatorRest'],
+    # ],
 
     'ArrayCreatorRest': [
         # ['LeftBracket', 'RightBracket', 'BracketsOpt', 'ArrayInitializer'],

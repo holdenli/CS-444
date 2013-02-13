@@ -75,53 +75,69 @@ RULES = {
     #     ['Float'],
     #     ['Double'],
     # ],
-    
+
     # Reference types (S4.3)
     'ReferenceType': [
-        ['ClassOrInterfaceType'],
+        ['QualifiedIdentifier'],
+        # ['ClassOrInterfaceType'],
         ['ArrayType'],
     ],
     'ClassOrInterfaceType': [
-        ['ClassType'],
-        ['InterfaceType'],
+        ['QualifiedIdentifier'],
+        # ['ClassType'],
+        # ['InterfaceType'],
     ],
     'ClassType': [
-        ['TypeName'],
+        ['QualifiedIdentifier'],
+        # ['TypeName'],
     ],
     'InterfaceType': [
-        ['TypeName'],
+        ['QualifiedIdentifier'],
+        # ['TypeName'],
     ],
     'ArrayType': [
-        ['Type', 'LeftBracket', 'RightBracket'],
+        # ['Type', 'LeftBracket', 'RightBracket'],
+        ['PrimitiveType', 'LeftBracket', 'RightBracket'],
+        ['QualifiedIdentifier', 'LeftBracket', 'RightBracket'],
     ],
    
     # Naming (S6.5)
-    'PackageName': [
-        ['Identifier'],
-        ['PackageName', 'Dot', 'Identifier'],
-    ],
-    'TypeName': [
-        ['Identifier'],
-        ['PackageOrTypeName', 'Dot', 'Identifier'],
-    ],
-    'ExpressionName': [
-        ['Identifier'],
-        ['AmbiguousName', 'Dot', 'Identifier'],
-    ],
-    'MethodName': [
-        ['Identifier'],
-        ['AmbiguousName', 'Dot', 'Identifier'],
-    ],
-    'PackageOrTypeName': [
-        ['Identifier'],
-        ['PackageOrTypeName', 'Dot', 'Identifier'],
-    ],
-    'AmbiguousName': [
-        ['Identifier'],
-        ['AmbiguousName', 'Dot', 'Identifier'],
-    ],
+    # 'PackageName': [
+    #     ['Identifier'],
+    #     ['PackageName', 'Dot', 'Identifier'],
+    # ],
+    # 'TypeName': [
+    #     ['Identifier'],
+    #     ['PackageOrTypeName', 'Dot', 'Identifier'],
+    # ],
+    # 'ExpressionName': [
+    #     ['Identifier'],
+    #     ['AmbiguousName', 'Dot', 'Identifier'],
+    # ],
+    # 'MethodName': [
+    #     ['Identifier'],
+    #     ['AmbiguousName', 'Dot', 'Identifier'],
+    # ],
+    # 'PackageOrTypeName': [
+    #     ['Identifier'],
+    #     ['PackageOrTypeName', 'Dot', 'Identifier'],
+    # ],
+    # 'AmbiguousName': [
+    #     ['QualifiedIdentifier'],
+    #     ['Identifier'],
+    #     ['AmbiguousName', 'Dot', 'Identifier'],
+    # ],
     'SimpleTypeName': [ # Note: Not explicit in spec.
         ['Identifier'],
+    ],
+    'QualifiedIdentifier': [
+        # ['Identifier'],
+        # ['QualifiedIdentifier', 'Dot', 'Identifier'],
+        ['SimpleTypeName'],
+        ['QualifiedTypeName'],
+    ],
+    'QualifiedTypeName': [
+        ['QualifiedIdentifier', 'Dot', 'Identifier'],
     ],
     
     # Compilation units (S7.3)
@@ -141,12 +157,13 @@ RULES = {
     ],
     'TypeDeclarations': [
         ['TypeDeclaration'],
-        ['TypeDeclarations', 'TypeDeclaration'],
+        # ['TypeDeclarations', 'TypeDeclaration'], # Only 1 type/file in Joos.
     ],
 
     # Package declarations (S7.4)
     'PackageDeclaration': [
-        ['Package', 'PackageName', 'SemiColon'],
+        # ['Package', 'PackageName', 'SemiColon'],
+        ['Package', 'QualifiedIdentifier', 'SemiColon'],
     ],
 
     # Import declarations (S7.5)
@@ -155,10 +172,13 @@ RULES = {
         ['TypeImportOnDemandDeclaration'],
     ],
     'SingleTypeImportDeclaration': [
-        ['Import', 'TypeName', 'SemiColon'],
+        # ['Import', 'TypeName', 'SemiColon'],
+        ['Import', 'QualifiedIdentifier', 'SemiColon'],
     ],
     'TypeImportOnDemandDeclaration': [
-        ['Import', 'PackageOrTypeName', 'Dot', 'MultiplyOperator',
+        # ['Import', 'PackageOrTypeName', 'Dot', 'MultiplyOperator',
+        #     'SemiColon'],
+        ['Import', 'QualifiedIdentifier', 'Dot', 'MultiplyOperator',
             'SemiColon'],
     ],
     
@@ -170,32 +190,52 @@ RULES = {
         ['SemiColon'],
     ],
 
-    # Class declaration (S8.1)
-    # Note: "Super(Stmt)" is not to be confused with the "Super" token.
-    'ClassDeclaration': [
-        ['Class', 'Identifier', 'ClassBody'],
-        ['ClassModifiers', 'Class', 'Identifier', 'ClassBody'],
-        # ['Class', 'Identifier', 'Super(Stmt)', 'ClassBody'],
-        ['Class', 'Identifier', 'Interfaces', 'ClassBody'],
-        # ['ClassModifiers', 'Class', 'Identifier', 'Super(Stmt)', 'ClassBody'],
-        ['ClassModifiers', 'Class', 'Identifier', 'Interfaces', 'ClassBody'],
-        # ['Class', 'Identifier', 'Super', 'Interfaces',  'ClassBody'],
-        # ['ClassModifiers', 'Class', 'Identifier', 'Super(Stmt)', 'Interfaces',
-        #     'ClassBody'],
+    'Modifiers': [
+        ['Modifier'],
+        ['Modifiers', 'Modifier'],
     ],
-    'ClassModifiers': [
-        ['ClassModifier'],
-        ['ClassModifiers', 'ClassModifier'],
-    ],
-    'ClassModifier': [
+    'Modifier': [
         ['Public'],
         ['Protected'],
         # ['Private'],
-        ['Abstract'],
         ['Static'],
+        ['Abstract'],
+        ['Final'],
+        ['Native'],
+        # ['Synchronized'],
+        # ['Transient'],
+        # ['Volatile'],
+        # ['Strictfp'],
+    ],    
+
+    # Class declaration (S8.1)
+    # Note: "Super(Stmt)" is not to be confused with the "Super" token.
+    'ClassDeclaration': [
+        # ['Class', 'Identifier', 'ClassBody'], # No package private
+        # ['ClassModifiers', 'Class', 'Identifier', 'ClassBody'],
+        # ['Class', 'Identifier', 'Super(Stmt)', 'ClassBody'],
+        # ['Class', 'Identifier', 'Interfaces', 'ClassBody'], # No package private
+        # ['ClassModifiers', 'Class', 'Identifier', 'Super(Stmt)', 'ClassBody'],
+        # ['ClassModifiers', 'Class', 'Identifier', 'Interfaces', 'ClassBody'],
+        # ['Class', 'Identifier', 'Super', 'Interfaces',  'ClassBody'],
+        # ['ClassModifiers', 'Class', 'Identifier', 'Super(Stmt)', 'Interfaces',
+        #     'ClassBody'],
+        ['Modifiers', 'Class', 'Identifier', 'ClassBody'],
+        ['Modifiers', 'Class', 'Identifier', 'Interfaces', 'ClassBody'],
+    ],
+    # 'ClassModifiers': [
+    #     ['ClassModifier'],
+    #     ['ClassModifiers', 'ClassModifier'],
+    # ],
+    # 'ClassModifier': [
+    #     ['Public'],
+    #     ['Protected'],
+        # ['Private'],
+    #     ['Abstract'],
+    #     ['Static'],
         # ['Final'],
         # ['Strictfp'],
-    ],
+    # ],
     # ['Super(Stmt)', [
     #     ['Extends', 'ClassType'],
     # ],
@@ -230,12 +270,13 @@ RULES = {
     
     # Field declarations (S8.3)
     'FieldDeclaration': [
-        ['Type', 'VariableDeclarators', 'SemiColon'],
-        ['FieldModifiers', 'Type', 'VariableDeclarators', 'SemiColon'],
+        # ['Type', 'VariableDeclarators', 'SemiColon'], # No package private.
+        # ['FieldModifiers', 'Type', 'VariableDeclarators', 'SemiColon'],
+        ['Modifiers', 'Type', 'VariableDeclarators', 'SemiColon'],
     ],
     'VariableDeclarators': [
         ['VariableDeclarators'],
-        ['VariableDeclarators', 'Comma', 'VariableDeclarator'],
+        # ['VariableDeclarators', 'Comma', 'VariableDeclarator'],
     ],
     'VariableDeclarator': [
         ['VariableDeclaratorId'],
@@ -247,36 +288,41 @@ RULES = {
     ],
     'VariableInitializer': [
         ['Expression'],
-        ['ArrayInitializer'],
+        # ['ArrayInitializer'],
     ],
-    'FieldModifiers': [
-        ['FieldModifier'],
-        ['FieldModifiers', 'FieldModifier'],
-    ],
-    'FieldModifier': [
-        ['Public'],
-        ['Protected'],
+    # 'FieldModifiers': [
+    #     ['FieldModifier'],
+    #     ['FieldModifiers', 'FieldModifier'],
+    # ],
+    # 'FieldModifier': [
+    #     ['Public'],
+    #     ['Protected'],
         # ['Private'],
-        ['Static'],
+    #     ['Static'],
         # ['Final'],
         # ['Transient'],
         # ['Volatile'],
-    ],
+    # ],
     
     # Method declarations (S8.4)
     'MethodDeclaration': [
         ['MethodHeader', 'MethodBody'],
     ],
     'MethodHeader': [
-        ['ResultType', 'MethodDeclarator'],
-        ['MethodModifiers', 'ResultType', 'MethodDeclarator'],
+        # ['ResultType', 'MethodDeclarator'],
+        # ['MethodModifiers', 'ResultType', 'MethodDeclarator'],
         # ['ResultType', 'MethodDeclarator', 'Throws'],
         # ['MethodModifiers', 'ResultType', 'MethodDeclarator', 'Throws'],
+        # ['Modifiers', 'ResultType', 'MethodDeclarator'],
+        ['Type', 'MethodDeclarator'],
+        ['Modifiers', 'Type', 'MethodDeclarator'],
+        ['Void', 'MethodDeclarator'],
+        ['Modifiers', 'Void', 'MethodDeclarator'],
     ],
-    'ResultType': [
-        ['Type'],
-        ['Void'],
-    ],
+    # 'ResultType': [
+    #     ['Type'],
+    #     ['Void'],
+    # ],
     'MethodDeclarator': [
         ['Identifier', 'LeftParenthesis', 'RightParenthesis'],
         ['Identifier', 'LeftParenthesis', 'FormalParameterList',
@@ -294,21 +340,21 @@ RULES = {
         ['Type', 'VariableDeclaratorId'],
     #     ['Final', 'Type', 'VariableDeclaratorId'],
     ],
-    'MethodModifiers': [
-        ['MethodModifier'],
-        ['MethodModifiers', 'MethodModifier'],
-    ],
-    'MethodModifier': [
-        ['Public'],
-        ['Protected'],
+    # 'MethodModifiers': [
+    #     ['MethodModifier'],
+    #     ['MethodModifiers', 'MethodModifier'],
+    # ],
+    # 'MethodModifier': [
+    #     ['Public'],
+    #     ['Protected'],
         # ['Private'],
-        ['Abstract'],
-        ['Static'],
+    #     ['Abstract'],
+    #     ['Static'],
         # ['Final'],
         # ['Synchronized'],
         # ['Native'],
         # ['Strictfp'],
-    ],
+    # ],
     # 'Throws(Stmt)': [
     #     ['Throws', 'ClassTypeList']
     # ],
@@ -333,25 +379,26 @@ RULES = {
     # Constructor declarations (S8.8)
     'ConstructorDeclaration': [
         ['ConstructorDeclarator', 'ConstructorBody'],
-        ['ConstructorModifiers', 'ConstructorDeclarator', 'ConstructorBody'],
+        # ['ConstructorModifiers', 'ConstructorDeclarator', 'ConstructorBody'],
         # ['ConstructorDeclarator', 'Throws(Stmt)', 'ConstructorBody'],
         # ['ConstructorModifiers', 'ConstructorDeclarator', 'Throws(Stmt)',
         #     'ConstructorBody'],
+        ['Modifiers', 'ConstructorDeclarator', 'ConstructorBody'],
     ],
     'ConstructorDeclarator': [
         ['SimpleTypeName', 'LeftParenthesis', 'RightParenthesis'],
         ['SimpleTypeName', 'LeftParenthesis', 'FormalParameterList',
             'RightParenthesis'],
     ],
-    'ConstructorModifiers': [
-        ['ConstructorModifier'],
-        ['ConstructorModifiers', 'ConstructorModifier'],
-    ],
-    'ConstructorModifier': [
-        ['Public'],
-        ['Protected'],
+    # 'ConstructorModifiers': [
+    #     ['ConstructorModifier'],
+    #     ['ConstructorModifiers', 'ConstructorModifier'],
+    # ],
+    # 'ConstructorModifier': [
+    #     ['Public'],
+    #     ['Protected'],
         # ['Private'],
-    ],
+    # ],
     'ConstructorBody': [
         ['LeftBrace', 'RightBrace'],
         # ['LeftBrace', 'ExplicitConstructorInvocation', 'RightBrace'],
@@ -374,24 +421,27 @@ RULES = {
     
     # Interface declarations (S9.1)
     'InterfaceDeclaration': [
-        ['Interface', 'Identifier', 'InterfaceBody'],
-        ['InterfaceModifiers', 'Identifier', 'InterfaceBody'],
-        ['Interface', 'Identifier', 'ExtendsInterfaces', 'InterfaceBody'],
-        ['InterfaceModifiers', 'Identifier', 'ExtendsInterfaces',
+        # ['Interface', 'Identifier', 'InterfaceBody'],
+        # ['InterfaceModifiers', 'Identifier', 'InterfaceBody'],
+        # ['Interface', 'Identifier', 'ExtendsInterfaces', 'InterfaceBody'],
+        # ['InterfaceModifiers', 'Identifier', 'ExtendsInterfaces',
+        #     'InterfaceBody'],
+        ['Modifiers', 'Identifier', 'InterfaceBody'],
+        ['Modifiers', 'Identifier', 'ExtendsInterfaces',
             'InterfaceBody'],
     ],
-    'InterfaceModifiers': [
-        ['InterfaceModifier'],
-        ['InterfaceModifiers', 'InterfaceModifier'],
-    ],
-    'InterfaceModifier': [
-        ['Public'],
-        ['Protected'],
+    # 'InterfaceModifiers': [
+    #     ['InterfaceModifier'],
+    #     ['InterfaceModifiers', 'InterfaceModifier'],
+    # ],
+    # 'InterfaceModifier': [
+    #     ['Public'],
+    #     ['Protected'],
         # ['Private'],
-        ['Abstract'],
-        ['Static'],
+    #     ['Abstract'],
+    #     ['Static'],
         # ['Strictfp'],
-    ],
+    # ],
     'ExtendsInterfaces': [
         ['Extends', 'InterfaceType'],
         ['ExtendsInterfaces', 'Comma', 'InterfaceType'],
@@ -407,51 +457,58 @@ RULES = {
     'InterfaceMemberDeclaration': [
         ['ConstantDeclaration'],
         ['AbstractMethodDeclaration'],
-        ['ClassDeclaration'],
-        ['InterfaceDeclaration'],
+        # ['ClassDeclaration'], # No nested types.
+        # ['InterfaceDeclaration'], # No nested types.
         ['SemiColon'],
     ],
     
     # Field (constant) declarations (S9.3)
     'ConstantDeclaration': [
         ['Type', 'VariableDeclarators'],
-        ['ConstantModifiers', 'Type', 'VariableDeclarators'],
+        # ['ConstantModifiers', 'Type', 'VariableDeclarators'],
+        ['Modifiers', 'Type', 'VariableDeclarators'],
     ],
-    'ConstantModifiers': [
-        ['ConstantModifier'],
-        ['ConstantModifiers', 'ConstantModifier'],
-    ],
-    'ConstantModifier': [
-        ['Public'],
-        ['Static'],
+    # 'ConstantModifiers': [
+    #     ['ConstantModifier'],
+    #     ['ConstantModifiers', 'ConstantModifier'],
+    # ],
+    # 'ConstantModifier': [
+    #     ['Public'],
+    #     ['Static'],
         # ['Final'],
-    ],
+    # ],
 
     # Abstract method declarations (S9.4)
     'AbstractMethodDeclaration': [
-        ['ResultType', 'MethodDeclarator', 'SemiColon'],
-        ['AbstractMethodModifiers', 'ResultType', 'MethodDeclarator',
-            'SemiColon'],
+        # ['ResultType', 'MethodDeclarator', 'SemiColon'],
+        # ['AbstractMethodModifiers', 'ResultType', 'MethodDeclarator',
+        #     'SemiColon'],
         # ['ResultType', 'MethodDeclarator', 'Throws(Stmt)', 'SemiColon'],
         # ['AbstractMethodModifiers', 'ResultType', 'MethodDeclarator',
         #     'Throws(Stmt)', 'SemiColon'],
+        # ['Modifiers', 'ResultType', 'MethodDeclarator',
+        #     'SemiColon'],
+        ['Type', 'MethodDeclarator', 'SemiColon'],
+        ['Modifiers', 'Type', 'MethodDeclarator', 'SemiColon'],
+        ['Void', 'MethodDeclarator', 'SemiColon'],
+        ['Modifiers', 'Void', 'MethodDeclarator', 'SemiColon'],
     ],
-    'AbstractMethodModifiers': [
-        ['AbstractMethodModifier'],
-        ['AbstractMethodModifiers', 'AbstractMethodModifier'],
-    ],
-    'AbstractMethodModifier': [
-        ['Public'],
-        ['Abstract'],
-    ],
+    # 'AbstractMethodModifiers': [
+    #     ['AbstractMethodModifier'],
+    #     ['AbstractMethodModifiers', 'AbstractMethodModifier'],
+    # ],
+    # 'AbstractMethodModifier': [
+    #     ['Public'],
+    #     ['Abstract'],
+    # ],
     
     # Array intializers (S10.6)
-    'ArrayInitializer': [
-        ['LeftBrace', 'RightBrace'],
-        ['LeftBrace', 'VariableInitializers', 'RightBrace'],
-        ['LeftBrace', 'Comma', 'RightBrace'],
-        ['LeftBrace', 'VariableInitializers', 'Comma', 'RightBrace'],
-    ],
+    # 'ArrayInitializer': [
+    #     ['LeftBrace', 'RightBrace'],
+    #     ['LeftBrace', 'VariableInitializers', 'RightBrace'],
+    #     ['LeftBrace', 'Comma', 'RightBrace'],
+    #     ['LeftBrace', 'VariableInitializers', 'Comma', 'RightBrace'],
+    # ],
     'VariableInitializers': [
         ['VariableInitializer'],
         ['VariableInitializers', 'Comma', 'VariableInitializer'],
@@ -468,7 +525,7 @@ RULES = {
     ],
     'BlockStatement': [
         ['LocalVariableDeclarationStatement'],
-        ['ClassDeclaration'],
+        # ['ClassDeclaration'], # No inner classes.
         ['Statement'],
     ],
 
@@ -659,18 +716,18 @@ RULES = {
         ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'RightParenthesis'],
         ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'ArgumentList',
             'RightParenthesis'],
-        ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'RightParenthesis',
-            'ClassBody'],
-        ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'ArgumentList',
-            'RightParenthesis', 'ClassBody'],
-        ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
-            'RightParenthesis'],
-        ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
-            'ArgumentList', 'RightParenthesis'],
-        ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
-            'RightParenthesis', 'ClassBody'],
-        ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
-            'ArgumentList', 'RightParenthesis', 'ClassBody'],
+        # ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'RightParenthesis',
+        #     'ClassBody'],
+        # ['New', 'ClassOrInterfaceType', 'LeftParenthesis', 'ArgumentList',
+        #     'RightParenthesis', 'ClassBody'],
+        # ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
+        #     'RightParenthesis'],
+        # ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
+        #     'ArgumentList', 'RightParenthesis'],
+        # ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
+        #     'RightParenthesis', 'ClassBody'],
+        # ['Primary', 'Dot', 'New', 'Identifier', 'LeftParenthesis',
+        #     'ArgumentList', 'RightParenthesis', 'ClassBody'],
     ],
     'ArgumentList': [
         ['Expression'],
@@ -679,12 +736,16 @@ RULES = {
 
     # Array creation expressions (S15.10)
     'ArrayCreationExpression': [
-        ['New', 'PrimitiveType', 'DimExprs'],
-        ['New', 'PrimitiveType', 'DimExprs', 'Dims'],
-        ['New', 'TypeName', 'DimExprs'],
-        ['New', 'TypeName', 'DimExprs', 'Dims'],
-        ['New', 'PrimitiveType', 'Dims', 'ArrayInitializer'],
-        ['New', 'TypeName', 'Dims', 'ArrayInitializer'],
+        # ['New', 'PrimitiveType', 'DimExprs'],
+        # ['New', 'PrimitiveType', 'DimExprs', 'Dims'],
+        # ['New', 'TypeName', 'DimExprs'],
+        # ['New', 'TypeName', 'DimExprs', 'Dims'],
+        # ['New', 'PrimitiveType', 'Dims', 'ArrayInitializer'],
+        # ['New', 'TypeName', 'Dims', 'ArrayInitializer'],
+        ['New', 'PrimitiveType', 'DimExpr'],
+        ['New', 'QualifiedIdentifier', 'DimExpr'],
+        # ['New', 'PrimitiveType', 'Dim', 'ArrayInitializer'],
+        # ['New', 'QualifiedIdentifier', 'Dim', 'ArrayInitializer'],
     ],
     'DimExprs': [
         ['DimExpr'],
@@ -694,8 +755,13 @@ RULES = {
         ['LeftBracket', 'Expression', 'RightBracket'],
     ],
     'Dims': [
+        # ['LeftBracket', 'RightBracket'],
+        # ['Dims', 'LeftBracket', 'RightBracket'],
+        ['Dim'],
+        ['Dims', 'Dim'],
+    ],
+    'Dim': [
         ['LeftBracket', 'RightBracket'],
-        ['Dims', 'LeftBracket', 'RightBracket'],
     ],
 
     # Field access expressions (S15.11)
@@ -707,33 +773,38 @@ RULES = {
     
     # Method invocation expressions (S15.12)
     'MethodInvocation': [
-        ['MethodName', 'LeftParenthesis', 'RightParenthesis'],
-        ['MethodName', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis'],
+        # ['MethodName', 'LeftParenthesis', 'RightParenthesis'],
+        # ['MethodName', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis',
             'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
             'RightParenthesis'],
-        ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
-        ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
-            'RightParenthesis'],
+        # ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
+            # No super method calls
+        # ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
+        #     'RightParenthesis'], # No super method calls.
         # ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
         #     'RightParenthesis'],
         # ['ClassName', 'Dot', 'Super', 'Dot', 'Identifier', 'LeftParenthesis',
         #     'ArgumentList', 'RightParenthesis'],
+        ['QualifiedIdentifier', 'LeftParenthesis', 'RightParenthesis'],
+        ['QualifiedIdentifier', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis'],
     ],
     
     # Array access expressions (S15.13)
     'ArrayAccess': [
-        ['ExpressionName', 'LeftBracket', 'Expression', 'RightBracket'],
+        # ['ExpressionName', 'LeftBracket', 'Expression', 'RightBracket'],
         ['PrimaryNoNewArray', 'LeftBracket', 'Expression', 'RightBracket'],
+        ['QualifiedIdentifier', 'LeftBracket', 'Expression', 'RightBracket'],
     ],
     
     # Postfix expressions (S15.14)
     'PostfixExpression': [
         ['Primary'],
-        ['ExpressionName'],
+        # ['ExpressionName'],
         # ['PostIncrementExpression'],
         # ['PostDecrementExpression'],
+        ['QualifiedIdentifier'],
     ],
     # 'PostIncrementExpression': [
     #     ['PostfixExpression', 'IncrementOperator'],
@@ -765,11 +836,19 @@ RULES = {
 
     # Cast expressions (S15.16)
     'CastExpression': [
+        # ['LeftParenthesis', 'PrimitiveType', 'RightParenthesis',
+        #     'UnaryExpression'],
+        # ['LeftParenthesis', 'PrimitiveType', 'Dims', 'RightParenthesis',
+        #     'UnaryExpression'],
+        # ['LeftParenthesis', 'ReferenceType', 'RightParenthesis',
+        #     'UnaryExpressionNotPlusMinus'],
         ['LeftParenthesis', 'PrimitiveType', 'RightParenthesis',
             'UnaryExpression'],
-        ['LeftParenthesis', 'PrimitiveType', 'Dims', 'RightParenthesis',
+        ['LeftParenthesis', 'PrimitiveType', 'Dim', 'RightParenthesis',
             'UnaryExpression'],
-        ['LeftParenthesis', 'ReferenceType', 'RightParenthesis',
+        ['LeftParenthesis', 'Expression', 'RightParenthesis',
+            'UnaryExpressionNotPlusMinus'],
+        ['LeftParenthesis', 'QualifiedIdentifier', 'Dim', 'RightParenthesis',
             'UnaryExpressionNotPlusMinus'],
     ],
     
@@ -857,9 +936,10 @@ RULES = {
         ['LeftHandSide', 'AssignmentOperator', 'AssignmentExpression'],
     ],
     'LeftHandSide': [
-        ['ExpressionName'],
+        # ['ExpressionName'],
         ['FieldAccess'],
         ['ArrayAccess'],
+        ['QualifiedIdentifier'],
     ],
 
     # Expression (S15.27)
