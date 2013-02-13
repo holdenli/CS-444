@@ -1,0 +1,503 @@
+Goal:
+	CompilationUnit
+Literal:
+	DecimalIntegerLiteral
+	FloatingPointLiteral
+	BooleanLiteral
+	CharacterLiteral
+	StringLiteral
+	NullLiteral	
+Type:
+	PrimitiveType
+	ReferenceType
+PrimitiveType:
+	NumericType
+	Boolean
+NumericType:
+	IntegralType
+	FloatingPointType
+IntegralType:
+	Byte
+	Short
+	Int
+	Long
+	Char
+FloatingPointType:
+	Float
+	Double
+ReferenceType:
+	ClassOrInterfaceType
+	ArrayType
+ClassOrInterfaceType:
+	Name
+ClassType:
+	ClassOrInterfaceType
+InterfaceType:
+	ClassOrInterfaceType
+ArrayType:
+	PrimitiveType LeftBracket RightBracket
+	Name LeftBracket RightBracket
+	ArrayType LeftBracket RightBracket
+Name:
+	SimpleName
+	QualifiedName
+	Identifier
+SimpleName:
+	Identifier
+QualifiedName:
+	Name Dot Identifier
+CompilationUnit:
+	PackageDeclarationopt ImportDeclarationsopt TypeDeclarationsopt
+	
+ImportDeclarations:
+	ImportDeclaration
+	ImportDeclarations ImportDeclaration
+TypeDeclarations:
+	TypeDeclaration
+	TypeDeclarations TypeDeclaration
+PackageDeclaration:
+	Package Name SemiColon
+ImportDeclaration:
+	SingleTypeImportDeclaration
+	TypeImportOnDemandDeclaration
+SingleTypeImportDeclaration:
+	Import Name SemiColon
+TypeImportOnDemandDeclaration:
+	Import Name Dot MultiplyOperator SemiColon
+TypeDeclaration:
+	ClassDeclaration
+	InterfaceDeclaration
+	SemiColon
+	
+Modifiers:
+	Modifier
+	Modifiers Modifier
+Modifier:
+	Public
+	Protected
+	Private
+	Static
+	Abstract
+	Final
+	Native
+	Synchronized
+	Transient
+	Volatile
+ClassDeclaration:
+	Class Identifier SuperStuff Interfaces ClassBodyDeclaration
+	Class Identifier Interfaces ClassBodyDeclarations
+	Class Identifier SuperStuff ClassBodyDeclaration
+	Class Identifier ClassBodyDeclarations
+	
+	Modifiers Class Identifier Super Interfaces ClassBodyDeclaration
+	Modifiers Class Identifier Interfaces ClassBodyDeclarations
+	Modifiers Class Identifier Super ClassBodyDeclaration
+	Modifiers Class Identifier ClassBodyDeclarations
+SuperStuff:
+	Extends ClassType
+Interfaces:
+	Implements InterfaceTypeList
+InterfaceTypeList:
+	InterfaceType
+	InterfaceTypeList Comma InterfaceType
+ClassBody:
+	LeftBrace RightBrace
+	LeftBrace ClassBodyDeclarations RightBrace
+ClassBodyDeclarations:
+	ClassBodyDeclaration
+	ClassBodyDeclarations ClassBodyDeclaration
+ClassBodyDeclaration:
+	ClassMemberDeclaration
+	StaticInitializer
+	ConstructorDeclaration
+ClassMemberDeclaration:
+	FieldDeclaration
+	MethodDeclaration
+FieldDeclaration:
+	Modifiers Type VariableDeclarators SemiColon
+	Type VariableDeclarators SemiColon
+VariableDeclarators:
+	VariableDeclarator
+	VariableDeclarators Comma VariableDeclarator
+VariableDeclarator:
+	VariableDeclaratorId
+	VariableDeclaratorId DirectAssignmentOperator VariableInitializer
+VariableDeclaratorId:
+	Identifier
+	VariableDeclaratorId LeftBracket RightBracket
+VariableInitializer:
+	Expression
+	ArrayInitializer
+MethodDeclaration:
+	MethodHeader MethodBody
+MethodHeader:
+	Modifiers Type MethodDeclarator ThrowsStuff
+	Modifiers Type MethodDeclarator
+	Type MethodDeclarator ThrowsStuff
+	Type MethodDeclarator
+	Modifiers Void MethodDeclarator ThrowsStuff
+	Modifiers Void MethodDeclarator
+	Void MethodDeclarator ThrowsStuff
+	Void MethodDeclarator
+MethodDeclarator:
+	Identifier LeftParenthesis FormalParameterList RightParenthesis
+	Identifier LeftParenthesis RightParenthesis
+	MethodDeclarator LeftBracket RightBracket
+FormalParameterList:
+	FormalParameter
+	FormalParameterList Comma FormalParameter
+FormalParameter:
+	Type VariableDeclaratorId
+ThrowsStuff:
+	Throws ClassTypeList
+ClassTypeList:
+	ClassType
+	ClassTypeList Comma ClassType
+MethodBody:
+	Block 
+	SemiColon
+	
+StaticInitializer:
+	Static Block
+ConstructorDeclaration:
+	Modifiers ConstructorDeclarator ThrowsStuff ConstructorBody
+	Modifiers ConstructorDeclarator ConstructorBody
+	ConstructorDeclarator ThrowsStuff ConstructorBody
+	ConstructorDeclarator ConstructorBody
+ConstructorDeclarator:
+	SimpleName LeftParenthesis FormalParameterList RightParenthesis
+	SimpleName LeftParenthesis RightParenthesis
+ConstructorBody:
+	LeftBrace ExplicitConstructorInvocation BlockStatement RightBrace
+	LeftBrace ExplicitConstructorInvocation RightBrace
+	LeftBrace BlockStatements RightBrace
+	LeftBrace RightBrace
+ExplicitConstructorInvocation:
+	This LeftParenthesis ArgumentList RightParenthesis SemiColon
+	This LeftParenthesis RightParenthesis SemiColon
+	Super LeftParenthesis ArgumentList RightParenthesis SemiColon
+	Super LeftParenthesis RightParenthesis SemiColon
+InterfaceDeclaration:
+	Modifiers Interface Identifier ExtendsInterfaces InterfaceBody
+ExtendsInterfaces:
+	Extends InterfaceType
+	ExtendsInterfaces Comma InterfaceType
+InterfaceBody:
+	LeftBrace InterfaceMemberDeclarations RightBrace
+	LeftBrace RightBrace
+InterfaceMemberDeclarations:
+	InterfaceMemberDeclaration
+	InterfaceMemberDeclarations InterfaceMemberDeclaration
+InterfaceMemberDeclaration:
+	ConstantDeclaration
+	AbstractMethodDeclaration
+ConstantDeclaration:
+	FieldDeclaration
+AbstractMethodDeclaration:
+	MethodHeader SemiColon
+ArrayInitializer:
+	LeftBrace VariableInitializers Comma RightBrace
+	LeftBrace VariableInitializers RightBrace
+	
+	LeftBrace Comma RightBrace
+	LeftBrace RightBrace
+VariableInitializers:
+	VariableInitializer
+	VariableInitializers Comma VariableInitializer
+	
+	
+Block:
+	LeftBrace BlockStatements RightBrace
+	LeftBrace RightBrace
+BlockStatements:
+	BlockStatement
+	BlockStatements BlockStatement
+BlockStatement:
+	LocalVariableDeclarationStatement
+	Statement
+LocalVariableDeclarationStatement:
+	LocalVariableDeclaration SemiColon
+LocalVariableDeclaration:
+	Type VariableDeclarators
+Statement:
+	StatementWithoutTrailingSubstatement
+	LabeledStatement
+	IfThenStatement
+	IfThenElseStatement
+	WhileStatement
+	ForStatement
+StatementNoShortIf:
+	StatementWithoutTrailingSubstatement
+	LabeledStatementNoShortIf
+	IfThenElseStatementNoShortIf
+	WhileStatementNoShortIf
+	ForStatementNoShortIf
+StatementWithoutTrailingSubstatement:
+	Block
+	EmptyStatement
+	ExpressionStatement
+	SwitchStatement
+	DoStatement
+	BreakStatement
+	ContinueStatement
+	ReturnStatement
+	SynchronizedStatement
+	ThrowStatement
+	TryStatement
+EmptyStatement:
+	SemiColon
+LabeledStatement:
+	Identifier ColonOperator Statement
+LabeledStatementNoShortIf:
+	Identifier ColonOperator StatementNoShortIf
+ExpressionStatement:
+	StatementExpression SemiColon
+StatementExpression:
+	Assignment
+	MethodInvocation
+	ClassInstanceCreationExpression
+IfThenStatement:
+	If LeftParenthesis Expression RightParenthesis Statement
+IfThenElseStatement:
+	If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else Statement
+IfThenElseStatementNoShortIf:
+	If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else StatementNoShortIf
+SwitchStatement:
+	Switch LeftParenthesis Expression RightParenthesis SwitchBlock
+SwitchBlock:
+	LeftBrace SwitchBlockStatementGroupsopt SwitchLabelsopt RightBrace
+	LeftBrace SwitchBlockStatementGroupsopt RightBrace
+	LeftBrace SwitchLabelsopt RightBrace
+	LeftBrace RightBrace
+SwitchBlockStatementGroups:
+	SwitchBlockStatementGroup
+	SwitchBlockStatementGroups SwitchBlockStatementGroup
+SwitchBlockStatementGroup:
+	SwitchLabels BlockStatements
+SwitchLabels:
+	SwitchLabel
+	SwitchLabels SwitchLabel
+SwitchLabel:
+	Case ConstantExpression ColonOperator
+	Default ColonOperator
+WhileStatement:
+	While LeftParenthesis Expression RightParenthesis Statement
+WhileStatementNoShortIf:
+	While LeftParenthesis Expression RightParenthesis StatementNoShortIf
+DoStatement:
+	Do Statement While LeftParenthesis Expression RightParenthesis SemiColon
+	
+ForStatement:
+	For LeftParenthesis ForInitopt SemiColon Expressionopt SemiColon ForUpdateopt RightParenthesis Statement
+ForStatementNoShortIf:
+	For LeftParenthesis ForInitopt SemiColon Expressionopt SemiColon ForUpdateopt RightParenthesis StatementNoShortIf
+ForInit:
+	StatementExpressionList
+	LocalVariableDeclaration
+ForUpdate:
+	StatementExpressionList
+StatementExpressionList:
+	StatementExpression
+	StatementExpressionList Comma StatementExpression
+BreakStatement:
+	Break Identifieropt SemiColon
+ContinueStatement:
+	Continue Identifieropt SemiColon
+ReturnStatement:
+	Return Expressionopt SemiColon
+ThrowStatement:
+	Throw Expression SemiColon
+SynchronizedStatement:
+	Synchronized LeftParenthesis Expression RightParenthesis Block
+TryStatement:
+	Try Block Catches
+	Try Block Catchesopt FinallyStuff
+Catches:
+	CatchClause
+	Catches CatchClause
+CatchClause:
+	Catch LeftParenthesis FormalParameter RightParenthesis Block
+FinallyStuff:
+	Finally Block
+	
+Primary:
+	PrimaryNoNewArray
+	ArrayCreationExpression
+PrimaryNoNewArray:
+	Literal
+	This
+	LeftParenthesis Expression RightParenthesis
+	ClassInstanceCreationExpression
+	FieldAccess
+	MethodInvocation
+	ArrayAccess
+ClassInstanceCreationExpression:
+	New ClassType LeftParenthesis ArgumentListopt RightParenthesis
+ArgumentList:
+	Expression
+	ArgumentList Comma Expression
+ArrayCreationExpression:
+	New PrimitiveType DimExprs Dimsopt
+	New ClassOrInterfaceType DimExprs Dimsopt
+DimExprs:
+	DimExpr
+	DimExprs DimExpr
+DimExpr:
+	LeftBracket Expression RightBracket
+Dims:
+	LeftBracket RightBracket
+	Dims LeftBracket RightBracket
+FieldAccess:
+	Primary Dot Identifier
+	Super Dot Identifier
+MethodInvocation:
+	Name LeftParenthesis ArgumentListopt RightParenthesis
+	Primary Dot Identifier LeftParenthesis ArgumentListopt RightParenthesis
+	Super Dot Identifier LeftParenthesis ArgumentListopt RightParenthesis
+ArrayAccess:
+	Name LeftBracket Expression RightBracket
+	PrimaryNoNewArray LeftBracket Expression RightBracket
+PostfixExpression:
+	Primary
+	Name
+UnaryExpression:
+	AddOperator UnaryExpression
+	SubtractOperator UnaryExpression
+	UnaryExpressionNotPlusMinus
+UnaryExpressionNotPlusMinus:
+	PostfixExpression
+	BinaryNotOperator UnaryExpression
+	NotOperator UnaryExpression
+	CastExpression
+CastExpression:
+	LeftParenthesis PrimitiveType Dimsopt RightParenthesis UnaryExpression
+	LeftParenthesis Expression RightParenthesis UnaryExpressionNotPlusMinus
+	LeftParenthesis Name Dims RightParenthesis UnaryExpressionNotPlusMinus
+MultiplicativeExpression:
+	UnaryExpression
+	MultiplicativeExpression MultiplyOperator UnaryExpression
+	MultiplicativeExpression DivideOperator UnaryExpression
+	MultiplicativeExpression ModuloOperator UnaryExpression
+AdditiveExpression:
+	MultiplicativeExpression
+	AdditiveExpression AddOperator MultiplicativeExpression
+	AdditiveExpression SubtractOperator MultiplicativeExpression
+ShiftExpression:
+	AdditiveExpression
+	ShiftExpression LeftShiftOperator AdditiveExpression
+	ShiftExpression RightShiftOperator AdditiveExpression
+RelationalExpression:
+	ShiftExpression
+	RelationalExpression LessThanOperator ShiftExpression
+	RelationalExpression GreaterThanOperator ShiftExpression
+	RelationalExpression LessThanEqualOperator ShiftExpression
+	RelationalExpression GreaterThanEqualOperator ShiftExpression
+	RelationalExpression Instanceof ReferenceType
+EqualityExpression:
+	RelationalExpression
+	EqualityExpression EqualOperator RelationalExpression
+	EqualityExpression NotEqualOperator RelationalExpression
+AndExpression:
+	EqualityExpression
+	AndExpression BinaryAndOperator EqualityExpression
+ExclusiveOrExpression:
+	AndExpression
+	ExclusiveOrExpression InverseOperator AndExpression
+InclusiveOrExpression:
+	ExclusiveOrExpression
+	InclusiveOrExpression BinaryOrOperator ExclusiveOrExpression
+ConditionalAndExpression:
+	InclusiveOrExpression
+	ConditionalAndExpression AndOperator InclusiveOrExpression
+ConditionalOrExpression:
+	ConditionalAndExpression
+	ConditionalOrExpression OrOperator ConditionalAndExpression
+ConditionalExpression:
+	ConditionalOrExpression
+AssignmentExpression:
+	ConditionalExpression
+	Assignment
+Assignment:
+	LeftHandSide AssignmentOperator AssignmentExpression
+LeftHandSide:
+	Name
+	FieldAccess
+	ArrayAccess
+AssignmentOperator:
+	DirectAssignmentOperator
+Expression:
+	AssignmentExpression
+ConstantExpression:
+	Expression
+SwitchBlockStatementGroupsopt:
+	__EPSILON__
+	 SwitchBlockStatementGroups
+SwitchLabelsopt:
+	__EPSILON__
+	 SwitchLabels
+SwitchBlockStatementGroupsopt:
+	__EPSILON__
+	 SwitchBlockStatementGroups
+SwitchLabelsopt:
+	__EPSILON__
+	 SwitchLabels
+ForInitopt :
+	__EPSILON__
+	 ForInit
+Expressionopt :
+	__EPSILON__
+	 Expression
+ForUpdateopt :
+	__EPSILON__
+	 ForUpdate
+ForInitopt :
+	__EPSILON__
+	 ForInit
+Expressionopt :
+	__EPSILON__
+	 Expression
+ForUpdateopt :
+	__EPSILON__
+	 ForUpdate
+Identifieropt :
+	__EPSILON__
+	 Identifier
+Identifieropt :
+	__EPSILON__
+	 Identifier
+Expressionopt :
+	__EPSILON__
+	 Expression
+Catchesopt :
+	__EPSILON__
+	 Catches
+ArgumentListopt :
+	__EPSILON__
+	 ArgumentList
+Dimsopt :
+	__EPSILON__
+	 Dims
+Dimsopt :
+	__EPSILON__
+	 Dims
+ArgumentListopt :
+	__EPSILON__
+	 ArgumentList
+ArgumentListopt :
+	__EPSILON__
+	 ArgumentList
+ArgumentListopt :
+	__EPSILON__
+	 ArgumentList
+Dimsopt :
+	__EPSILON__
+	Dims
+PackageDeclarationopt:
+	__EPSILON__
+	PackageDeclaration
+ImportDeclarationsopt:
+	__EPSILON__
+	ImportDeclarations
+TypeDeclarationsopt:
+	__EPSILON__
+	TypeDeclarations
