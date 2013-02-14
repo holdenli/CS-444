@@ -11,7 +11,7 @@ ${TARGET}: ${SOURCE}
 	chmod +x ${TARGET}
 
 test: ${TARGET}
-	./${TARGET} -t
+	./${TARGET} -t a1
 
 jlalr/:
 	javac -d `pwd` Jlalr1.java

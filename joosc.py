@@ -16,8 +16,8 @@ def parse_options(args=sys.argv):
         help="""Logging level. Choices: DEBUG, INFO, WARNING, ERROR.
             [default: INFO]""")
 
-    parser.add_option('-t', '--test', action='store_true', default=False,
-        help="Run tests")
+    parser.add_option('-t', '--test', action='store', dest='test',
+        default='a1', help="Run tests")
 
     return parser.parse_args()
 
@@ -48,7 +48,7 @@ def main(argv=sys.argv):
     if opts.test:
         logging.info("TESTING")
         ts = test.TestRunner("JOOSC", test_work)
-        ts.assignment = "a1"
+        ts.assignment = opts.test
         ts.re_expected = "_EXCEPTION"
         ts.verbose = (opts.loglevel == 'DEBUG')
         ts.run()

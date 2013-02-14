@@ -1,3 +1,7 @@
+# Modified Java 1.0 grammar.
+# Taken from:
+# http://titanium.cs.berkeley.edu/doc/java-langspec-1.0/19.doc.html
+
 START_SYMBOL = 'Goal'
 
 RULES = {
@@ -27,21 +31,21 @@ RULES = {
 
     'NumericType': [
         ['IntegralType'],
-        ['FloatingPointType'],
+        # ['FloatingPointType'],
     ],
 
     'IntegralType': [
         ['Byte'],
         ['Short'],
         ['Int'],
-        ['Long'],
+        # ['Long'],
         ['Char'],
     ],
 
-    'FloatingPointType': [
-        ['Float'],
-        ['Double'],
-    ],
+    # 'FloatingPointType': [
+    #     ['Float'],
+    #     ['Double'],
+    # ],
 
     'ReferenceType': [
         ['ClassOrInterfaceType'],
@@ -94,9 +98,10 @@ RULES = {
         ['ImportDeclarations ImportDeclaration'],
     ],
 
+    # Only one type per file in Joos.
     'TypeDeclarations': [
         ['TypeDeclaration'],
-    #     ['TypeDeclarations', 'TypeDeclaration'],
+        # ['TypeDeclarations', 'TypeDeclaration']
     ],
 
     'PackageDeclaration': [
@@ -140,20 +145,21 @@ RULES = {
         # ['Volatile'],
     ],
 
+    # No 
     'ClassDeclaration': [
         # ['Class Identifier SuperStuff Interfaces ClassBody'],
         # ['Class Identifier Interfaces ClassBody'],
         # ['Class Identifier SuperStuff ClassBody'],
         # ['Class Identifier ClassBody'],
-        # ['Modifiers', 'Class', 'Identifier', 'SuperStuff', 'Interfaces', 'ClassBody'],
+        ['Modifiers', 'Class', 'Identifier', 'SuperStuff', 'Interfaces', 'ClassBody'],
         ['Modifiers', 'Class', 'Identifier', 'Interfaces', 'ClassBody'],
-        # ['Modifiers', 'Class', 'Identifier', 'SuperStuff', 'ClassBody'],
+        ['Modifiers', 'Class', 'Identifier', 'SuperStuff', 'ClassBody'],
         ['Modifiers', 'Class', 'Identifier', 'ClassBody'],
     ],
 
-    # 'SuperStuff': [
-    #     ['Extends ClassType'],
-    # ],
+    'SuperStuff': [
+        ['Extends ClassType'],
+    ],
 
     'Interfaces': [
         ['Implements', 'InterfaceTypeList'],
@@ -190,9 +196,10 @@ RULES = {
         #    ['Type VariableDeclarators SemiColon'],
     ],
 
+    # No multiple-declarations in Joos.
     'VariableDeclarators': [
         ['VariableDeclarator'],
-        ['VariableDeclarators', 'Comma', 'VariableDeclarator'],
+        # ['VariableDeclarators', 'Comma', 'VariableDeclarator'],
     ],
 
     'VariableDeclarator': [
@@ -201,9 +208,11 @@ RULES = {
             'VariableInitializer'],
     ],
 
+    # No multi-dimensional arrays.
     'VariableDeclaratorId': [
         ['Identifier'],
-        ['VariableDeclaratorId', 'LeftBracket', 'RightBracket'],
+        # ['VariableDeclaratorId', 'LeftBracket', 'RightBracket'],
+        ['Identifier', 'LeftBracket', 'RightBracket'],
     ],
 
     'VariableInitializer': [
@@ -215,6 +224,7 @@ RULES = {
         ['MethodHeader', 'MethodBody'],
     ],
 
+    # Methods cannot be package private - there must be a modifier.
     'MethodHeader': [
         # ['Modifiers Type MethodDeclarator ThrowsStuff'],
         ['Modifiers', 'Type', 'MethodDeclarator'],
@@ -226,11 +236,12 @@ RULES = {
         # ['Void MethodDeclarator'],
     ],
 
+    # No array return type after method signature.
     'MethodDeclarator': [
         ['Identifier', 'LeftParenthesis', 'FormalParameterList',
             'RightParenthesis'],
         ['Identifier', 'LeftParenthesis', 'RightParenthesis'],
-        ['MethodDeclarator', 'LeftBracket', 'RightBracket'],
+        # ['MethodDeclarator', 'LeftBracket', 'RightBracket'],
     ],
 
     'FormalParameterList': [
@@ -258,6 +269,7 @@ RULES = {
     #StaticInitializer:
     #     ['Static Block'],
 
+    # No package private, and no throws.
     'ConstructorDeclaration': [
         # ['Modifiers ConstructorDeclarator ThrowsStuff ConstructorBody'],
         ['Modifiers', 'ConstructorDeclarator', 'ConstructorBody'],
@@ -278,6 +290,7 @@ RULES = {
         ['LeftBrace', 'RightBrace'],
     ],
 
+    # No this() or super() calls.
     #ExplicitConstructorInvocation:
     #    ['This LeftParenthesis ArgumentList RightParenthesis SemiColon'],
     #    ['This LeftParenthesis RightParenthesis SemiColon'],
@@ -506,9 +519,10 @@ RULES = {
         ['StatementExpressionList'],
     ],
 
+    # No "general for" statements in Joos.
     'StatementExpressionList': [
         ['StatementExpression'],
-        ['StatementExpressionList', 'Comma', 'StatementExpression'],
+        # ['StatementExpressionList', 'Comma', 'StatementExpression'],
     ],
 
     'ReturnStatement': [
