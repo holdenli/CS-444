@@ -172,21 +172,25 @@ ConstructorDeclaration:
 	Modifiers ConstructorDeclarator ConstructorBody
 #	ConstructorDeclarator ThrowsStuff ConstructorBody
 	ConstructorDeclarator ConstructorBody
+
 ConstructorDeclarator:
 	SimpleName LeftParenthesis FormalParameterList RightParenthesis
 	SimpleName LeftParenthesis RightParenthesis
 ConstructorBody:
-	LeftBrace ExplicitConstructorInvocation BlockStatement RightBrace
-	LeftBrace ExplicitConstructorInvocation RightBrace
+#   LeftBrace ExplicitConstructorInvocation BlockStatement RightBrace
+#   LeftBrace ExplicitConstructorInvocation RightBrace
 	LeftBrace BlockStatements RightBrace
 	LeftBrace RightBrace
-ExplicitConstructorInvocation:
-	This LeftParenthesis ArgumentList RightParenthesis SemiColon
-	This LeftParenthesis RightParenthesis SemiColon
-	Super LeftParenthesis ArgumentList RightParenthesis SemiColon
-	Super LeftParenthesis RightParenthesis SemiColon
+#ExplicitConstructorInvocation:
+#	This LeftParenthesis ArgumentList RightParenthesis SemiColon
+#	This LeftParenthesis RightParenthesis SemiColon
+#	Super LeftParenthesis ArgumentList RightParenthesis SemiColon
+#	Super LeftParenthesis RightParenthesis SemiColon
 InterfaceDeclaration:
 	Modifiers Interface Identifier ExtendsInterfaces InterfaceBody
+	Modifiers Interface Identifier InterfaceBody
+    Interface Identifier ExtendsInterfaces InterfaceBody
+	Interface Identifier InterfaceBody
 ExtendsInterfaces:
 	Extends InterfaceType
 	ExtendsInterfaces Comma InterfaceType
@@ -197,12 +201,13 @@ InterfaceMemberDeclarations:
 	InterfaceMemberDeclaration
 	InterfaceMemberDeclarations InterfaceMemberDeclaration
 InterfaceMemberDeclaration:
-	ConstantDeclaration
-	AbstractMethodDeclaration
-ConstantDeclaration:
-	FieldDeclaration
-AbstractMethodDeclaration:
-	MethodHeader SemiColon
+#	ConstantDeclaration
+#	AbstractMethodDeclaration
+    MethodHeader SemiColon
+#ConstantDeclaration:
+#	FieldDeclaration
+#AbstractMethodDeclaration:
+#	MethodHeader SemiColon
 ArrayInitializer:
 	LeftBrace VariableInitializers Comma RightBrace
 	LeftBrace VariableInitializers RightBrace

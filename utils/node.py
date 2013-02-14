@@ -76,7 +76,7 @@ class Node:
     def pprint(self, tabsize=0):
         print(' '*tabsize, self, self.value)
         for c in self.children:
-            c.pprint(tabsize=tabsize+4)
+            c.pprint(tabsize=tabsize+2)
 
 if __name__ == "__main__":
     n = Node("OMG1",
