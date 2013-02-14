@@ -27,7 +27,6 @@ def joosc(program):
 
     parse_table = parser.read_parse_table('grammar.lr1')
     parse_tree = parser.parse(tokens, parse_table)
-    parse_tree.pprint()
 
     if parse_tree == False:
         logging.error("Could not parse")

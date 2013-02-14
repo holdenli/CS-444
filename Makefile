@@ -1,7 +1,7 @@
 TARGET=joosc
 SOURCE=joosc.py
 
-all: ${TARGET}
+all: ${TARGET} parsetable
 
 ${TARGET}: ${SOURCE} 
 	cp ${SOURCE} ${TARGET}
