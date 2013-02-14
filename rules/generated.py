@@ -367,18 +367,20 @@ RULES = {
         ['Type', 'VariableDeclarators'],
     ],
 
+    # No labelled statements.
     'Statement': [
         ['StatementWithoutTrailingSubstatement'],
-        ['LabeledStatement'],
+        # ['LabeledStatement'],
         ['IfThenStatement'],
         ['IfThenElseStatement'],
         ['WhileStatement'],
         ['ForStatement'],
     ],
 
+    # No labelled statements.
     'StatementNoShortIf': [
         ['StatementWithoutTrailingSubstatement'],
-        ['LabeledStatementNoShortIf'],
+        # ['LabeledStatementNoShortIf'],
         ['IfThenElseStatementNoShortIf'],
         ['WhileStatementNoShortIf'],
         ['ForStatementNoShortIf'],
@@ -402,13 +404,13 @@ RULES = {
         ['SemiColon'],
     ],
 
-    'LabeledStatement': [
-        ['Identifier', 'ColonOperator', 'Statement'],
-    ],
+    # 'LabeledStatement': [
+    #     ['Identifier', 'ColonOperator', 'Statement'],
+    # ],
 
-    'LabeledStatementNoShortIf': [
-        ['Identifier', 'ColonOperator', 'StatementNoShortIf'],
-    ],
+    # 'LabeledStatementNoShortIf': [
+    #     ['Identifier', 'ColonOperator', 'StatementNoShortIf'],
+    # ],
 
     'ExpressionStatement': [
         ['StatementExpression', 'SemiColon'],
@@ -629,15 +631,17 @@ RULES = {
         ['Name'],
     ],
 
+    # No unary + in Joos.
     'UnaryExpression': [
-        ['AddOperator', 'UnaryExpression'],
+        # ['AddOperator', 'UnaryExpression'],
         ['SubtractOperator', 'UnaryExpression'],
         ['UnaryExpressionNotPlusMinus'],
     ],
 
+    # No binary not ~ in Joos.
     'UnaryExpressionNotPlusMinus': [
         ['PostfixExpression'],
-        ['BinaryNotOperator', 'UnaryExpression'],
+        # ['BinaryNotOperator', 'UnaryExpression'],
         ['NotOperator', 'UnaryExpression'],
         ['CastExpression'],
     ],
@@ -666,10 +670,11 @@ RULES = {
         ['AdditiveExpression', 'SubtractOperator', 'MultiplicativeExpression'],
     ],
 
+    # No shift operators in Joos.
     'ShiftExpression': [
         ['AdditiveExpression'],
-        ['ShiftExpression', 'LeftShiftOperator', 'AdditiveExpression'],
-        ['ShiftExpression', 'RightShiftOperator', 'AdditiveExpression'],
+        # ['ShiftExpression', 'LeftShiftOperator', 'AdditiveExpression'],
+        # ['ShiftExpression', 'RightShiftOperator', 'AdditiveExpression'],
     ],
 
     'RelationalExpression': [
@@ -687,9 +692,10 @@ RULES = {
         ['EqualityExpression', 'NotEqualOperator', 'RelationalExpression'],
     ],
 
+    # No binary and.
     'AndExpression': [
         ['EqualityExpression'],
-        ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
+        # ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
     ],
 
     'ExclusiveOrExpression': [
@@ -697,9 +703,10 @@ RULES = {
         ['ExclusiveOrExpression', 'InverseOperator', 'AndExpression'],
     ],
 
+    # No binary or.
     'InclusiveOrExpression': [
         ['ExclusiveOrExpression'],
-        ['InclusiveOrExpression', 'BinaryOrOperator', 'ExclusiveOrExpression'],
+        # ['InclusiveOrExpression', 'BinaryOrOperator', 'ExclusiveOrExpression'],
     ],
 
     'ConditionalAndExpression': [
