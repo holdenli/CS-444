@@ -3,6 +3,9 @@ SOURCE=joosc.py
 
 all: ${TARGET} parsetable
 
+pkg:
+	zip -r pkg * -x 'assignment_testcases/*' -x '*__pycache__*'	
+
 ${TARGET}: ${SOURCE} 
 	cp ${SOURCE} ${TARGET}
 	chmod +x ${TARGET}
