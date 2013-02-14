@@ -7,6 +7,7 @@ from utils import logging
 
 import test
 import scanner
+import parser
 
 def parse_options(args=sys.argv):
     parser = optparse.OptionParser()
@@ -22,9 +23,15 @@ def parse_options(args=sys.argv):
 
 def joosc(program):
     tokens = scanner.scan(program)
+    logging.debug("Tokens returned from scanner:\n", pprint.pformat(tokens))
 
-    logging.debug("Tokens returned from scanner:")
-    logging.debug(pprint.pformat(tokens))
+    parse_table = parser.read_parse_table('grammar.lr1')
+    parse_tree = parser.parse(tokens, parse_table)
+    parse_tree.pprint()
+
+    if parse_tree == False:
+        logging.error("Could not parse")
+        sys.exit(42)
 
 def test_work(path):
     try:

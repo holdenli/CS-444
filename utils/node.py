@@ -16,15 +16,18 @@ class Node:
     def __repr__(self):
         return "<Node: %s>" % (self.name)
 
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self.name == other.name
+        
+        return False
+
     def bfs_iter(self, leafs=False, filterfn=None):
         queue = [self]
         while len(queue) > 0:
             node = queue.pop(0)
             queue += node.children
             if leafs and len(node.children) != 0:
-                continue
-
-            if filterfn and not filterfn(node.name, node.value):
                 continue
 
             yield node
@@ -37,13 +40,43 @@ class Node:
             if leafs and len(node.children) != 0:
                 continue
 
-            if filterfn and not filterfn(node.name, node.value):
-                continue
-
             yield node
 
     def leafs(self):
         return list(self.dfs_iter(True))
+
+    def select(self, names):
+        """
+        self.select(['ClassDeclaration', 'Modifiers'])
+        
+        will search through this node's heirarchy and return a list of all
+        'Modifiers' odes that have a ClassDeclaration->Modifiers structure
+        in this node's subtree.
+        
+        """
+
+        stack = [self]
+        stack_counters = [0]
+        while len(stack) > 0:
+            node = stack.pop(0)
+            node_counter = stack_counters.pop(0)
+
+            if node.name == names[node_counter]:
+                if node_counter == len(names):
+                    yield node
+                    continue
+
+                node_counter += 1
+            else:
+                node_counter = 0
+            
+            stack = node.children + stack
+            stack_counters = [node_counter]*len(node.children) + stack_counters
+
+    def pprint(self, tabsize=0):
+        print(' '*tabsize, self, self.value)
+        for c in self.children:
+            c.pprint(tabsize=tabsize+4)
 
 if __name__ == "__main__":
     n = Node("OMG1",
