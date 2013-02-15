@@ -15,10 +15,8 @@ from utils.node import Node
 # SOVLED BY GRAMMAR: A method or constructor must not contain explicit this() or super() calls.
 # SOLVED BY GRAMMAR: No multidimensional array types or array creation expressions are allowed.
 
-
-# A class/interface must be declared in a .java file with the same base name as the class/interface.
-
 def weed(parse_tree, filename):
+
     unarys = parse_tree.select(['UnaryExpression'], deep=True)
     for unary in unarys:
         leafs = unary.leafs()
@@ -26,7 +24,7 @@ def weed(parse_tree, filename):
         # Bounds checking on negative integers
         if len(leafs) == 2 \
             and leafs[0] == Node('SubtractOperator') \
-            and leafs[1] == Node('DecimalIntegerLiteral') \
+            and leafs[1] == Node('DecimalIntegerLiteral'):
             and int(leafs[1].value.value) > 2147483648:
                 logging.error("Integer out of bounds: -%s" % leafs[1].value.value,
                     "pos=%s, line=%s" % (leafs[1].value.pos, leafs[1].value.line))
@@ -41,11 +39,10 @@ def weed(parse_tree, filename):
                 sys.exit(42)
 
 
-
     classes = list(parse_tree.select(['ClassDeclaration']))
     if len(classes) != 0:
         node = classes[0]
-        classname = node.children[node.children.index(Node('Identifier'))].value.value
+        classname = node.find_child('Identifier').value.value
 
         # A class/interface must be declared in a .java file with the same base name
         # as the class/interface.
@@ -53,12 +50,10 @@ def weed(parse_tree, filename):
             logging.error("A class must be declared in a .java file with the same base name as the class.")
             sys.exit(42)
 
-
-
         # A class cannot be both abstract and final.
         if Node('Modifiers') in node.children:
 
-            modifiers = node.children[node.children.index(Node('Modifiers'))].leafs()
+            modifiers = node.find_child('Modifiers').leafs()
 
             if Node('Abstract') in modifiers and Node('Final') in modifiers:
                 logging.error("A class cannot be both abstract and final.",

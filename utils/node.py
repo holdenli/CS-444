@@ -22,6 +22,12 @@ class Node:
         
         return False
 
+    def find_child(self, token_name):
+        i = self.children.index(Node(token_name))
+        if i != -1:
+            return self.children[i]
+        return None;
+
     def bfs_iter(self, leafs=False, filterfn=None):
         queue = [self]
         while len(queue) > 0:
