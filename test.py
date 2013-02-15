@@ -41,6 +41,8 @@ class TestRunner:
         self._name = name
         self._foo = func
 
+    """
+    Eh, this is too complex. Forget it.
     # Test given against expected value based on file
     # Note:
     #   The verification currently is regex matching of header comments
@@ -54,6 +56,14 @@ class TestRunner:
                         return value != 0
                     break
         return value == 0
+    """
+
+    # This is given the return value of the function run and the test name and determines if the return value is valid
+    def test(self, value, name):
+        if re.search("^Je", name): 
+            return value != 0
+        else:
+            return value == 0
 
     # Run test batch
     def run(self):
@@ -76,7 +86,7 @@ class TestRunner:
                     continue
                 test_total += 1
                 ret = self._foo(test_path)
-                if self.test(ret, test_path) == False:
+                if self.test(ret, f) == False:
                     test_fails += 1
                     newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, f))
                     if self.verbose == True:
@@ -87,7 +97,6 @@ class TestRunner:
         # Done tests
         sys.stdout = newout.stdout
         sys.stderr = newout.stderr
-        print("==================================================")
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
