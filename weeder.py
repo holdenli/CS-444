@@ -17,28 +17,33 @@ from utils.node import Node
 
 def weed(parse_tree, filename):
 
-    unarys = parse_tree.select(['UnaryExpression'], deep=True)
+    # BOUNDS CHECKING WEEDING:
+    unarys = list(parse_tree.select(['UnaryExpression']))
     for unary in unarys:
         leafs = unary.leafs()
 
         # Bounds checking on negative integers
         if len(leafs) == 2 \
             and leafs[0] == Node('SubtractOperator') \
-            and leafs[1] == Node('DecimalIntegerLiteral') \
-            and int(leafs[1].value.value) > 2147483648:
+            and leafs[1] == Node('DecimalIntegerLiteral'):
+            
+            if int(leafs[1].value.value) > 2147483648:
                 logging.error("Integer out of bounds: -%s" % leafs[1].value.value,
                     "pos=%s, line=%s" % (leafs[1].value.pos, leafs[1].value.line))
                 sys.exit(42)
-
+        
         # Bounds checking on positive integers 
         elif len(leafs) == 1 \
-            and leafs[0] == Node('DecimalIntegerLiteral') \
-            and int(leafs[0].value.value) > 2147483647:
+            and leafs[0] == Node('DecimalIntegerLiteral'):
+
+            if int(leafs[0].value.value) > 2147483647:
                 logging.error("Integer out of bounds: %s" % leafs[0].value.value,
                             "pos=%s, line=%s" % (leafs[0].value.pos, leafs[0].value.line))
                 sys.exit(42)
+        else:
+            unarys.extend(unary.select(['UnaryExpression'], inclusive=False))
 
-
+    # WEEDING RELATED TO CLASSES:
     classes = list(parse_tree.select(['ClassDeclaration']))
     if len(classes) != 0:
         node = classes[0]
@@ -100,6 +105,7 @@ def weed(parse_tree, filename):
                 sys.exit(42)
 
 
+        
         for constructor in node.select(['ConstructorDeclaration']):
 
             # Every class must contain at least one explicit constructor.
@@ -140,6 +146,7 @@ def weed(parse_tree, filename):
                     "pos=%s, line=%s" % (modifiers[0].value.pos, modifiers[0].value.line))
                 sys.exit(42)
 
+    # WEEDING RELATED TO INTERFACES:
     # An interface method cannot be static, final, or native.
     elif parse_tree.select(['InterfaceDeclaration']):
 

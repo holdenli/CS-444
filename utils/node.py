@@ -51,7 +51,7 @@ class Node:
     def leafs(self):
         return list(self.dfs_iter(True))
 
-    def select(self, names, deep=False):
+    def select(self, names, deep=False, inclusive=True):
         """
         self.select(['ClassDeclaration', 'Modifiers'])
         
@@ -60,8 +60,13 @@ class Node:
         in this node's subtree.
         
         """
-        stack = [self]
-        stack_counters = [0]
+        if inclusive:
+            stack = [self]
+            stack_counters = [0]
+        else:
+            stack = list(self.children)
+            stack_counters = [0] * len(self.children)
+
         while len(stack) > 0:
             node = stack.pop(0)
             node_counter = stack_counters.pop(0)
