@@ -8,6 +8,7 @@ from utils import logging
 import test
 import scanner
 import parser
+import weeder
 
 def parse_options(args=sys.argv):
     parser = optparse.OptionParser()
@@ -17,7 +18,7 @@ def parse_options(args=sys.argv):
             [default: INFO]""")
 
     parser.add_option('-t', '--test', action='store', dest='test',
-        default='a1', help="Run tests")
+        help="Run tests")
 
     return parser.parse_args()
 
@@ -27,6 +28,10 @@ def joosc(program):
 
     parse_table = parser.read_parse_table('grammar.lr1')
     parse_tree = parser.parse(tokens, parse_table)
+
+    parse_tree.pprint()
+
+    weeder.weed(parse_tree);
 
     if parse_tree == False:
         logging.error("Could not parse")
