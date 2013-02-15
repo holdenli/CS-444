@@ -24,7 +24,7 @@ def parse_options(args=sys.argv):
 
     return parser.parse_args()
 
-def joosc(program):
+def joosc(program, filename):
     global parse_table
 
     tokens = scanner.scan(program)
@@ -35,12 +35,12 @@ def joosc(program):
         logging.error("Could not parse")
         sys.exit(42)
 
-    weeder.weed(parse_tree);
+    weeder.weed(parse_tree, filename)
 
 def test_work(path):
     try:
         with open(path, 'r') as f:
-            joosc(f.read())
+            joosc(f.read(), path)
         return 0
     except SystemExit as e:
         return 1
@@ -64,7 +64,7 @@ def main(argv=sys.argv):
         sys.exit(2)
 
     with open(args[0], 'r') as f:
-        joosc(f.read())
+        joosc(f.read(), args[0])
 
 if __name__ == "__main__":
     try:

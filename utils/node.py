@@ -14,7 +14,7 @@ class Node:
         self.children = children
 
     def __repr__(self):
-        return "<Node: %s>" % (self.name)
+        return "<Node: %s=%s>" % (self.name, self.value)
 
     def __eq__(self, other):
         if self.__class__ is other.__class__:
@@ -65,10 +65,10 @@ class Node:
                 if node_counter == len(names):
                     yield node
 
-                    if not deep:
-                        continue
-                    else:
+                    if deep:
                         node_counter = 0
+                    else:
+                        continue
             else:
                 node_counter = 0
             

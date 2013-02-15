@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import sys
 
 from utils import logging
@@ -17,8 +18,7 @@ from utils.node import Node
 
 # A class/interface must be declared in a .java file with the same base name as the class/interface.
 
-def weed(parse_tree):
-
+def weed(parse_tree, filename):
     unarys = parse_tree.select(['UnaryExpression'], deep=True)
     for unary in unarys:
         leafs = unary.leafs()
@@ -45,6 +45,15 @@ def weed(parse_tree):
     classes = list(parse_tree.select(['ClassDeclaration']))
     if len(classes) != 0:
         node = classes[0]
+        classname = node.children[node.children.index(Node('Identifier'))].value.value
+
+        # A class/interface must be declared in a .java file with the same base name
+        # as the class/interface.
+        if os.path.basename(filename) != '%s.java' % classname:
+            logging.error("A class must be declared in a .java file with the same base name as the class.")
+            sys.exit(42)
+
+
 
         # A class cannot be both abstract and final.
         if Node('Modifiers') in node.children:
@@ -96,7 +105,6 @@ def weed(parse_tree):
                 sys.exit(42)
 
 
-        class_name = node.children[node.children.index(Node('Identifier'))].value.value
         for constructor in node.select(['ConstructorDeclaration']):
 
             # Every class must contain at least one explicit constructor.
@@ -107,9 +115,9 @@ def weed(parse_tree):
             ])]
 
             if not constructor_names or \
-                [class_name]*len(constructor_names) != constructor_names:
+                [classname]*len(constructor_names) != constructor_names:
                 logging.error("Every class must contain at least one explicit constructor.",
-                        "Class %s does not." % (class_name)),
+                        "Class %s does not." % (classname)),
                 sys.exit(42)
 
             # Constructors can only be public or protected
@@ -139,6 +147,16 @@ def weed(parse_tree):
 
     # An interface method cannot be static, final, or native.
     elif parse_tree.select(['InterfaceDeclaration']):
+
+        interfacename = list(parse_tree.select(['InterfaceDeclaration',
+            'Identifier']))[0].value.value
+
+        # A class/interface must be declared in a .java file with the same base name
+        # as the class/interface.
+        if os.path.basename(filename) != '%s.java' % interfacename:
+            logging.error("A interface must be declared in a .java file with the same base name as the interface.")
+            sys.exit(42)
+
         modifiers = parse_tree.select([
             'InterfaceDeclaration',
             'InterfaceBody',
