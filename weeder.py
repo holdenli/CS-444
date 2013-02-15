@@ -8,6 +8,9 @@ from utils import logging
 from scanner import Token
 from utils.node import Node
 
+# TODO: Investigate Package Private classes, interfaces, fields
+# Basic a1 tests do not fully cover these cases
+
 # SOLVED BY GRAMMAR: The type void may only be uised as the return type of a method.
 # SOLVED BY GRAMMAR: A class/interface must be declared in a .java file with the same base name as the class/interface.
 # SOLVED BY GRAMMAR: An interface cannot contain fields or constructors.
@@ -128,7 +131,13 @@ def weed(parse_tree, filename):
             is_protected = Node('Protected') in modifiers
 
             abs_or_nat = is_abstract or is_native
+            has_permission = is_public or is_protected
             has_def = len(list(method.select(['MethodBody', 'Block']))) == 1
+
+            if (not has_permission):
+                logging.error("A method cannot be package private.",
+                    "pos=%s, line=%s" % (modifiers[0].value.pos, modifiers[0].value.line))
+                sys.exit(42)
 
             if (has_def and abs_or_nat) or (not abs_or_nat and not has_def):
                 logging.error("A method has a body if and only if it is neither abstract nor native.",
