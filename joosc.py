@@ -10,6 +10,8 @@ import scanner
 import parser
 import weeder
 
+parse_table = parser.read_parse_table('grammar.lr1')
+
 def parse_options(args=sys.argv):
     parser = optparse.OptionParser()
     parser.add_option('-l', '--loglevel', action='store', default='WARNING',
@@ -23,19 +25,17 @@ def parse_options(args=sys.argv):
     return parser.parse_args()
 
 def joosc(program):
+    global parse_table
+
     tokens = scanner.scan(program)
     logging.debug("Tokens returned from scanner:\n", pprint.pformat(tokens))
 
-    parse_table = parser.read_parse_table('grammar.lr1')
     parse_tree = parser.parse(tokens, parse_table)
-
-    parse_tree.pprint()
-
-    weeder.weed(parse_tree);
-
     if parse_tree == False:
         logging.error("Could not parse")
         sys.exit(42)
+
+    weeder.weed(parse_tree);
 
 def test_work(path):
     try:

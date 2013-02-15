@@ -55,11 +55,11 @@ class TestRunner:
 
     # Run test batch
     def run(self):
-        tests_path = "assignment_testcases/{}".format(self.assignment)
+        tests_path = "assignment_testcases/%s" % self.assignment
         test_total = 0
         test_fails = 0
 
-        print("Running test suite: '{}'".format(self._name))
+        print("Running test suite: '%s'" % self._name)
         print("==================================================")
 
         sys.stdout = StdoutCapture()
@@ -74,7 +74,7 @@ class TestRunner:
                 ret = self._foo(test_path)
                 if self.test(ret, test_path) == False:
                     test_fails += 1
-                    sys.stdout.saved.write("# TEST FAIL: {}\n".format(f))
+                    sys.stdout.saved.write("# TEST FAIL [%d failed so far]: %s\n" % (test_fails, f))
                     if self.verbose == True:
                         sys.stdout.saved.write("= OUTPUT: ========================================\n")
                         sys.stdout.saved.write(sys.stdout.capture)

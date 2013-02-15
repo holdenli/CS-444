@@ -24,10 +24,11 @@ SINGLELINE_PATTERNS = {
     'Identifier': [r'([a-zA-Z_$][a-zA-Z0-9_$]*)'],
     
     # integer literals
-    'DecimalIntegerLiteral': [r'('+DIGITS+'[lL]?)'],
+    'DecimalIntegerLiteral': [r'('+DIGITS+')'],
+    #'DecimalIntegerLiteral': [r'('+DIGITS+'[lL]?)'],
     #'DecimalIntegerLiteral': [r'('+DIGITS+')'], # No Longs in Joos.
-    'HexIntegerLiteral': [r'(0[xX][0-9abcedfABCDEF]+[lL]?)'],
-    'OctalIntegerLiteral': [r'(0[0-7]+[lL]?)'],
+    #'HexIntegerLiteral': [r'(0[xX][0-9abcedfABCDEF]+[lL]?)'],
+    #'OctalIntegerLiteral': [r'(0[0-7]+[lL]?)'],
     
     # floating point literals (unused in Joos):
     #     Digits . Digitsopt ExponentPartopt FloatTypeSuffixopt
@@ -236,14 +237,13 @@ def scan(program: "Joos program as a string") -> "list of tokens":
             (token_label, token_value) = max(matches, key=lambda x: len(x[1]))
             line += token_value.count('\n')
             pos += len(token_value)
-            
+           
             # ignore whitespace and comments
-            if token_label not in THROWAWAY_TOKENS:
+            if (token_label not in THROWAWAY_TOKENS):
                 tokens.append(Token(token_label, token_value, pos, line))
         else:
             logging.error("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
                 % (pos, line, program[pos:pos+20].replace("\n", "\\n")))
-            logging.error(pprint.pformat(tokens))
 
             sys.exit(42)
 
