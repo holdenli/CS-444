@@ -4,19 +4,21 @@ import os
 import sys
 import re
 
-# StdoutCapture
+# OutputCapture
 # Used to suppress stdout and save it for future use
+# Warning: This is kinda dangerous because it may hide real errors
 #
-class StdoutCapture:
-
-    saved = None
-    capture = ""
+class OutputCapture:
 
     def __init__(self):
-        self.saved = sys.stdout
+        self.stdout = sys.stdout
+        self.stderr = sys.stderr
+        self.capture = ""
+
+    def stdwrite(self, msg):
+        self.stdout.write(msg)
 
     def write(self, msg):
-        #self.saved.write(msg)
         self.capture += msg
 
 # TestRunner
@@ -62,7 +64,9 @@ class TestRunner:
         print("Running test suite: '%s'" % self._name)
         print("==================================================")
 
-        sys.stdout = StdoutCapture()
+        newout = OutputCapture()
+        sys.stdout = newout
+        sys.stderr = newout
 
         # Loop through test cases (files)
         for root, subFolders, files in os.walk(tests_path):
@@ -74,15 +78,16 @@ class TestRunner:
                 ret = self._foo(test_path)
                 if self.test(ret, test_path) == False:
                     test_fails += 1
-                    sys.stdout.saved.write("# TEST FAIL [%d failed so far]: %s\n" % (test_fails, f))
+                    newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, f))
                     if self.verbose == True:
-                        sys.stdout.saved.write("= OUTPUT: ========================================\n")
-                        sys.stdout.saved.write(sys.stdout.capture)
-                        sys.stdout.saved.write("==================================================\n")
-                sys.stdout.capture = ""
+                        newout.stdwrite(sys.stdout.capture)
+                        newout.stdwrite("==================================================\n")
+                newout.capture = ""
 
         # Done tests
-        sys.stdout = sys.stdout.saved
+        sys.stdout = newout.stdout
+        sys.stderr = newout.stderr
+        print("==================================================")
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
