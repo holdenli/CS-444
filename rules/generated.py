@@ -1,5 +1,5 @@
 # Modified Java 1.0 grammar.
-# Taken from:
+# Base grammar taken from:
 # http://titanium.cs.berkeley.edu/doc/java-langspec-1.0/19.doc.html
 
 START_SYMBOL = 'Goal'
@@ -64,10 +64,11 @@ RULES = {
         ['ClassOrInterfaceType'],
     ],
 
+    # No multi-dimensional arrays.
     'ArrayType': [
         ['PrimitiveType', 'LeftBracket', 'RightBracket'],
         ['Name', 'LeftBracket', 'RightBracket'],
-        ['ArrayType', 'LeftBracket', 'RightBracket'],
+        # ['ArrayType', 'LeftBracket', 'RightBracket'],
     ],
 
     'Name': [
@@ -145,7 +146,7 @@ RULES = {
         # ['Volatile'],
     ],
 
-    # No 
+    # No package private => must have at least 1 modifier.
     'ClassDeclaration': [
         # ['Class Identifier SuperStuff Interfaces ClassBody'],
         # ['Class Identifier Interfaces ClassBody'],
@@ -209,15 +210,16 @@ RULES = {
     ],
 
     # No multi-dimensional arrays.
+    # No array declaration after variable name.
     'VariableDeclaratorId': [
         ['Identifier'],
         # ['VariableDeclaratorId', 'LeftBracket', 'RightBracket'],
-        ['Identifier', 'LeftBracket', 'RightBracket'],
+        # ['Identifier', 'LeftBracket', 'RightBracket'],
     ],
 
     'VariableInitializer': [
         ['Expression'],
-        ['ArrayInitializer'],
+        # ['ArrayInitializer'],
     ],
 
     'MethodDeclaration': [
@@ -253,13 +255,16 @@ RULES = {
         ['Type', 'VariableDeclaratorId'],
     ],
 
-    #ThrowsStuff:
-    #    ['Throws ClassTypeList'],
+    # No Throws.
+    # 'ThrowsStuff': [
+    #     ['Throws', 'ClassTypeList'],
+    # ],
 
-    'ClassTypeList': [
-        ['ClassType'],
-        ['ClassTypeList', 'Comma', 'ClassType'],
-    ],
+    # Unused, only used by ThrowsStuff.
+    # 'ClassTypeList': [
+    #     ['ClassType'],
+    #     ['ClassTypeList', 'Comma', 'ClassType'],
+    # ],
 
     'MethodBody': [
         ['Block'],
@@ -332,12 +337,13 @@ RULES = {
     #AbstractMethodDeclaration:
     #    ['MethodHeader SemiColon'],
 
-    'ArrayInitializer': [
-        ['LeftBrace', 'VariableInitializers', 'Comma', 'RightBrace'],
-        ['LeftBrace', 'VariableInitializers', 'RightBrace'],
-        ['LeftBrace', 'Comma', 'RightBrace'],
-        ['LeftBrace', 'RightBrace'],
-    ],
+    # No array data.
+    # 'ArrayInitializer': [
+    #     ['LeftBrace', 'VariableInitializers', 'Comma', 'RightBrace'],
+    #     ['LeftBrace', 'VariableInitializers', 'RightBrace'],
+    #     ['LeftBrace', 'Comma', 'RightBrace'],
+    #     ['LeftBrace', 'RightBrace'],
+    # ],
 
     'VariableInitializers': [
         ['VariableInitializer'],
@@ -584,25 +590,29 @@ RULES = {
         ['ArgumentList', 'Comma', 'Expression'],
     ],
 
+    # A few changes are made here so that only single-dimension arrays work.
     'ArrayCreationExpression': [
         ['New', 'PrimitiveType', 'DimExprs'],
-        ['New', 'PrimitiveType', 'DimExprs', 'Dims'],
+        # ['New', 'PrimitiveType', 'DimExprs', 'Dims'],
         ['New', 'ClassOrInterfaceType', 'DimExprs'],
-        ['New', 'ClassOrInterfaceType', 'DimExprs', 'Dims'],
+        # ['New', 'ClassOrInterfaceType', 'DimExprs', 'Dims'],
+        ['New', 'PrimitiveType', 'Dims'],
+        ['New', 'ClassOrInterfaceType', 'Dims'],
     ],
 
     'DimExprs': [
         ['DimExpr'],
-        ['DimExprs DimExpr'],
+        # ['DimExprs DimExpr'],
     ],
 
     'DimExpr': [
         ['LeftBracket', 'Expression', 'RightBracket'],
     ],
 
+    # Only one dimension allowed.
     'Dims': [
         ['LeftBracket', 'RightBracket'],
-        ['Dims', 'LeftBracket', 'RightBracket'],
+        # ['Dims', 'LeftBracket', 'RightBracket'],
     ],
 
     'FieldAccess': [
@@ -692,10 +702,9 @@ RULES = {
         ['EqualityExpression', 'NotEqualOperator', 'RelationalExpression'],
     ],
 
-    # No binary and.
     'AndExpression': [
         ['EqualityExpression'],
-        # ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
+        ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
     ],
 
     'ExclusiveOrExpression': [
@@ -703,10 +712,9 @@ RULES = {
         ['ExclusiveOrExpression', 'InverseOperator', 'AndExpression'],
     ],
 
-    # No binary or.
     'InclusiveOrExpression': [
         ['ExclusiveOrExpression'],
-        # ['InclusiveOrExpression', 'BinaryOrOperator', 'ExclusiveOrExpression'],
+        ['InclusiveOrExpression', 'BinaryOrOperator', 'ExclusiveOrExpression'],
     ],
 
     'ConditionalAndExpression': [
