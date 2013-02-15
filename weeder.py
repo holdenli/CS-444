@@ -24,7 +24,7 @@ def weed(parse_tree, filename):
         # Bounds checking on negative integers
         if len(leafs) == 2 \
             and leafs[0] == Node('SubtractOperator') \
-            and leafs[1] == Node('DecimalIntegerLiteral'):
+            and leafs[1] == Node('DecimalIntegerLiteral') \
             and int(leafs[1].value.value) > 2147483648:
                 logging.error("Integer out of bounds: -%s" % leafs[1].value.value,
                     "pos=%s, line=%s" % (leafs[1].value.pos, leafs[1].value.line))
