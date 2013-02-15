@@ -306,8 +306,8 @@ RULES = {
         ['Modifiers', 'Interface', 'Identifier', 'ExtendsInterfaces',
             'InterfaceBody'],
         ['Modifiers', 'Interface', 'Identifier', 'InterfaceBody'],
-        # ['Interface Identifier ExtendsInterfaces InterfaceBody'],
-        # ['Interface Identifier InterfaceBody'],
+        # ['Interface', 'Identifier', 'ExtendsInterfaces', 'InterfaceBody'],
+        # ['Interface', 'Identifier', 'InterfaceBody'],
     ],
 
     'ExtendsInterfaces': [
@@ -623,7 +623,7 @@ RULES = {
     'MethodInvocation': [
         ['Name', 'LeftParenthesis', 'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
-        ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
+        # ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
         ['Name', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
             'RightParenthesis'],
