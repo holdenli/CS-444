@@ -199,42 +199,30 @@ def scan(program: "Joos program as a string") -> "list of tokens":
                         for p in MULTILINE_PATTERNS[k]]
                         for k in MULTILINE_PATTERNS})
 
+    
     while pos != len(program):
-        is_identifier = False
-        
-        # In the event we have more than 1 regex that matches, we keep a list
-        # of matches and pick the greediest match
-        matches = []
+        best_match = None
+        best_match_len = -1
         
         # first, we try to match string tokens from STRINGS dict.
         # this is pretty inefficient.  TODO:  use a trie
         prefix = find_prefix(program, strings, pos)
         if prefix != None:
-            matches.append((STRINGS[prefix], prefix))
+            best_match = ((STRINGS[prefix], prefix)) 
+            best_match_len = len(prefix)
     
         # now, we match regex patterns.
         for token_label in patterns:
             for pattern in patterns[token_label]:
                 match = pattern.match(program, pos)
                 if match != None:
-                    if token_label == 'Identifier':
-                        is_identifier = True 
-                    matches.append((token_label, match.group(1)))
+                    if len(match.group(1)) > best_match_len:
+                        best_match = (token_label, match.group(1))
+                        best_match_len = len(match.group(1))
         
-        if len(matches) > 0:
-            # if we have a match for an Identifier and a different token type,
-            # the different token type trumps it!
-            if is_identifier and len(matches) >= 2:
-                # find and remove the identifier
-                found = 0
-                for (n, (token_type,_)) in enumerate(matches):
-                    if token_type == 'Identifier':
-                        found = n
-                        break
-                matches.pop(found)
-
+        if best_match_len != -1:
             # find the match that consumes the most characters in program
-            (token_label, token_value) = max(matches, key=lambda x: len(x[1]))
+            (token_label, token_value) = best_match
             line += token_value.count('\n')
             pos += len(token_value)
            
