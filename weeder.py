@@ -22,23 +22,6 @@ def weed(parse_tree, filename):
 
     # Problem 5: Cast versus Parenthesized Expression
     cast_exprs = parse_tree.select(['CastExpression', 'Expression'], deep=True)
-#    correct_cast_exprs = parse_tree.select(['CastExpression', 'Expression',
-#        'AssignmentExpression', 
-#        'ConditionalExpression', 
-#        'ConditionalOrExpression', 
-#        'ConditionalAndExpression', 
-#        'InclusiveOrExpression', 
-#        'ExclusiveOrExpression', 
-#        'AndExpression', 
-#        'EqualityExpression', 
-#        'RelationalExpression', 
-#        'ShiftExpression', 
-#        'AdditiveExpression', 
-#        'MultiplicativeExpression', 
-#        'UnaryExpression', 
-#        'UnaryExpressionNotPlusMinus', 
-#        'PostfixExpression', 
-#        'Name'], deep=True)
     correct_cast_hiearchy = [
         'AssignmentExpression', 
         'ConditionalExpression', 
@@ -131,13 +114,7 @@ def weed(parse_tree, filename):
             is_protected = Node('Protected') in modifiers
 
             abs_or_nat = is_abstract or is_native
-            has_permission = is_public or is_protected
             has_def = len(list(method.select(['MethodBody', 'Block']))) == 1
-
-            if (not has_permission):
-                logging.error("A method cannot be package private.",
-                    "pos=%s, line=%s" % (modifiers[0].value.pos, modifiers[0].value.line))
-                sys.exit(42)
 
             if (has_def and abs_or_nat) or (not abs_or_nat and not has_def):
                 logging.error("A method has a body if and only if it is neither abstract nor native.",
