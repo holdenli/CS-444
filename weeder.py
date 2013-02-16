@@ -19,6 +19,23 @@ def weed(parse_tree, filename):
 
     # Problem 5: Cast versus Parenthesized Expression
     cast_exprs = parse_tree.select(['CastExpression', 'Expression'], deep=True)
+#    correct_cast_exprs = parse_tree.select(['CastExpression', 'Expression',
+#        'AssignmentExpression', 
+#        'ConditionalExpression', 
+#        'ConditionalOrExpression', 
+#        'ConditionalAndExpression', 
+#        'InclusiveOrExpression', 
+#        'ExclusiveOrExpression', 
+#        'AndExpression', 
+#        'EqualityExpression', 
+#        'RelationalExpression', 
+#        'ShiftExpression', 
+#        'AdditiveExpression', 
+#        'MultiplicativeExpression', 
+#        'UnaryExpression', 
+#        'UnaryExpressionNotPlusMinus', 
+#        'PostfixExpression', 
+#        'Name'], deep=True)
     correct_cast_hiearchy = [
         'AssignmentExpression', 
         'ConditionalExpression', 
@@ -44,8 +61,7 @@ def weed(parse_tree, filename):
                 logging.error("Incorrect cast expression", e.leafs())
                 sys.exit(42)
 
-   
-    # WEEDING RELATED TO BOUNDS CHECKING
+    # BOUNDS CHECKING WEEDING:
     unarys = list(parse_tree.select(['UnaryExpression']))
     for unary in unarys:
         leafs = unary.leafs()
@@ -108,6 +124,8 @@ def weed(parse_tree, filename):
             is_native = Node('Native') in modifiers
             is_static = Node('Static') in modifiers
             is_final = Node('Final') in modifiers
+            is_public = Node('Public') in modifiers
+            is_protected = Node('Protected') in modifiers
 
             abs_or_nat = is_abstract or is_native
             has_def = len(list(method.select(['MethodBody', 'Block']))) == 1
@@ -132,8 +150,11 @@ def weed(parse_tree, filename):
                     "pos=%s, line=%s" % (modifiers[0].value.pos, modifiers[0].value.line))
                 sys.exit(42)
 
+            elif not (is_public or is_protected):
+                logging.error("Method cannot be package-private",
+                    "pos=%s, line=%s" % (modifiers[0].value.pos, modifiers[0].value.line))
+                sys.exit(42)
 
-        
         for constructor in node.select(['ConstructorDeclaration']):
 
             # Every class must contain at least one explicit constructor.
