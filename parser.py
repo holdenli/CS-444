@@ -33,25 +33,20 @@ class ParseTable:
 
         # LR1
         self.lr1_states = lr1[0]
-        self.lr1_t = [] # ( state, term/symbol, reduce?, rule/state )
+        self.lr1_d = {}
         for t in lr1[1]:
             tt = t.split()
-            self.lr1_t.append((
-                    int(tt[0])
-                    , tt[1]
-                    , tt[2] == "reduce"
-                    , int(tt[3])
-                ))
+            self.lr1_d['%s %s %s' % (tt[0], tt[1], tt[2] == 'reduce')] = int(tt[3])
         
         logging.debug("ParseTable LR(1) Transitions:\n%s\n%s\n%s"
-            % ("*"*20, pprint.pformat(self.lr1_t), "*"*20))
+            % ("*"*20, pprint.pformat(self.lr1_d), "*"*20))
 
     # False if no next state (could be reduce)
     def next_state(self, state, symbol, reduce):
-        for t in self.lr1_t:
-            if t[0] == state and t[1] == symbol and t[2] == reduce:
-                return t[3]
-        return False
+        try:
+            return self.lr1_d['%s %s %s' % (state, symbol, reduce)] 
+        except KeyError:
+            return False
 
 # read_parse_table
 # This is some ugly code to return generate tuples used to generate the ParseTable
@@ -125,8 +120,8 @@ def parse(tokens, parse_table):
         logging.info("  " + str(stack))
         
         # Reduce
-        while parse_reduce(parse_table, stack, a) != False:
-            production = parse_reduce(parse_table, stack, a)
+        production = parse_reduce(parse_table, stack, a)
+        while production != False:
             children = []
             # Remove RHS from stack
             for p in reversed(production[1]):
@@ -137,6 +132,8 @@ def parse(tokens, parse_table):
             stack.append((production[0], None))
             node_stack.append(node.Node(production[0], None, children))
             logging.info("#PARSE REDUCE : %s" % (stack))
+
+            production = parse_reduce(parse_table, stack, a)
         
         # Reject?
         if parse_reject(parse_table, stack + [a]):
