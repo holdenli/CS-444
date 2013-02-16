@@ -17,7 +17,35 @@ from utils.node import Node
 
 def weed(parse_tree, filename):
 
-    # BOUNDS CHECKING WEEDING:
+    # Problem 5: Cast versus Parenthesized Expression
+    cast_exprs = parse_tree.select(['CastExpression', 'Expression'], deep=True)
+    correct_cast_hiearchy = [
+        'AssignmentExpression', 
+        'ConditionalExpression', 
+        'ConditionalOrExpression', 
+        'ConditionalAndExpression', 
+        'InclusiveOrExpression', 
+        'ExclusiveOrExpression', 
+        'AndExpression', 
+        'EqualityExpression', 
+        'RelationalExpression', 
+        'ShiftExpression', 
+        'AdditiveExpression', 
+        'MultiplicativeExpression', 
+        'UnaryExpression', 
+        'UnaryExpressionNotPlusMinus', 
+        'PostfixExpression', 
+        'Name']
+    for e in cast_exprs:
+        c = [e]
+        for name in correct_cast_hiearchy:
+            c = c[0].children
+            if len(c) != 1 or c[0].name != name:
+                logging.error("Incorrect cast expression", e.leafs())
+                sys.exit(42)
+
+   
+    # WEEDING RELATED TO BOUNDS CHECKING
     unarys = list(parse_tree.select(['UnaryExpression']))
     for unary in unarys:
         leafs = unary.leafs()

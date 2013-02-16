@@ -56,7 +56,7 @@ class Node:
         self.select(['ClassDeclaration', 'Modifiers'])
         
         will search through this node's heirarchy and return a list of all
-        'Modifiers' odes that have a ClassDeclaration->Modifiers structure
+        'Modifiers' nodes that have a ClassDeclaration->Modifiers structure
         in this node's subtree.
         
         """
