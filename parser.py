@@ -3,7 +3,6 @@
 import sys
 from utils import node
 from utils import logging
-import pprint
 
 # ParseTable
 # The assumption is that the grammar and parse table here is
@@ -37,9 +36,6 @@ class ParseTable:
         for t in lr1[1]:
             tt = t.split()
             self.lr1_d['%s %s %s' % (tt[0], tt[1], tt[2] == 'reduce')] = int(tt[3])
-        
-        logging.debug("ParseTable LR(1) Transitions:\n%s\n%s\n%s"
-            % ("*"*20, pprint.pformat(self.lr1_d), "*"*20))
 
     # False if no next state (could be reduce)
     def next_state(self, state, symbol, reduce):
@@ -109,15 +105,15 @@ def parse_reject(parse_table, stack):
 # Notes:
 # - Should it error 42 instead of false?
 def parse(tokens, parse_table):
-    logging.info("PARSE: %s" % (pprint.pformat(tokens)))
+    #logging.info("PARSE: %s" % (tokens))
 
     tree = None
     stack = []
     node_stack = [] # keep nodes in a parallel stack cause its easier suck it
     for a in tokens:
-        logging.info(">>PARSE LOOP")
-        logging.info("  " + str(a))
-        logging.info("  " + str(stack))
+        #logging.info(">>PARSE LOOP")
+        #logging.info("  " + str(a))
+        #logging.info("  " + str(stack))
         
         # Reduce
         production = parse_reduce(parse_table, stack, a)
@@ -131,27 +127,28 @@ def parse(tokens, parse_table):
                 children.insert(0, node_stack.pop())
             stack.append((production[0], None))
             node_stack.append(node.Node(production[0], None, children))
-            logging.info("#PARSE REDUCE : %s" % (stack))
+            #logging.info("#PARSE REDUCE : %s" % (stack))
 
             production = parse_reduce(parse_table, stack, a)
         
         # Reject?
         if parse_reject(parse_table, stack + [a]):
-            logging.info("#FAIL         : %s" % (stack + [a]))
+            #logging.info("#FAIL         : %s" % (stack + [a]))
             return False
         
         # Shift
         stack.append(a)
         node_stack.append(node.Node(a[0], a, []))
         
-        logging.info("#PARSE SHIFT  : %s" % (stack))
-        logging.info("#NODE STACK   : %s" % (node_stack))
+        #logging.info("#PARSE SHIFT  : %s" % (stack))
+        #logging.info("#NODE STACK   : %s" % (node_stack))
     
     # Accept
     return node.Node("ROOT", children=node_stack)
 
 if __name__ == "__main__":
     import scanner
+    import pprint
     
     logging.setLogLevel("INFO")
 
