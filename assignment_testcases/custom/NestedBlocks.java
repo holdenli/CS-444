@@ -1,7 +1,7 @@
 // TEST
 
-public class Foo {
-    public Foo() {
+public class NestedBlocks {
+    public NestedBlocks() {
         int x = 0;
         {
             int y = 0;

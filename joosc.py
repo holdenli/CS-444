@@ -23,21 +23,35 @@ def parse_options(args=sys.argv):
     parser.add_option('-t', '--test', action='store', dest='test',
         help="Run tests")
 
+    parser.add_option('-s', '--stage', action='store', dest='stage',
+        default='end', choices=['scanner', 'parser', 'weeder', 'ast', 'end'],
+        help="Stage of compiler to run \"up to\".")
+
     return parser.parse_args()
 
-def joosc(program, filename):
+def joosc(program, filename, stage='end'):
     global parse_table
-
     tokens = scanner.scan(program)
     logging.debug("Tokens returned from scanner:\n", pprint.pformat(tokens))
+    if stage == 'scanner':
+        return
 
     parse_tree = parser.parse(tokens, parse_table)
     if parse_tree == False:
         logging.error("Could not parse")
         sys.exit(42)
+    if stage == 'parser':
+        return
 
     weeder.weed(parse_tree, filename)
-    ast.astize(parse_tree)
+    if stage == 'weeder':
+        return
+
+    abstract_syntax_tree = ast.build_ast(parse_tree)
+    abstract_syntax_tree.pprint()
+    if stage == 'ast':
+        return
+
 
 def test_work(path):
     try:
@@ -66,7 +80,7 @@ def main(argv=sys.argv):
         sys.exit(2)
 
     with open(args[0], 'r') as f:
-        joosc(f.read(), args[0])
+        joosc(f.read(), args[0], opts.stage)
 
 if __name__ == "__main__":
     try:

@@ -22,11 +22,27 @@ class Node:
         
         return False
 
+    def __getitem__(self, key):
+        return self.children[key]
+
     def find_child(self, token_name):
         for child in self.children:
             if child.name == token_name:
                 return child
         return None
+
+    def add(self, node):
+        """
+        Adds node to children (mostly for convenience).
+        """
+        self.children.append(node)
+
+    @property
+    def first(self):
+        """
+        Convenience getter for the first child.
+        """
+        return self.children[0]
 
     def bfs_iter(self, leafs=False, filterfn=None):
         queue = [self]
