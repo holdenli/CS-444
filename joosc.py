@@ -9,6 +9,7 @@ import test
 import scanner
 import parser
 import weeder
+import ast
 
 parse_table = parser.read_parse_table('grammar.lr1')
 
@@ -36,6 +37,7 @@ def joosc(program, filename):
         sys.exit(42)
 
     weeder.weed(parse_tree, filename)
+    ast.astize(parse_tree)
 
 def test_work(path):
     try:
