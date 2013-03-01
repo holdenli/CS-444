@@ -58,7 +58,8 @@ class TestRunner:
         return value == 0
     """
 
-    # This is given the return value of the function run and the test name and determines if the return value is valid
+    # This is given the return value of the function run and the test name and
+    # determines if the return value is valid
     def test(self, value, name):
         if re.search("^Je", name): 
             return value != 0
@@ -79,20 +80,19 @@ class TestRunner:
         sys.stderr = newout
 
         # Loop through test cases (files)
-        for root, subFolders, files in os.walk(tests_path):
-            for f in files:
-                test_path = os.path.join(root, f)
-                if test_path[-5:] != ".java":
-                    continue
-                test_total += 1
-                ret = self._foo(test_path)
-                if self.test(ret, f) == False:
-                    test_fails += 1
-                    newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, f))
-                    if self.verbose == True:
-                        newout.stdwrite(sys.stdout.capture)
-                        newout.stdwrite("==================================================\n")
-                newout.capture = ""
+        for f in os.listdir(tests_path):
+            if not f.endswith(".java"):
+                continue
+            test_path = os.path.join(tests_path, f)
+            test_total += 1
+            ret = self._foo(test_path)
+            if self.test(ret, f) == False:
+                test_fails += 1
+                newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, f))
+                if self.verbose == True:
+                    newout.stdwrite(sys.stdout.capture)
+                    newout.stdwrite("==================================================\n")
+            newout.capture = ""
 
         # Done tests
         sys.stdout = newout.stdout
