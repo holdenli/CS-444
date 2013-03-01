@@ -171,8 +171,9 @@ RULES = {
         ['InterfaceTypeList', 'Comma', 'InterfaceType'],
     ],
 
+    # No omitted constructor => must have ClassBodyDeclarations.
     'ClassBody': [
-        ['LeftBrace', 'RightBrace'],
+        # ['LeftBrace', 'RightBrace'],
         ['LeftBrace', 'ClassBodyDeclarations', 'RightBrace'],
     ],
 
