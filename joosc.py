@@ -39,7 +39,7 @@ def get_ast(program, filename, stage='end'):
         return parse_tree
 
     abstract_syntax_tree = ast.build_ast(parse_tree)
-    #abstract_syntax_tree.pprint()
+    # abstract_syntax_tree.pprint()
     return abstract_syntax_tree
 
 # Main work
