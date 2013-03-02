@@ -271,9 +271,11 @@ RULES = {
         ['Block'],
         ['SemiColon'],
     ],
-    
-    #StaticInitializer:
-    #     ['Static Block'],
+
+    # No static initializers. 
+    # 'StaticInitializer': [
+    #     ['Static', 'Block'],
+    # ],
 
     # No package private, and no throws.
     'ConstructorDeclaration': [
