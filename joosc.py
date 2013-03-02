@@ -60,6 +60,15 @@ def test_work(path):
     except SystemExit as e:
         return 1
 
+# This is given the return value of the function run and the test name and
+# determines if the return value is valid
+def test_test(value, name):
+    import re
+    if re.search("^Je", name): 
+        return value != 0
+    else:
+        return value == 0
+
 # INTERFACE
 ##########################
 
@@ -86,9 +95,8 @@ def main(argv=sys.argv):
     
     if opts.test:
         logging.info("TESTING %s" % (opts.test))
-        ts = test.TestRunner("JOOSC", test_work)
-        ts.assignment = opts.test
-        ts.re_expected = "_EXCEPTION"
+        ts = test.TestRunner("JOOSC", test_work, test_test)
+        ts.test_subfolder = opts.test
         ts.verbose = (opts.loglevel == 'WARNING')
         ts.run()
         return 0

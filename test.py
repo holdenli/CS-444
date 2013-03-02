@@ -2,7 +2,6 @@
 
 import os
 import sys
-import re
 
 # OutputCapture
 # Used to suppress stdout and save it for future use
@@ -29,46 +28,21 @@ class OutputCapture:
 class TestRunner:
 
     _name = "Unknown"
-    _foo = None
+    _work_func = None # func(test_path)
+    _test_func = None # func(test_value, test_name)
     
-    assignment = "a1"
-    re_type = "JOOSW:|JOOS2:"
-    re_expected = "_EXCEPTION"
+    test_folder = "assignment_testcases"
+    test_subfolder = "a1"
     
     verbose = False
-
-    def __init__(self, name, func):
+    def __init__(self, name, work, test):
         self._name = name
-        self._foo = func
-
-    """
-    Eh, this is too complex. Forget it.
-    # Test given against expected value based on file
-    # Note:
-    #   The verification currently is regex matching of header comments
-    #   which are assumed to be within the first 5 lines
-    def test(self, value, path):
-        with open(path, 'r') as f:
-            for i in range(1,6):
-                line = f.readline()
-                if re.search(self.re_type, line):
-                    if re.search(self.re_expected, line):
-                        return value != 0
-                    break
-        return value == 0
-    """
-
-    # This is given the return value of the function run and the test name and
-    # determines if the return value is valid
-    def test(self, value, name):
-        if re.search("^Je", name): 
-            return value != 0
-        else:
-            return value == 0
+        self._work_func = work
+        self._test_func = test
 
     # Run test batch
     def run(self):
-        tests_path = "assignment_testcases/%s" % self.assignment
+        tests_path = "%s/%s" % (self.test_folder, self.test_subfolder)
         test_total = 0
         test_fails = 0
 
@@ -80,15 +54,15 @@ class TestRunner:
         sys.stderr = newout
 
         # Loop through test cases (files)
-        for f in os.listdir(tests_path):
-            if not f.endswith(".java"):
+        for test_name in os.listdir(tests_path):
+            if not test_name.endswith(".java"):
                 continue
-            test_path = os.path.join(tests_path, f)
+            test_path = os.path.join(tests_path, test_name)
             test_total += 1
-            ret = self._foo(test_path)
-            if self.test(ret, f) == False:
+            ret = self._work_func(test_path)
+            if self._test_func(ret, test_name) == False:
                 test_fails += 1
-                newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, f))
+                newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, test_name))
                 if self.verbose == True:
                     newout.stdwrite(sys.stdout.capture)
                     newout.stdwrite("==================================================\n")
