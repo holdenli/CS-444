@@ -188,7 +188,10 @@ def build_methods(node):
             method.add(Node('Type', None, [method_decl[0][1]]))
         else:
             method.add(build_type(method_decl[0][1])) # Non-void.
-        
+
+        # Name.
+        method.add(method_decl[0][2][0])
+ 
         # Extract parameters.
         if method_decl[0][2][2].name == 'FormalParameterList':
             method.add(build_parameters(method_decl[0][2][2]))
