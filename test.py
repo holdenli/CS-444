@@ -50,12 +50,13 @@ class TestRunner:
         print("==================================================")
 
         newout = OutputCapture()
-        sys.stdout = newout
+        #sys.stdout = newout
         sys.stderr = newout
 
         # Loop through test cases (files)
         for test_name in os.listdir(tests_path):
-            if not test_name.endswith(".java"):
+            print(test_name)
+            if not test_name.startswith("J"):
                 continue
             test_path = os.path.join(tests_path, test_name)
             test_total += 1
@@ -74,10 +75,30 @@ class TestRunner:
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
-if __name__ == "__main__":
-    def f(a):
-        print(a)
+# Test Functions
+##########################
+import joosc
 
-    ts = TestRunner("FACK", f)
+def test_work(path):
+    try:
+        with open(path, 'r') as f:
+            joosc.get_ast(f.read(), path)
+        return 0
+    except SystemExit as e:
+        return 1
+
+# This is given the return value of the function run and the test name and
+# determines if the return value is valid
+def test_test(value, name):
+    import re
+    if re.search("^Je", name): 
+        return value != 0
+    else:
+        return value == 0
+
+def test_joosc(test_name, verbose):
+    ts = TestRunner("JOOSC", test_work, test_test)
+    ts.test_subfolder = test_name
+    ts.verbose = verbose
     ts.run()
 

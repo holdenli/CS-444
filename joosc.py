@@ -39,7 +39,6 @@ def get_ast(program, filename, stage='end'):
         return parse_tree
 
     abstract_syntax_tree = ast.build_ast(parse_tree)
-    abstract_syntax_tree.pprint()
     return abstract_syntax_tree
 
 # Main work
@@ -48,26 +47,6 @@ def joosc(files, stage):
     for i in files:
         with open(i, 'r') as f:
             ast_list.append(get_ast(f.read(), i, stage))
-
-# TESTING
-##########################
-
-def test_work(path):
-    try:
-        with open(path, 'r') as f:
-            get_ast(f.read(), path)
-        return 0
-    except SystemExit as e:
-        return 1
-
-# This is given the return value of the function run and the test name and
-# determines if the return value is valid
-def test_test(value, name):
-    import re
-    if re.search("^Je", name): 
-        return value != 0
-    else:
-        return value == 0
 
 # INTERFACE
 ##########################
@@ -95,10 +74,7 @@ def main(argv=sys.argv):
     
     if opts.test:
         logging.info("TESTING %s" % (opts.test))
-        ts = test.TestRunner("JOOSC", test_work, test_test)
-        ts.test_subfolder = opts.test
-        ts.verbose = (opts.loglevel == 'WARNING')
-        ts.run()
+        test.test_joosc(opts.test, opts.loglevel == 'WARNING')
         return 0
  
     if len(args) < 1:
