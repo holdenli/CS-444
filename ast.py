@@ -146,7 +146,7 @@ def build_fields(node):
 
         fields.add(field)
 
-    return field
+    return fields
 
 def build_constructors(node):
     constructors = Node('Constructors')
