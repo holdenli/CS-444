@@ -50,7 +50,7 @@ class TestRunner:
         print("==================================================")
 
         newout = OutputCapture()
-        #sys.stdout = newout
+        sys.stdout = newout
         sys.stderr = newout
 
         # Loop through test cases (files)
@@ -75,14 +75,21 @@ class TestRunner:
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
-# Test Functions
+# Primary Test Functions
 ##########################
 import joosc
 
 def test_work(path):
     try:
-        with open(path, 'r') as f:
-            joosc.get_ast(f.read(), path)
+        if path.endswith(".java"):
+            joosc.joosc([path], "end")
+        elif os.path.isdir(path):
+            paths = []
+            for (path, dirs, files) in os.walk(path):
+                paths.extend([os.path.join(path, f) for f in files])
+            joosc.joosc(paths, "end")
+        else:
+            return 1
         return 0
     except SystemExit as e:
         return 1
