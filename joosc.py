@@ -25,20 +25,26 @@ def get_ast(program, filename, stage='end'):
     tokens = scanner.scan(program)
     logging.debug("Tokens returned from scanner:\n", pprint.pformat(tokens))
     if stage == 'scanner':
-        return
+        sys.exit(0)
 
     parse_tree = parser.parse(tokens, parse_table)
     if parse_tree == False:
         logging.error("Could not parse")
         sys.exit(42)
     if stage == 'parser':
-        return parse_tree
+        parse_tree.pprint()
+        sys.exit(0)
 
     weeder.weed(parse_tree, filename)
     if stage == 'weeder':
-        return parse_tree
+        parse_tree.pprint()
+        sys.exit(0)
 
     abstract_syntax_tree = ast.build_ast(parse_tree)
+    if stage == 'ast':
+        abstract_syntax_tree.pprint()
+        sys.exit(0)
+
     return abstract_syntax_tree
 
 # Main work
