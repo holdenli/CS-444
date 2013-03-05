@@ -14,7 +14,10 @@ class Node:
         self.children = children
 
     def __repr__(self):
-        return "<Node: %s=%s>" % (self.name, self.value)
+        if self.value != None:
+            return "<Node: %s=%s>" % (self.name, self.value)
+        else:
+            return "<Node: %s>" % (self.name)
 
     def __eq__(self, other):
         if self.__class__ is other.__class__:
@@ -103,7 +106,7 @@ class Node:
             stack_counters = [node_counter]*len(node.children) + stack_counters
 
     def pprint(self, tabsize=0):
-        print(' '*tabsize, self, self.value)
+        print(' '*tabsize, self)
         for c in self.children:
             c.pprint(tabsize=tabsize+2)
 
