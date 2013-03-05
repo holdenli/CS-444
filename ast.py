@@ -341,7 +341,7 @@ def make_name_node(root_name, identifiers):
 
 # Returns a string of the qualified name of a node
 # This assume it has a list of identifiers as children
-def get_qualified_identifier(node):
+def get_qualified_name(node):
     s = ""
     for i in node.children:
         s += "." + i.value.value
