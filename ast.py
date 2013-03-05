@@ -335,6 +335,18 @@ def make_name_node(root_name, identifiers):
     return Node(root_name, None,
         [Node('Identifier', id) for identifier in identifiers])
 
+###############################################################################
+
+# Convenience functions
+
+# Returns a string of the qualified name of a node
+# This assume it has a list of identifiers as children
+def get_qualified_identifier(node):
+    s = ""
+    for i in node.children:
+        s += "." + i.value.value
+    return s[1:]
+
 #################################### Unused ###################################
 
 def collapse(node):
