@@ -623,6 +623,7 @@ RULES = {
         ['Super', 'Dot', 'Identifier'],
     ],
 
+    # No super method calls in Joos.
     'MethodInvocation': [
         ['Name', 'LeftParenthesis', 'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis', 'RightParenthesis'],
@@ -630,8 +631,8 @@ RULES = {
         ['Name', 'LeftParenthesis', 'ArgumentList', 'RightParenthesis'],
         ['Primary', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
             'RightParenthesis'],
-        ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
-            'RightParenthesis'],
+        # ['Super', 'Dot', 'Identifier', 'LeftParenthesis', 'ArgumentList',
+        #     'RightParenthesis'],
     ],
 
     'ArrayAccess': [
