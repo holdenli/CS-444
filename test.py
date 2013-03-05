@@ -51,7 +51,7 @@ class TestRunner:
 
         newout = OutputCapture()
         sys.stdout = newout
-        sys.stderr = newout
+        #sys.stderr = newout
 
         # Loop through test cases (files)
         for test_name in os.listdir(tests_path):

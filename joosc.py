@@ -10,6 +10,7 @@ import scanner
 import parser
 import weeder
 import ast
+from utils import class_hierarchy
 
 # Globals
 ##########################
@@ -53,6 +54,7 @@ def joosc(files, stage):
     for i in files:
         with open(i, 'r') as f:
             ast_list.append(get_ast(f.read(), i, stage))
+    class_hierarchy.class_hierarchy(ast_list, None)
 
 # INTERFACE
 ##########################
