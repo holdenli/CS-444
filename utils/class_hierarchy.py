@@ -191,10 +191,10 @@ def class_hierarchy(ast_list, pkg_index):
         decl = a[0][3]
         name = decl[1][0].value.value
 
-        #print("@#", name)
 
         # create class
         c = Class(pkg_name, name)
+        #print("@#", c.name)
         c.interface = decl.name != "ClassDeclaration"
         c.mods = ast.get_modifiers(decl.find_child("Modifiers"))
         
@@ -231,7 +231,7 @@ def class_hierarchy(ast_list, pkg_index):
             logging.error("SHOULD NOT HAPPEN: %s has already been declared." % name)
             sys.exit(42)
 
-        class_dict[name] = c
+        class_dict[c.name] = c
 
     # create hiearchy
     for c in class_dict.values():
