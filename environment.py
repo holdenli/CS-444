@@ -46,16 +46,29 @@ class Environment(Node):
        self.children = children
 
     def __repr__(self):
-        return '<Env: %s> %s' % (self.name, self.names)
+        return '<Env: %s=%s> %s' % (self.name, self.value, self.names)
 
     def __getitem__(self, key):
         return
+
+def type_name(env):
+
+    cls = list(env.select(['ClassDeclaration']))
+    iface = list(env.select(['InterfaceDeclaration']))
+
+    if cls:
+        name = cls[0].node.select_leaf_values(['ClassName', 'Identifier'])[0]
+    elif iface:
+        name = iface[0].node.select_leaf_values(['InterfaceName', 'Identifier'])[0]
+    else:
+        return None
+
+    return name
 
 def build_environments(ast_list):
     # index of packages;  package -> list of compilation units
     # index of canonincal named types;  canonical name -> type
     pkg_index = {}
-    type_index = {}
 
     for ast in ast_list:
         pkg_env = build_environment(ast)
@@ -63,18 +76,11 @@ def build_environments(ast_list):
         pkg_name = pkg_env.value
         if pkg_name not in pkg_index:
             pkg_index[pkg_name] = []
-        
-        pkg_index[pkg_name].append(pkg_env.children[0])
+    
+        if pkg_env.children:
+            pkg_index[pkg_name].append(pkg_env.children[0])
 
-        # get canonical name of the type from this compilation unit
-        type_env = pkg_env.children[0].children[2]
-        type_name = type_env.value
-        canon_name = '%s.%s' % (pkg_name, type_name)
-
-        if canon_name in type_index:
-            logging.error("No two classes or interfaces have the same canonical name=%s" % canon_name )
-            sys.exit(42)
-        type_index[canon_name] = type_env
+    return pkg_index
 
 def build_environment(abs_tree):
     """
