@@ -10,7 +10,20 @@ class Environment(Node):
         this class has a mess of different member variables..
         each environment name employes a different set of member variables, so
         use contextually.
+
+
+        self.names is a dictionary of string -> Node
+        where the string is the name of the variable in the environment's scope,
+        and node is the declaration of that variable
+
+        self.methods and self.fields are only defined for the Class environment;
+        they are a method/field name->declaration mapping.
+
+        self.value used in PackageDeclaration and ClassDeclaration, and it
+        represents the name of the package or class
+
     """
+
     def __init__(self, name=None, value=None,
         node=None, children=None, names=None):
 
@@ -37,6 +50,35 @@ class Environment(Node):
 
     def __getitem__(self, key):
         return
+
+def build_environments(ast_list):
+    # index of packages;  package -> list of compilation units
+    # index of canonincal named types;  canonical name -> type
+    pkg_index = {}
+    type_index = {}
+
+    for ast in ast_list:
+        pkg_env = build_environment(ast)
+
+        pkg_name = pkg_env.value
+        if pkg_name not in pkg_index:
+            pkg_index[pkg_name] = []
+        
+        pkg_index[pkg_name].append(pkg_env.children[0])
+
+        # get canonical name of the type from this compilation unit
+        type_env = pkg_env.children[0].children[2]
+        type_name = type_env.value
+        canon_name = '%s.%s' % (pkg_name, type_name)
+
+        if canon_name in type_index:
+            logging.error("No two classes or interfaces have the same canonical name=%s" % canon_name )
+            sys.exit(42)
+        type_index[canon_name] = type_env
+
+        pkg_env.pprint()
+
+
 
 def build_environment(abs_tree):
     """
