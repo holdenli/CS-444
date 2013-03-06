@@ -87,7 +87,7 @@ def build_environment(abs_tree):
     """
 
     pkg = list(abs_tree.select(['PackageDeclaration']))
-    if len(pkg[0].children) == 0:
+    if len(pkg) == 0 or len(pkg[0].children) == 0:
         # default package name
         pkg = Node(name='PackageDeclaration', children=[
             Node(name='Identifier', value=Token(label='Identifier',
