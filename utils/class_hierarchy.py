@@ -3,11 +3,12 @@
 import sys
 
 import ast
+import typelink
 
 from utils import logging
 
 class Field:
-    def __init__(self, node, interface=False):
+    def __init__(self, node, c):
         if node == None or node.name != "FieldDeclaration":
             self.mods = []
             self.name = ""
@@ -16,7 +17,7 @@ class Field:
             self.mods = ast.get_modifiers(node.find_child("Modifiers"))
             self.name = node.find_child("Identifier").value.value
             self.type = ast.get_type(node.find_child("Type"))
-        if interface:
+        if c.interface:
             self.mods.append("Abstract")
 
     def __repr__(self):
@@ -30,7 +31,7 @@ class Field:
 # This is kinda overloaded to represent constructors as well cause I'm a terrible person
 # When self.type == None, it is a constructor
 class Method:
-    def __init__(self, node, interface=False):
+    def __init__(self, node, c):
         if node == None or (node.name != "MethodDeclaration" and node.name != "ConstructorDeclaration"):
             self.mods = []
             self.type = None
@@ -44,7 +45,7 @@ class Method:
                 self.type = ast.get_type(node.find_child("Type"))
             self.name = node.find_child("Identifier").value.value
             self.params = ast.get_parameters(node.find_child("Parameters"))
-        if interface:
+        if c.interface:
             self.mods.append("Abstract")
 
     def __repr__(self):
@@ -66,8 +67,11 @@ class Method:
 #   - pointers to the relevant AST and ENV nodes
 class Class:
 
-    def __init__(self, name=''):
-        self.name = name
+    def __init__(self, pkg, name):
+        self.pkg = pkg
+        self.name = pkg + "." + name
+        if self.name[0] == ".":
+            self.name = self.name[1:]
         
         self.interface = False
         self.mods = []
@@ -79,6 +83,8 @@ class Class:
         self.implements = None
         
         self.node = None
+        self.env = None
+        self.type_index = None
 
     def __repr__(self):
         return "<Class: %s>" % self.name
@@ -167,7 +173,9 @@ def determine_inherit(c):
 # class_hierarchy
 # creates all Classes, Fields, and Methods
 # returns a dictionary of all available classes/interfaces
-def class_hierarchy(ast_list, env_list):
+def class_hierarchy(ast_list, pkg_index):
+    type_index = typelink.build_canonical_type_index(pkg_index)
+
     class_dict = {}
 
     # scan ASTs for classes
@@ -177,24 +185,40 @@ def class_hierarchy(ast_list, env_list):
 
         # figure out fully qualified name
         package = a[0][0]
+        pkg_name = ast.get_qualified_name(package)
+        if pkg_name == "":
+            pkg_name = "MAIN_PKG"
         decl = a[0][3]
         name = decl[1][0].value.value
-        name = ast.get_qualified_name(package) + "." + name
-        if name[0] == ".":
-            name = name[1:]
+
+        #print("@#", name)
 
         # create class
-        c = Class(name)
+        c = Class(pkg_name, name)
         c.interface = decl.name != "ClassDeclaration"
         c.mods = ast.get_modifiers(decl.find_child("Modifiers"))
         
         c.extends = decl.find_child("Superclass")
         c.implements = decl.find_child("Interfaces")
-        c.extends = ast.get_type(c.extends)
-        c.implements = [ast.get_type(x) for x in c.implements.children]
-        
-        c.node = decl
 
+        c.node = decl
+        c.env = type_index[c.name]
+        c.type_index = type_index
+
+        tn = None
+        if c.extends != None:
+            tn = c.extends.find_child("Type")
+        
+        if tn != None:
+            c.extends = typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
+        else:
+            c.extends = ""
+        #print(" # EXTENDS:   ", c.extends)
+
+        c.implements = [typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
+            for tn in c.implements.children]
+        #print(" # IMPLEMENTS:", c.implements)
+        
         #decl.pprint()
         """
         print(c)
@@ -203,16 +227,8 @@ def class_hierarchy(ast_list, env_list):
         print("Implements: ", c.implements)
         """
 
-        # TODO: 
-        # A class must not extend an interface. (JLS 8.1.3, dOvs simple constraint 1)
-        # A class must not implement a class. (JLS 8.1.4, dOvs simple constraint 2)
-        # An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3) 
-        if c.interface and False:
-            logging.error("%s extend a class but is an interface" % name)
-            sys.exit(42)
-
         if name in class_dict:
-            logging.error("%s has already been declared." % name)
+            logging.error("SHOULD NOT HAPPEN: %s has already been declared." % name)
             sys.exit(42)
 
         class_dict[name] = c
@@ -229,7 +245,7 @@ def class_hierarchy(ast_list, env_list):
                 # A class must not extend an interface. (JLS 8.1.3, dOvs simple constraint 1) 
                 if c.extends.interface:
                     logging.error("%s is an interface (for %s)."
-                        % (i, c.name))
+                        % (c.extends, c.name))
                     sys.exit(42)
                 # A class must not extend a final class. (JLS 8.1.1.2, 8.1.3, dOvs simple constraint 4)
                 if "Final" in c.extends.mods:
@@ -270,7 +286,7 @@ def class_hierarchy(ast_list, env_list):
         fields = c.node.find_child("Fields")
         if fields != None: # Interfaces have no fields
             for f in fields:
-                ff = Field(f, c.interface)
+                ff = Field(f, c)
                 if ff in c.declare:
                     logging.error("Duplicate declaration of field %s" % ff)
                     sys.exit(42)
@@ -279,7 +295,7 @@ def class_hierarchy(ast_list, env_list):
         # Methods
         methods = c.node.find_child("Methods")
         for m in methods:
-            mm = Method(m, c.interface)
+            mm = Method(m, c)
             # A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4, dOvs well-formedness constraint 2) 
             # A class or interface must not contain (declare or inherit) two methods with the same signature but different return types (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1, dOvs well-formedness constraint 3) 
             if mm in c.declare:
@@ -296,7 +312,7 @@ def class_hierarchy(ast_list, env_list):
         if constructors == None:
             constructors = []
         for con in constructors:
-            ccon = Method(con, c.interface)
+            ccon = Method(con, c)
             # A class must not declare two constructors with the same parameter types (dOvs 8.8.2, simple constraint 5) 
             if ccon in c.declare:
                 logging.error("Duplicate declaration of constructor %s" % ccon)

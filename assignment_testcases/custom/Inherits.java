@@ -1,3 +1,4 @@
+package apple;
 
 public class Inherits {
 

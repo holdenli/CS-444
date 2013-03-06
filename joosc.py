@@ -62,7 +62,7 @@ def joosc(files, stage):
     
     typelink.typelink(ast_list, pkg_index)
 
-    class_hierarchy.class_hierarchy(ast_list, None)
+    class_hierarchy.class_hierarchy(ast_list, pkg_index)
 
 
 # INTERFACE

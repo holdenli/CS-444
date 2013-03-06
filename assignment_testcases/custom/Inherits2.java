@@ -1,3 +1,4 @@
+import apple.Inherits;
 
 public class Inherits2 extends Inherits {
 
