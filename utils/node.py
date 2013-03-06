@@ -101,9 +101,23 @@ class Node:
                         continue
             else:
                 node_counter = 0
-            
-            stack = node.children + stack
+
+            try:
+                stack = node.children + stack
+            except:
+                print(stack)
+                print(node, type(node.children))
+                node.pprint()
+
             stack_counters = [node_counter]*len(node.children) + stack_counters
+
+    def select_leaf_values(self, names):
+        ret = []
+        for s in self.select(names):
+            ret.extend(i.value.value for i in s.leafs())
+
+        return ret
+
 
     def pprint(self, tabsize=0):
         print(' '*tabsize, self)
