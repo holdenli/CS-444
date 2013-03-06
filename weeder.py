@@ -185,8 +185,6 @@ def weed(parse_tree, filename):
     # An interface method cannot be static, final, or native.
     elif len(list(parse_tree.select(['InterfaceDeclaration']))) != 0:
 
-        parse_tree.pprint()
-
         interfacename = list(parse_tree.select(['InterfaceDeclaration',
             'Identifier']))[0].value.value
 
