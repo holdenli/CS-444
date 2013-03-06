@@ -13,6 +13,7 @@ import ast
 from utils import class_hierarchy
 
 from environment import build_environments
+import typelink
 
 # Globals
 ##########################
@@ -58,7 +59,9 @@ def joosc(files, stage):
             ast_list.append(get_ast(f.read(), i, stage))
     class_hierarchy.class_hierarchy(ast_list, None)
    
-    build_environments(ast_list)
+    pkg_index = build_environments(ast_list)
+    typelink.typelink(ast_list, pkg_index)
+
 
 # INTERFACE
 ##########################
