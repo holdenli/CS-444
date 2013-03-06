@@ -83,7 +83,6 @@ def build_environments(ast_list):
 
     for ast in ast_list:
         pkg_env = build_environment(ast)
-        pkg_env.pprint()
 
         pkg_name = pkg_env.value
         if pkg_name not in pkg_index:
