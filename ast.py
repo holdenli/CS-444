@@ -61,9 +61,9 @@ def flatten_imports(node):
 
         # Append to appropriate list.
         if node[1][0].name == 'SingleTypeImportDeclaration':
-            typ_imports.append(Node('ImportDeclaration', None, id_list))
+            typ_imports.append(Node('ImportDeclaration', None, id_list.children))
         else:
-            pkg_imports.append(Node('ImportDeclaration', None, id_list))
+            pkg_imports.append(Node('ImportDeclaration', None, id_list.children))
 
         node = node[0]
 
@@ -73,9 +73,9 @@ def flatten_imports(node):
 
     # Append to appropriate list.
     if node[0][0].name == 'SingleTypeImportDeclaration':
-        typ_imports.append(Node('ImportDeclaration', None, id_list))
+        typ_imports.append(Node('ImportDeclaration', None, id_list.children))
     else:
-        pkg_imports.append(Node('ImportDeclaration', None, id_list))
+        pkg_imports.append(Node('ImportDeclaration', None, id_list.children))
 
     typ_imports.reverse()
     pkg_imports.reverse()
