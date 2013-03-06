@@ -31,7 +31,7 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
         imports = set()
 
     # the local type is also in the imports!
-    imports.add('%s.%s' % (pkg_name, environment.type_name(cu_env)))
+    imports.add('%s.%s' % (pkg_name, environment.env_type_name(cu_env)))
 
     type_name = '.'.join(l.value.value for l in type_node.leafs())
 
@@ -46,7 +46,8 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     return None
 
 def find_type_nodes(cu_env):
-    for node in cu_env.node.select(['ReferenceType']):
+    n = environment.env_type_node(cu_env)
+    for node in n.select(['ReferenceType']):
         yield node
 
 def weed_single_type_imports(type_index):
@@ -83,7 +84,7 @@ def build_canonical_type_index(pkg_index):
         for cu in pkg_index[pkg_name]:
 
             # get canonical name of the type from this compilation unit
-            type_name = environment.type_name(cu)
+            type_name = environment.env_type_name(cu)
             if type_name:
                 canon_name = '%s.%s' % (pkg_name, type_name)
 

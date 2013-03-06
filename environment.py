@@ -51,7 +51,18 @@ class Environment(Node):
     def __getitem__(self, key):
         return
 
-def type_name(env):
+def env_type_node(env):
+    cls = list(env.select(['ClassDeclaration']))
+    iface = list(env.select(['InterfaceDeclaration']))
+
+    if cls:
+        return cls[0].node
+    elif iface:
+        return iface[0].node
+    else:
+        return None
+
+def env_type_name(env):
 
     cls = list(env.select(['ClassDeclaration']))
     iface = list(env.select(['InterfaceDeclaration']))
