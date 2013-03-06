@@ -30,6 +30,12 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     """
     given a compilation unit, the package it's in,
     and a type node, resolve to a canonical type name
+
+    pkg_name is a string (e.g., 'java.lang')
+    type_node is ASTNode
+    cu_env is Environment
+    type_index is a dict of canonical type names -> Environment of compilation
+    unit
     """
     # build a list of imports in this CU
     imports = list(cu_env.select(['CompilationUnit', 'TypeImport']))
@@ -48,8 +54,12 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     for i in imports:
         i_pkg = '.'.join(i.split('.')[:-1])
         canon_type = '%s.%s' % (i_pkg, type_name)
-        if canon_type in type_index:
+        if canon_type in imports:
             return canon_type
+
+    # maybe it's java.lang?
+    if 'java.lang.%s' % type_name in type_index:
+        return 'java.lang.%s' % type_name
 
     return None
 
