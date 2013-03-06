@@ -93,11 +93,12 @@ def build_class_structure(node):
 
     # Extract superclass.
     superstuff = node.find_child('SuperStuff')
-    if superstuff is None: # No extends, so extend java.lang.Object
-        decl_node.add(Node('Superclass')) # empty for now
-    #     decl_node.add(make_name_node('Superclass', ["java", "lang", "Object"]))
+    if superstuff is None:
+        decl_node.add(Node('Superclass'))
     else:
-        decl_node.add(flatten(superstuff, 'Superclass', 'Identifier'))
+        typ = Node('Type', None,
+            [flatten(superstuff, 'ReferenceType', 'Identifier')])
+        decl_node.add(Node('Superclass', None, [typ]))
 
     # Extract interface implements.
     interfaces = Node('Interfaces')
@@ -663,7 +664,9 @@ def flatten_interfaces(node):
 
     # Flatten each InterfaceType name.
     for int_type in int_types.children:
-        interfaces.add(flatten(int_type, 'InterfaceType', 'Identifier'))
+        typ = Node('Type', None,
+            [flatten(int_type, 'ReferenceType', 'Identifier')])
+        interfaces.add(typ)
 
     return interfaces
 

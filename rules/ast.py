@@ -54,15 +54,12 @@ RULES = {
     ],
 
     'Superclass': [
-        ['Identifier'], # One or more
+        [],
+        ['Type'],
     ],
 
     'Interfaces': [
-        ['InterfaceType'], # Zero or more
-    ],
-
-    'InterfaceType': [
-        ['Identifier'], # One or more
+        ['Type'], # Zero or more
     ],
 
     'Fields': [
