@@ -9,10 +9,12 @@ def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
 
     #asts[0][0].pprint()
+    """
     print(pkg_index)
     for pkg in pkg_index.values():
         for e in pkg:
             merge_on_demand_imports(e, type_index, pkg_index)
+    """
 
     for pkg_name in pkg_index:
         for cu_env in pkg_index[pkg_name]:

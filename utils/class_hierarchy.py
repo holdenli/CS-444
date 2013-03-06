@@ -190,8 +190,8 @@ def class_hierarchy(ast_list, env_list):
         
         c.extends = decl.find_child("Superclass")
         c.implements = decl.find_child("Interfaces")
-        c.extends = ast.get_qualified_name(c.extends)
-        c.implements = [ast.get_qualified_name(x) for x in c.implements.children]
+        c.extends = ast.get_type(c.extends)
+        c.implements = [ast.get_type(x) for x in c.implements.children]
         
         c.node = decl
 

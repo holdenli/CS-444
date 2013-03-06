@@ -725,6 +725,9 @@ def get_qualified_name(node):
     return s[1:]
 
 def get_type(node):
+    if node == None or len(node.children) == 0:
+        return ""
+
     if node.find_child("ArrayType") == None:
         return node.leafs()[0].value.value
     else:

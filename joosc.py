@@ -58,11 +58,11 @@ def joosc(files, stage):
         with open(i, 'r') as f:
             ast_list.append(get_ast(f.read(), i, stage))
    
+    class_hierarchy.class_hierarchy(ast_list, None)
     pkg_index = build_environments(ast_list)
     
     typelink.typelink(ast_list, pkg_index)
 
-    class_hierarchy.class_hierarchy(ast_list, None)
 
 # INTERFACE
 ##########################
