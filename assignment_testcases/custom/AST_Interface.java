@@ -2,8 +2,7 @@ import java.util.Blah;
 import java.blah.*;
 
 
-public interface AST_Interface extends a.b.c.d, Foo, bar {
-
-
+public interface AST_Interface {
+    public int AST_Interface();
 }
 

@@ -76,10 +76,6 @@ def build_environments(ast_list):
             sys.exit(42)
         type_index[canon_name] = type_env
 
-        pkg_env.pprint()
-
-
-
 def build_environment(abs_tree):
     """
         environment stack:

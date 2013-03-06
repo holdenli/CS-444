@@ -1,11 +1,19 @@
 // TEST
 
+package mypackage.mynig;
+import nigs.hey;
+import nigs.ho;
+
+import mynigs.*;
+
 public class NestedBlocks {
-    public NestedBlocks() {
-        int x = 0;
-        {
-            int y = 0;
-        }
+
+    public int meth(int a) {
+        int b;
+        {int c;}
+        {int c;}
     }
+
 }
+
 

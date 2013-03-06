@@ -27,26 +27,36 @@ class Field:
             return self.name == other.name
         return False
 
+# This is kinda overloaded to represent constructors as well cause I'm a terrible person
+# When self.type == None, it is a constructor
 class Method:
     def __init__(self, node, interface=False):
-        if node == None or node.name != "MethodDeclaration":
+        if node == None or (node.name != "MethodDeclaration" and node.name != "ConstructorDeclaration"):
             self.mods = []
             self.type = None
             self.name = ""
             self.params = []
         else:
             self.mods = ast.get_modifiers(node.find_child("Modifiers"))
-            self.type = ast.get_type(node.find_child("Type"))
+            if node.name == "ConstructorDeclaration":
+                self.type = None
+            else:
+                self.type = ast.get_type(node.find_child("Type"))
             self.name = node.find_child("Identifier").value.value
             self.params = ast.get_parameters(node.find_child("Parameters"))
         if interface:
             self.mods.append("Abstract")
 
     def __repr__(self):
-        return "<Method: %s>" % self.name
+        if (self.type == None):
+            return "<Constructor: %s>" % self.name
+        else:
+            return "<Method: %s>" % self.name
 
     def __eq__(self, other):
         if isinstance(other, Method):
+            if (self.type == None or other.type == None) and self.type != other.type:
+                return False
             return self.name == other.name and self.params == other.params
         return False
 
@@ -233,10 +243,23 @@ def class_hierarchy(ast_list, env_list):
         methods = c.node.find_child("Methods")
         for m in methods:
             mm = Method(m, c.interface)
+            # A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4, dOvs well-formedness constraint 2) 
             if mm in c.declare:
                 logging.error("Duplicate declaration of method %s" % mm)
                 sys.exit(42)
             c.declare.append(mm)
+
+        # Constructors
+        constructors = c.node.find_child("Constructors")
+        if constructors == None:
+            constructors = []
+        for con in constructors:
+            ccon = Method(con, c.interface)
+            # A class must not declare two constructors with the same parameter types (dOvs 8.8.2, simple constraint 5) 
+            if ccon in c.declare:
+                logging.error("Duplicate declaration of constructor %s" % ccon)
+                sys.exit(42)
+            c.declare.append(ccon)
 
     # fill in inherits
     # Apologies for this code, but I'm just going to loop through the dictionary
