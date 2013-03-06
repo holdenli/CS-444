@@ -3,6 +3,23 @@
 import os
 import sys
 
+stdlib_paths = [
+    "stdlib/5.0/java/lang/Byte.java",
+    "stdlib/5.0/java/lang/Character.java",
+    "stdlib/5.0/java/lang/Class.java",
+    "stdlib/5.0/java/lang/Cloneable.java",
+    "stdlib/5.0/java/lang/Integer.java",
+    "stdlib/5.0/java/lang/Number.java",
+    "stdlib/5.0/java/lang/Object.java",
+    "stdlib/5.0/java/lang/Short.java",
+    "stdlib/5.0/java/lang/String.java",
+    "stdlib/5.0/java/lang/System.java",
+    "stdlib/5.0/java/io/OutputStream.java",
+    "stdlib/5.0/java/io/PrintStream.java",
+    "stdlib/5.0/java/io/Serializable.java",
+    "stdlib/5.0/java/util/Arrays.java",
+]
+
 # OutputCapture
 # Used to suppress stdout and save it for future use
 # Warning: This is kinda dangerous because it may hide real errors
@@ -38,18 +55,6 @@ class TestRunner:
     include_stdlib = False
 
     # Paths to include if include_stdlib is true.
-    stdlib_paths = [
-        "stdlib/5.0/java/lang/Byte.java",
-        "stdlib/5.0/java/lang/Character.java",
-        "stdlib/5.0/java/lang/Class.java",
-        "stdlib/5.0/java/lang/Cloneable.java",
-        "stdlib/5.0/java/lang/Integer.java",
-        "stdlib/5.0/java/lang/Number.java",
-        "stdlib/5.0/java/lang/Object.java",
-        "stdlib/5.0/java/lang/Short.java",
-        "stdlib/5.0/java/lang/String.java",
-        "stdlib/5.0/java/lang/System.java",
-    ]
 
     def __init__(self, name, work, test):
         self._name = name
@@ -79,7 +84,7 @@ class TestRunner:
 
             additional_paths = []
             if self.include_stdlib == True:
-                additional_paths.extend(self.stdlib_paths)
+                additional_paths.extend(stdlib_paths)
 
             # Run joosc (i.e., run the test).
             ret = self._work_func(test_path, additional_paths)
