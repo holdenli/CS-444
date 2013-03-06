@@ -4,7 +4,7 @@ SOURCE=joosc.py
 all: ${TARGET}
 
 pkg:
-	zip -r pkg * -x 'assignment_testcases/*' -x '*__pycache__*'	
+	zip -r pkg * -x 'assignment_testcases/*' -x '*__pycache__*'	-x 'stdlib/*'
 
 ${TARGET}: ${SOURCE} 
 	cp ${SOURCE} ${TARGET}

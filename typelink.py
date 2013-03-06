@@ -2,11 +2,17 @@
 import sys
 
 import environment
+
 from utils import logging
 
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
-    merge_on_demand_imports(type_index)
+
+    #asts[0][0].pprint()
+    print(pkg_index)
+    for pkg in pkg_index.values():
+        for e in pkg:
+            merge_on_demand_imports(e, type_index, pkg_index)
 
     for pkg_name in pkg_index:
         for cu_env in pkg_index[pkg_name]:
@@ -59,18 +65,28 @@ def weed_single_type_imports(type_index):
 
     pass
 
-def merge_on_demand_imports(pkg_index):
+def merge_on_demand_imports(cu, type_index, pkg_index):
     """
-    given the type_index, which is 
-        icanonical type name -> compilation unit env of that type
+    given the env compulation unit, type index, and package index
 
     convert/move the import-on-demands under compulation unit node
     into single-type imports
     """
 
+    print("####")
+    cu.pprint()
+
+    imports_node = cu.find_child("PackageImports")
+    if imports_node == None:
+        return cu
+
+    print("-- on demand imports: --")
+    for n in imports_node.names.keys():
+        print(n)
+        for t in [x for x in type_index.keys() if x.startswith(n)]:
+            print("  ", t)
+
     pass
-
-
 
 def build_canonical_type_index(pkg_index):
     """
