@@ -68,13 +68,17 @@ class Class:
 
     def __init__(self, name=''):
         self.name = name
+        
         self.interface = False
+        self.mods = []
+        
         self.declare = []
         self.inherit = None
+        
         self.extends = None
         self.implements = None
+        
         self.node = None
-        self.env = None
 
     def __repr__(self):
         return "<Class: %s>" % self.name
@@ -181,12 +185,15 @@ def class_hierarchy(ast_list, env_list):
 
         # create class
         c = Class(name)
-        c.node = decl
         c.interface = decl.name != "ClassDeclaration"
+        c.mods = ast.get_modifiers(decl.find_child("Modifiers"))
+        
         c.extends = decl.find_child("Superclass")
         c.implements = decl.find_child("Interfaces")
         c.extends = ast.get_qualified_name(c.extends)
         c.implements = [ast.get_qualified_name(x) for x in c.implements.children]
+        
+        c.node = decl
 
         #decl.pprint()
         """
@@ -219,6 +226,17 @@ def class_hierarchy(ast_list, env_list):
                 sys.exit(42)
             else:
                 c.extends = class_dict[c.extends]
+                # A class must not extend an interface. (JLS 8.1.3, dOvs simple constraint 1) 
+                if c.extends.interface:
+                    logging.error("%s is an interface (for %s)."
+                        % (i, c.name))
+                    sys.exit(42)
+                # A class must not extend a final class. (JLS 8.1.1.2, 8.1.3, dOvs simple constraint 4)
+                if "Final" in c.extends.mods:
+                    logging.error("%s is final and is extended (for %s)."
+                        % (c.extends, c.name))
+                    sys.exit(42)
+                    
         else:
             c.extends = None
 
@@ -228,8 +246,21 @@ def class_hierarchy(ast_list, env_list):
                     % (i, c.name))
                 sys.exit(42)
         c.implements = [class_dict[x] for x in c.implements]
+        for i in c.implements:
+            # A class must not implement a class. (JLS 8.1.4, dOvs simple constraint 2) 
+            # An interface must not extend a class. (JLS 9.1.2) 
+            if i.interface != True:
+                logging.error("%s is not an interface (for %s)."
+                    % (i, c.name))
+                sys.exit(42)
+            # An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3) 
+            if i in [x for x in c.implements if x != i]:
+                logging.error("%s is an interface that is repeated (for %s)."
+                    % (i, c.name))
+                sys.exit(42)
 
     # check for cycles
+    # The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2, dOvs well-formedness constraint 1) 
     for c in class_dict.values():
         cycle_detection(c, [])
 
@@ -250,7 +281,12 @@ def class_hierarchy(ast_list, env_list):
         for m in methods:
             mm = Method(m, c.interface)
             # A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4, dOvs well-formedness constraint 2) 
+            # A class or interface must not contain (declare or inherit) two methods with the same signature but different return types (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1, dOvs well-formedness constraint 3) 
             if mm in c.declare:
+                logging.error("Duplicate declaration of method %s" % mm)
+                sys.exit(42)
+            # A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1, well-formedness constraint 4)
+            if c.interface != True and "Abstract" in mm.mods and "Abstract" not in c.mods:
                 logging.error("Duplicate declaration of method %s" % mm)
                 sys.exit(42)
             c.declare.append(mm)
