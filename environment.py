@@ -251,6 +251,7 @@ def build_block_env(tree, carry):
         sub-environments are recursively generated
     """
     envs = []
+
     blocks = list(tree.select(['Block'], inclusive=False))
     for block in blocks:
 
@@ -260,36 +261,35 @@ def build_block_env(tree, carry):
 
         new_carry = set(carry)
 
-        for var in build_variables(block):
-            name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
-            name = name[0].value.value
+        for e in block_or_variable_iter(block):
 
-            # variables same name in an overlapping scope?
-            if name in carry:
-                logging.error("No two local variables=%s with overlapping scope have the same name"
-                    % name)
-                sys.exit(42)
+            if e == Node('Block'):
+                # look for subenvs in this environment:
+                env.children.extend(build_block_env(block, new_carry))
+            else:
+                var = e
+                name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
+                name = name[0].value.value
 
-            env.names[name] = var
-            new_carry.add(name)
+                # variables same name in an overlapping scope?
+                if name in carry:
+                    logging.error("No two local variables=%s with overlapping scope have the same name"
+                        % name)
+                    sys.exit(42)
+
+                env.names[name] = var
+                new_carry.add(name)
         
-        # look for subenvs in this environment:
-        env.children.extend(build_block_env(block, new_carry))
         envs.append(env)
 
     return envs
 
-def build_variables(block_tree):
+def block_or_variable_iter(block_tree):
     # we traverse through block_tree looking for LocalVariableDeclaration
     # we don't go past another Block, though
     
-    res = []
-
     for c in block_tree.children:
-        if c == Node('LocalVariableDeclaration'):
-            res.append(c)
-        elif c != Node('Block'):
-            res.extend(build_variables(c))
-
-    return res
-
+        if c == Node('LocalVariableDeclaration') or c == Node('Block'):
+            yield c
+        else:
+            block_or_variable_iter(c)
