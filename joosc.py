@@ -82,6 +82,9 @@ def parse_options(args=sys.argv):
         default='end', choices=['scanner', 'parser', 'weeder', 'ast', 'end'],
         help="Stage of compiler to run \"up to\".")
 
+    parser.add_option('-i', '--include_stdlib', action='store_true',
+        dest='include_stdlib')
+
     return parser.parse_args()
 
 def main(argv=sys.argv):
@@ -91,12 +94,28 @@ def main(argv=sys.argv):
     
     if opts.test:
         logging.info("TESTING %s" % (opts.test))
-        test.test_joosc(opts.test, opts.loglevel == 'WARNING')
+        test.test_joosc(opts.test, opts.loglevel == 'WARNING',
+            opts.include_stdlib)
         return 0
  
     if len(args) < 1:
         logging.info("Nothing to compile.")
         return 0
+
+    paths = [
+        "stdlib/5.0/java/lang/Byte.java",
+        "stdlib/5.0/java/lang/Character.java",
+        "stdlib/5.0/java/lang/Class.java",
+        "stdlib/5.0/java/lang/Cloneable.java",
+        "stdlib/5.0/java/lang/Integer.java",
+        "stdlib/5.0/java/lang/Number.java",
+        "stdlib/5.0/java/lang/Object.java",
+        "stdlib/5.0/java/lang/Short.java",
+        "stdlib/5.0/java/lang/String.java",
+        "stdlib/5.0/java/lang/System.java",
+    ]
+    if opts.include_stdlib is True:
+        args.extend(paths)
 
     joosc(args, opts.stage)
 
