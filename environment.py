@@ -83,6 +83,7 @@ def build_environments(ast_list):
 
     for ast in ast_list:
         pkg_env = build_environment(ast)
+        pkg_env.pprint()
 
         pkg_name = pkg_env.value
         if pkg_name not in pkg_index:
@@ -252,44 +253,54 @@ def build_block_env(tree, carry):
     """
     envs = []
 
-    blocks = list(tree.select(['Block'], inclusive=False))
-    for block in blocks:
-
+    for block in find_nodes(tree, [Node('Block'), Node('ForStatement')]):
         # get all the variables in this environment
         env = Environment(name='Block')
         env.node = block
-
         new_carry = set(carry)
 
-        for e in block_or_variable_iter(block):
+        if block == Node('ForStatement'):
+            
+            # block[0] is ForInit
+            # block[0][0] is LocalVariableDeclaration
+            # block[0][0][1] is Identifier for LocalVariableDecl
+            # block[3] is ForBody
+            if len(block[0].children) != 0:
+                varname = block[0][0][1].value.value
+                env.names[varname] = block[0][0]
+                new_carry.add(varname)
+            env.children.extend(build_block_env(block[3], new_carry))
+        else:
+            for e in find_nodes(block, [Node('LocalVariableDeclaration'),
+                Node('Block'), Node('ForStatement')]):
 
-            if e == Node('Block'):
-                # look for subenvs in this environment:
-                env.children.extend(build_block_env(block, new_carry))
-            else:
-                var = e
-                name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
-                name = name[0].value.value
+                if e == Node('Block') or e == Node('ForStatement'):
+                    # look for subenvs in this environment:
+                    env.children.extend(build_block_env(block, new_carry))
+                else:
+                    var = e
+                    name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
+                    name = name[0].value.value
 
-                # variables same name in an overlapping scope?
-                if name in carry:
-                    logging.error("No two local variables=%s with overlapping scope have the same name"
-                        % name)
-                    sys.exit(42)
+                    # variables same name in an overlapping scope?
+                    if name in carry:
+                        logging.error("No two local variables=%s with overlapping scope have the same name"
+                            % name)
+                        sys.exit(42)
 
-                env.names[name] = var
-                new_carry.add(name)
-        
+                    env.names[name] = var
+                    new_carry.add(name)
+            
         envs.append(env)
 
     return envs
 
-def block_or_variable_iter(block_tree):
+def find_nodes(block_tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration
     # we don't go past another Block, though
     
     for c in block_tree.children:
-        if c == Node('LocalVariableDeclaration') or c == Node('Block'):
+        if c in white_list:
             yield c
         else:
-            block_or_variable_iter(c)
+            find_nodes(c, white_list)
