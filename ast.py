@@ -161,7 +161,7 @@ def build_constructors(node):
         cons.add(cons_decl[1][0][0]) # Name
 
         # Extract parameters.
-        if cons_decl[1][2] == 'FormalParameterList':
+        if cons_decl[1][2].name == 'FormalParameterList':
             cons.add(build_parameters(cons_decl[1][2]))
         else:
             cons.add(Node('Parameters'))
