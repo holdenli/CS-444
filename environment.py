@@ -166,8 +166,7 @@ def build_class_env(cls_node):
 
             # get the parameters
             params = {}
-            for p in method_node.select(['MethodDeclaration', 'Parameters',
-                'Parameter']):
+            for p in method_node.select(['Parameters', 'Parameter']):
                 param_name = p[1].value.value
                 if param_name in params:
                     logging.error('Two params=%s have cannot have the same name'
