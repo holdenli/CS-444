@@ -168,6 +168,9 @@ def class_hierarchy(ast_list, env_list):
 
     # scan ASTs for classes
     for a in ast_list:
+        if len(a.children) == 0:
+            continue
+
         # figure out fully qualified name
         package = a[0][0]
         decl = a[0][3]
@@ -193,7 +196,10 @@ def class_hierarchy(ast_list, env_list):
         print("Implements: ", c.implements)
         """
 
-        # TODO: check constraints on type info involving extends and implements
+        # TODO: 
+        # A class must not extend an interface. (JLS 8.1.3, dOvs simple constraint 1)
+        # A class must not implement a class. (JLS 8.1.4, dOvs simple constraint 2)
+        # An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3) 
         if c.interface and False:
             logging.error("%s extend a class but is an interface" % name)
             sys.exit(42)
@@ -277,4 +283,3 @@ def class_hierarchy(ast_list, env_list):
             else:
                 c.inherit = determine_inherit(c)
 
-# fill in replaces
