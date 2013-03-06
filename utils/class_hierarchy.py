@@ -6,14 +6,44 @@ import ast
 
 from utils import logging
 
+class Field:
+    def __init__(self, node):
+        if node == None or node.name != "FieldDeclaration":
+            self.mods = []
+            self.name = ""
+            self.type = None
+        else:
+            self.mods = ast.get_modifiers(node.find_child("Modifiers"))
+            self.name = node.find_child("Identifier").value.value
+            self.type = ast.get_type(node.find_child("Type"))
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+class Method:
+    def __init__(self, node):
+        if node == None or node.name != "MethodDeclaration":
+            self.mods = []
+            self.type = None
+            self.name = ""
+            self.params = []
+        else:
+            self.mods = ast.get_modifiers(node.find_child("Modifiers"))
+            self.type = ast.get_type(node.find_child("Type"))
+            self.name = node.find_child("Identifier").value.value
+            self.params = ast.get_parameters(node.find_child("Parameters"))
+
+    def __eq__(self, other):
+        return self.name == other.name and self.params == other.params
+
 class Class:
 
     def __init__(self, name=''):
         self.name = name
         self.interface = False
-        self.declare = {}
-        self.inherit = {}
-        self.replace = {}
+        self.declare = []
+        self.inherit = []
+        self.replace = []
         self.extends = None
         self.implements = None
         self.node = None
@@ -44,8 +74,8 @@ def class_hierarchy(ast_list, env_list):
         c.extends = ast.get_qualified_name(c.extends)
         c.implements = [ast.get_qualified_name(x) for x in c.implements.children]
 
-        #decl.pprint()
         """
+        #decl.pprint()
         print(c)
         print(c.interface)
         print("Extends:    ", c.extends)
@@ -72,6 +102,8 @@ def class_hierarchy(ast_list, env_list):
                 sys.exit(42)
             else:
                 c.extends = class_dict[c.extends]
+        else:
+            c.extends = None
 
         for i in c.implements:
             if i not in class_dict:
@@ -82,9 +114,36 @@ def class_hierarchy(ast_list, env_list):
 
     # check for cycles
     for c in class_dict.values():
-        pass
+        hierarchy = [c]
+        cc = c.extends
+        while cc != None:
+            if cc in hierarchy:
+                logging.error("Cycle detected in super class hierarchy for %s"
+                    % c.name)
+                sys.exit(42)
+            hierarchy.append(cc)
+            cc = cc.extends
 
-# fill in declares
+    # create fields and methods and fill in declares
+    for c in class_dict.values():
+        # Fields
+        fields = c.node.find_child("Fields")
+        if fields != None: # Interfaces have no fields
+            for f in fields:
+                ff = Field(f)
+                if ff in c.declare:
+                    logging.error("Duplicate declaration of field %s" % ff)
+                    sys.exit(42)
+                c.declare.append(ff)
+
+        # Methods
+        methods = c.node.find_child("Methods")
+        for m in methods:
+            mm = Method(m)
+            if mm in c.declare:
+                logging.error("Duplicate declaration of method %s" % mm)
+                sys.exit(42)
+            c.declare.append(mm)
 
 # fill in inherits
 
