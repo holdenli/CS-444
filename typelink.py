@@ -8,13 +8,9 @@ from utils import logging
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
 
-    #asts[0][0].pprint()
-    """
-    print(pkg_index)
     for pkg in pkg_index.values():
         for e in pkg:
             merge_on_demand_imports(e, type_index, pkg_index)
-    """
 
     for pkg_name in pkg_index:
         for cu_env in pkg_index[pkg_name]:
@@ -85,20 +81,13 @@ def merge_on_demand_imports(cu, type_index, pkg_index):
     into single-type imports
     """
 
-    print("####")
-    cu.pprint()
+    pkg_imports = cu.find_child("PackageImports")
+    if pkg_imports == None:
+        return
 
-    imports_node = cu.find_child("PackageImports")
-    if imports_node == None:
-        return cu
-
-    print("-- on demand imports: --")
-    for n in imports_node.names.keys():
-        print(n)
+    for n in pkg_imports.names.keys():
         for t in [x for x in type_index.keys() if x.startswith(n)]:
-            print("  ", t)
-
-    pass
+            cu.find_child("TypeImport").names[t] = pkg_imports.names[n]
 
 def build_canonical_type_index(pkg_index):
     """

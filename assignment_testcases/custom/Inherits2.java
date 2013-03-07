@@ -1,4 +1,4 @@
-import apple.Inherits;
+import apple.*;
 
 public class Inherits2 extends Inherits {
 

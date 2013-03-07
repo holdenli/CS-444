@@ -89,6 +89,26 @@ class Class:
     def __repr__(self):
         return "<Class: %s>" % self.name
 
+    def get_type(self, type_node):
+        # preliminary checks on type_node
+        if type_node == None or type_node.name != "Type":
+            logging.error("FATAL ERROR: resolve_type")
+            exit(1)
+
+        # check for array
+        isArray = type_node.find_child("ArrayType") != None
+        if isArray:
+            type_node = type_node.find_child("ArrayType")
+        
+        # not a reference type so return primitive or void
+        if type_node.find_child("ReferenceType") == None:
+            if isArray:
+                return type_node.leafs()[0].value.value + "[]"
+            else:
+                return type_node.leafs()[0].value.value
+        
+        return "HELLO"
+
 ##########################
 
 # helper methods
