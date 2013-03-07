@@ -151,8 +151,12 @@ def replace(m1, list_of_m):
 
     for m2 in list_of_m:
         # A nonstatic method must not replace a static method (JLS 8.4.6.1, dOvs well-formedness constraint 5) 
-        if "Static" not in m1.mods and "Static" in m2.mods:
+        if ("Static" not in m1.mods and "Static" in m2.mods):
             logging.error("a nonstatic method (%s) replaced a static method (%s)" % (m1, m2))
+            sys.exit(42)
+
+        if ("Static" in m1.mods and "Static" not in m2.mods):
+            logging.error("a static method (%s) replaced a nonstatic method (%s)" % (m1, m2))
             sys.exit(42)
 
         # A method must not replace a method with a different return type. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1, dOvs well-formedness constraint 6) 
@@ -186,12 +190,13 @@ def determine_inherit(c):
     for x in super_contain:
         # replace in declare: do not add to inherit because its in declare
         if x in c.declare:
-            replace(x, [y for y in c.declare if y == x])
+            replace([z for z in c.declare if z == x][0],
+                [y for y in super_contain if y == x])
             continue
 
         # non-abstract inherit
         if x not in c.declare and "Abstract" not in x.mods:
-            replace(x, [y for y in super_contain if y == x and "Abstract" in x.mods])
+            replace(x, [y for y in super_contain if y == x and "Abstract" in y.mods])
             inherit.append(x)
         # all abstract inherit
         elif x not in c.declare and False not in ["Abstract" in y.mods for y in super_contain if y == x]:
@@ -244,7 +249,10 @@ def class_hierarchy(ast_list, pkg_index):
         if tn != None:
             c.extends = typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
         else:
-            c.extends = ""
+            if c.interface == False and c.name != "java.lang.Object":
+                c.extends = "java.lang.Object"
+            else:
+                c.extends = ""
         #print(" # EXTENDS:   ", c.extends)
 
         c.implements = [typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
@@ -352,10 +360,6 @@ def class_hierarchy(ast_list, pkg_index):
             if mm in c.declare:
                 logging.error("Duplicate declaration of method %s" % mm)
                 sys.exit(42)
-            # A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1, well-formedness constraint 4)
-            if c.interface != True and "Abstract" in mm.mods and "Abstract" not in c.mods:
-                logging.error("Duplicate declaration of method %s" % mm)
-                sys.exit(42)
             c.declare.append(mm)
 
         # Constructors
@@ -385,4 +389,11 @@ def class_hierarchy(ast_list, pkg_index):
                 continue
             else:
                 c.inherit = determine_inherit(c)
+
+    # final checks
+    for c in class_dict.values():
+        # A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1, well-formedness constraint 4)
+        if c.interface != True and "Abstract" not in c.mods and True in [True for x in contain(c) if "Abstract" in x.mods]:
+            logging.error("%s is not abstract but contains an abstract method" % c)
+            sys.exit(42)
 
