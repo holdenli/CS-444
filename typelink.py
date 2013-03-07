@@ -11,7 +11,7 @@ def typelink(asts, pkg_index):
 
     # prefix checks
     prefixes = list(type_index.keys()) + list(pkg_index.keys())
-    for t in type_index.keys():
+    for t in type_index:
         for x in prefixes:
             if len(x) == len(t):
                 continue
@@ -130,13 +130,18 @@ def weed_single_type_imports(type_index, pkg_index):
     declared in the same file.
     - No two single-type-import declarations clash with each other.
     """
-
     for type_name in type_index:
         cu = type_index[type_name]
         pkg_imports = cu.find_child("PackageImports")
         if pkg_imports != None:
             for pkg_imp in pkg_imports.names:
-                if pkg_imp not in pkg_index:
+
+                found = False
+                for valid_pkg in pkg_index:
+                    if valid_pkg == pkg_imp or valid_pkg.startswith(pkg_imp+'.'):
+                        found = True
+
+                if found == False:
                     logging.error("Package import %s doesnt exist" % pkg_imp)
                     sys.exit(42)
 
@@ -172,6 +177,9 @@ def build_canonical_type_index(pkg_index):
             type_name = environment.env_type_name(cu)
             if type_name:
                 canon_name = '%s.%s' % (pkg_name, type_name)
+
+                if pkg_name == type_name or type_name
+
 
                 if canon_name in type_index:
                     logging.error("No two classes or interfaces have the same canonical name=%s" % canon_name )
