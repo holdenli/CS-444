@@ -9,6 +9,17 @@ from utils.node import Node
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
 
+    # prefix checks
+    prefixes = list(type_index.keys()) + list(pkg_index.keys())
+    for t in type_index.keys():
+        for x in prefixes:
+            if len(x) == len(t):
+                continue
+            elif x.startswith(t):
+                if (x[len(t)] == "."):
+                    logging.error('"%s" is a prefix of "%s"' % (t, x))
+                    sys.exit(42)
+
     weed_single_type_imports(type_index, pkg_index)
 
     for pkg in pkg_index.values():
@@ -39,16 +50,6 @@ def typelink(asts, pkg_index):
                     logging.error('Cant type link "%s"' % type_name)
                     sys.exit(42)
 
-    # prefix checks
-    prefixes = list(type_index.keys()) + list(pkg_index.keys())
-    for t in type_index.keys():
-        for x in prefixes:
-            if len(x) == len(t):
-                continue
-            elif x.startswith(t):
-                if (x[len(t)] == "."):
-                    logging.error('"%s" is a prefix of "%s"' % (t, x))
-                    sys.exit(42)
 
 def resolve_type(type_index, cu_env, pkg_name, type_node):
     """
