@@ -60,6 +60,7 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     # the local type is also in the imports!
     imports.add('%s.%s' % (pkg_name, environment.env_type_name(cu_env)))
 
+    candidates = set()
     # now we resolve type_name to something canonical.
     # is it one of the imports?
     type_name = '.'.join(l.value.value for l in type_node.leafs())
@@ -67,17 +68,23 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
         i_pkg = '.'.join(i.split('.')[:-1])
         canon_type = '%s.%s' % (i_pkg, type_name)
         if canon_type in imports:
-            return canon_type
+            candidates.add(canon_type)
 
     # maybe it's java.lang?
     if 'java.lang.%s' % type_name in type_index:
-        return 'java.lang.%s' % type_name
+        candidates.add('java.lang.%s' % type_name)
     
     # maybe it's fully qualified?
     if type_name in type_index:
-        return type_name
+        candidates.add(type_name)
 
-    return None
+    if len(candidates) == 1:
+        return candidates.pop()
+    elif len(candidates) == 0:
+        return None
+    else:
+        logging.error('Could not resolve type %s; candidates: %s' % (type_name,
+            candidates))
 
 def find_type_nodes(cu_env):
     n = environment.env_type_node(cu_env)
@@ -93,15 +100,15 @@ def weed_single_type_imports(type_index):
 
     for canon_type in type_index:
         cu = type_index[canon_type]
-        type_name = environment.env_type_name(cu)   
+        type_name = environment.env_type_name(cu)
 
         ti = list(cu.select(['TypeImport']))[0]
+        for ti_name in ti.names:
+            if ti_name.endswith('.'+type_name) and \
+                ti_name != canon_type:
 
-        if sum([k.endswith('.'+type_name) for k in ti.names]) > 0:
-            logging.error("No single-type-import declaration clashes with the class or interface declared in the same file; type name=%s" %
-            type_name)
-
-            sys.exit(42)
+                logging.error("No single-type-import declaration clashes with the class or interface declared in the same file; type name=%s" % type_name)
+                sys.exit(42)
 
         if len(set(name.split('.')[-1] for name in ti.names)) != \
             len(ti.names):
