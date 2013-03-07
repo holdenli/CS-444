@@ -251,45 +251,57 @@ def build_block_env(tree, carry):
         sub-environments are recursively generated
     """
     envs = []
-    blocks = list(tree.select(['Block'], inclusive=False))
-    for block in blocks:
 
+    for block in find_nodes(tree, [Node('Block'), Node('ForStatement')]):
         # get all the variables in this environment
         env = Environment(name='Block')
         env.node = block
-
         new_carry = set(carry)
 
-        for var in build_variables(block):
-            name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
-            name = name[0].value.value
+        if block == Node('ForStatement'):
+            
+            # block[0] is ForInit
+            # block[0][0] is LocalVariableDeclaration
+            # block[0][0][1] is Identifier for LocalVariableDecl
+            # block[3] is ForBody
+            if len(block[0].children) != 0:
+                varname = block[0][0][1].value.value
+                env.names[varname] = block[0][0]
+                new_carry.add(varname)
+            env.children.extend(build_block_env(block[3], new_carry))
+        else:
+            for e in find_nodes(block, [Node('LocalVariableDeclaration'),
+                Node('Block'), Node('ForStatement')]):
 
-            # variables same name in an overlapping scope?
-            if name in carry:
-                logging.error("No two local variables=%s with overlapping scope have the same name"
-                    % name)
-                sys.exit(42)
+                if e == Node('Block') or e == Node('ForStatement'):
+                    # look for subenvs in this environment:
+                    env.children.extend(build_block_env(block, new_carry))
+                else:
+                    var = e
+                    name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
+                    name = name[0].value.value
 
-            env.names[name] = var
-            new_carry.add(name)
-        
-        # look for subenvs in this environment:
-        env.children.extend(build_block_env(block, new_carry))
+                    # variables same name in an overlapping scope?
+                    if name in carry:
+                        logging.error("No two local variables=%s with overlapping scope have the same name"
+                            % name)
+                        sys.exit(42)
+
+                    env.names[name] = var
+                    new_carry.add(name)
+            
         envs.append(env)
 
     return envs
 
-def build_variables(block_tree):
+def find_nodes(block_tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration
     # we don't go past another Block, though
-    
-    res = []
-
+    ret = []
     for c in block_tree.children:
-        if c == Node('LocalVariableDeclaration'):
-            res.append(c)
-        elif c != Node('Block'):
-            res.extend(build_variables(c))
+        if c in white_list:
+            ret.append(c)
+        else:
+            ret.extend(find_nodes(c, white_list))
 
-    return res
-
+    return ret
