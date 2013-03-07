@@ -314,6 +314,25 @@ def class_hierarchy(ast_list, pkg_index):
 
     # create fields and methods and fill in declares
     for c in class_dict.values():
+        # Implicit declare for interface without superinterface
+        if c.interface and len(c.implements) == 0:
+            # Add publics of java.lang.Object
+            for (n, t) in [
+                    ("equals", "boolean"),
+                    ("toString", "java.lang.String"),
+                    ("hashCode", "int"),
+                    ("getClass", "java.lang.Class")]:
+                m = Method(None, c)
+                m.mods = ["Public"]
+                m.type = t
+                m.name = n
+                m.params = []
+                if (n == "equals"):
+                    m.params.append("java.lang.Object")
+                elif (n == "getClass"):
+                    m.mods.append("Final")
+                c.declare.append(m)
+
         # Fields
         fields = c.node.find_child("Fields")
         if fields != None: # Interfaces have no fields
