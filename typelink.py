@@ -8,19 +8,35 @@ from utils import logging
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
 
+    weed_single_type_imports(type_index)
+
     for pkg in pkg_index.values():
         for e in pkg:
             merge_on_demand_imports(e, type_index, pkg_index)
 
     for pkg_name in pkg_index:
         for cu_env in pkg_index[pkg_name]:
+
+            # first, we resolve the type imports
+            imports = list(cu_env.select(['CompilationUnit', 'TypeImport']))
+            if imports:
+                imports = set(imports[0].names)
+            else:
+                imports = set()
+
+            for i in imports:
+                if i not in type_index:
+                    logging.error("Type import '%s' could not be resolved" % i)
+                    sys.exit(42)
+
+            # then, we find type references and resolve those
             for type_node in find_type_nodes(cu_env):
                 r = resolve_type(type_index, cu_env, pkg_name, type_node)
                 if r == None:
-                    logging.error('Cant type link')
+                    type_name = type_node.select_leaf_values(['Identifier'])[0]
+                    logging.error('Cant type link "%s"' % type_name)
                     sys.exit(42)
 
-    weed_single_type_imports(type_index)
 
 def resolve_type(type_index, cu_env, pkg_name, type_node):
     """
@@ -33,6 +49,7 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     type_index is a dict of canonical type names -> Environment of compilation
     unit
     """
+
     # build a list of imports in this CU
     imports = list(cu_env.select(['CompilationUnit', 'TypeImport']))
     if imports:
@@ -55,7 +72,7 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     # maybe it's java.lang?
     if 'java.lang.%s' % type_name in type_index:
         return 'java.lang.%s' % type_name
-
+    
     # maybe it's fully qualified?
     if type_name in type_index:
         return type_name
@@ -74,7 +91,22 @@ def weed_single_type_imports(type_index):
     - No two single-type-import declarations clash with each other.
     """
 
-    pass
+    for canon_type in type_index:
+        cu = type_index[canon_type]
+        type_name = environment.env_type_name(cu)   
+
+        ti = list(cu.select(['TypeImport']))[0]
+
+        if sum([k.endswith('.'+type_name) for k in ti.names]) > 0:
+            logging.error("No single-type-import declaration clashes with the class or interface declared in the same file; type name=%s" %
+            type_name)
+
+            sys.exit(42)
+
+        if len(set(name.split('.')[-1] for name in ti.names)) != \
+            len(ti.names):
+            logging.error("Two single-type-import declarations must not clash with each other")
+            sys.exit(42)
 
 def merge_on_demand_imports(cu, type_index, pkg_index):
     """
@@ -88,9 +120,10 @@ def merge_on_demand_imports(cu, type_index, pkg_index):
     if pkg_imports == None:
         return
 
-    for n in pkg_imports.names.keys():
-        for t in [x for x in type_index.keys() if x.startswith(n)]:
-            cu.find_child("TypeImport").names[t] = pkg_imports.names[n]
+    for pkg_name in pkg_imports.names:
+        for type_name in [t for t in type_index if t.startswith(pkg_name+'.')]:
+            if '.' not in type_name[len(pkg_name)+1:]:
+                cu.find_child("TypeImport").names[type_name] = pkg_imports.names[pkg_name]
 
 def build_canonical_type_index(pkg_index):
     """

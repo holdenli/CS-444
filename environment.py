@@ -114,7 +114,7 @@ def build_environment(abs_tree):
         pkg_name = 'MAIN_PKG'
     else:
         pkg = pkg[0]
-        pkg_name = '.'.join(pkg[0].select_leaf_values(['Identifier']))
+        pkg_name = '.'.join(pkg.select_leaf_values(['Identifier']))
 
     # add the package to the environment
     pkg_env = Environment(name='PackageDeclaration', node=pkg,
@@ -130,6 +130,7 @@ def build_environment(abs_tree):
     ti = {}
     for i in abs_tree.select(['TypeImports', 'ImportDeclaration']):
         i_name = '.'.join(n.value.value for n in i.leafs())
+
         ti[i_name] = i
 
     ti_node = list(abs_tree.select(['TypeImports']))[0]
@@ -142,7 +143,7 @@ def build_environment(abs_tree):
     for i in abs_tree.select(['PackageImports', 'ImportDeclaration']):
         p_name = '.'.join(n.value.value for n in i.leafs())
         pi[p_name] = i
-
+   
     # also add the package name itself into the package imports
     pi[pkg_name] = pkg
 
@@ -274,9 +275,15 @@ def build_block_env(tree, carry):
                 'LocalVariableDeclaration']))
 
             if len(for_vars) != 0:
-                varname = for_vars[0][1].value.value
-                env.names[varname] = for_vars[0]
-                new_carry.add(varname)
+                name = for_vars[0][1].value.value
+                if name in new_carry:
+                    logging.error("No two local variables=%s with overlapping scope have the same name"
+                        % name)
+                    sys.exit(42)
+
+                env.names[name] = for_vars[0]
+                new_carry.add(name)
+
             env.children.extend(build_block_env(block[3], new_carry))
         else:
             for e in find_nodes(block, [Node('LocalVariableDeclaration'),
@@ -291,7 +298,7 @@ def build_block_env(tree, carry):
                     name = name[0].value.value
 
                     # variables same name in an overlapping scope?
-                    if name in carry:
+                    if name in new_carry:
                         logging.error("No two local variables=%s with overlapping scope have the same name"
                             % name)
                         sys.exit(42)
