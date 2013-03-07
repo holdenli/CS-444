@@ -186,7 +186,8 @@ def determine_inherit(c):
     for x in super_contain:
         # replace in declare: do not add to inherit because its in declare
         if x in c.declare:
-            replace(x, [y for y in c.declare if y == x])
+            replace([z for z in c.declare if z == x][0],
+                [y for y in super_contain if y == x])
             continue
 
         # non-abstract inherit
