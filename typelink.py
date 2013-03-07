@@ -9,7 +9,7 @@ from utils.node import Node
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
 
-    weed_single_type_imports(type_index)
+    weed_single_type_imports(type_index, pkg_index)
 
     for pkg in pkg_index.values():
         for e in pkg:
@@ -123,12 +123,21 @@ def find_type_nodes(cu_env):
     for node in n.select(['ReferenceType']):
         yield node
 
-def weed_single_type_imports(type_index):
+def weed_single_type_imports(type_index, pkg_index):
     """
     - No single-type-import declaration clashes with the class or interface
     declared in the same file.
     - No two single-type-import declarations clash with each other.
     """
+
+    for type_name in type_index:
+        cu = type_index[type_name]
+        pkg_imports = cu.find_child("PackageImports")
+        if pkg_imports != None:
+            for pkg_imp in pkg_imports.names:
+                if pkg_imp not in pkg_index:
+                    logging.error("Package import %s doesnt exist" % pkg_imp)
+                    sys.exit(42)
 
     for canon_type in type_index:
         cu = type_index[canon_type]
