@@ -104,6 +104,7 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     candidates = set()
     on_demands = list(cu_env.select(['CompilationUnit', 'PackageImports']))[0].names
     on_demands['java.lang'] = Node('JAVA.LANG.PACKAGE')
+
     if len(on_demands) != 0:
         for i in on_demands:
             canon_type = '%s.%s' % (i, type_name)
@@ -177,9 +178,6 @@ def build_canonical_type_index(pkg_index):
             type_name = environment.env_type_name(cu)
             if type_name:
                 canon_name = '%s.%s' % (pkg_name, type_name)
-
-                if pkg_name == type_name or type_name
-
 
                 if canon_name in type_index:
                     logging.error("No two classes or interfaces have the same canonical name=%s" % canon_name )
