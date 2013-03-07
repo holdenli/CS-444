@@ -95,6 +95,9 @@ class TestRunner:
                 if self.verbose == True:
                     newout.stdwrite(sys.stdout.capture)
                     newout.stdwrite("==================================================\n")
+            else:
+                newout.stdwrite('.')
+                newout.stdout.flush()
             newout.capture = ""
 
         # Done tests
