@@ -724,15 +724,6 @@ def get_qualified_name(node):
         s += "." + i.value.value
     return s[1:]
 
-def get_type(node):
-    if node == None or len(node.children) == 0:
-        return ""
-
-    if node.find_child("ArrayType") == None:
-        return node.leafs()[0].value.value
-    else:
-        return node.leafs()[0].value.value + "[]"
-
 def get_modifiers(node):
     if node == None:
         return []
@@ -740,12 +731,4 @@ def get_modifiers(node):
     for i in node.children:
         m.append(i.name)
     return m
-
-def get_parameters(node):
-    if node == None:
-        return []
-    p = []
-    for i in node.children:
-        p.append(get_type(i.find_child("Type")))
-    return p
 

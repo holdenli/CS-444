@@ -16,7 +16,7 @@ class Field:
         else:
             self.mods = ast.get_modifiers(node.find_child("Modifiers"))
             self.name = node.find_child("Identifier").value.value
-            self.type = ast.get_type(node.find_child("Type"))
+            self.type = c.get_type(node.find_child("Type"))
         if c.interface:
             self.mods.append("Abstract")
 
@@ -42,9 +42,9 @@ class Method:
             if node.name == "ConstructorDeclaration":
                 self.type = None
             else:
-                self.type = ast.get_type(node.find_child("Type"))
+                self.type = c.get_type(node.find_child("Type"))
             self.name = node.find_child("Identifier").value.value
-            self.params = ast.get_parameters(node.find_child("Parameters"))
+            self.params = c.get_parameters(node.find_child("Parameters"))
         if c.interface:
             self.mods.append("Abstract")
 
@@ -106,8 +106,20 @@ class Class:
                 return type_node.leafs()[0].value.value + "[]"
             else:
                 return type_node.leafs()[0].value.value
-        
-        return "HELLO"
+        # reference type, resolve it
+        else:
+            t = typelink.resolve_type(self.type_index, self.env, self.pkg, type_node)
+            if t != None and isArray:
+                t = t + "[]"
+            return t
+
+    def get_parameters(self, node):
+        if node == None:
+            return []
+        p = []
+        for i in node.children:
+            p.append(self.get_type(i.find_child("Type")))
+        return p
 
 ##########################
 
