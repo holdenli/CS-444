@@ -264,9 +264,12 @@ def build_block_env(tree, carry):
             # block[0][0] is LocalVariableDeclaration
             # block[0][0][1] is Identifier for LocalVariableDecl
             # block[3] is ForBody
-            if len(block[0].children) != 0:
-                varname = block[0][0][1].value.value
-                env.names[varname] = block[0][0]
+            for_vars = list(block.select(['ForStatement', 'ForInit',
+                'LocalVariableDeclaration']))
+
+            if len(for_vars) != 0:
+                varname = for_vars[0][1].value.value
+                env.names[varname] = for_vars[0]
                 new_carry.add(varname)
             env.children.extend(build_block_env(block[3], new_carry))
         else:
