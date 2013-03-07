@@ -360,10 +360,6 @@ def class_hierarchy(ast_list, pkg_index):
             if mm in c.declare:
                 logging.error("Duplicate declaration of method %s" % mm)
                 sys.exit(42)
-            # A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1, well-formedness constraint 4)
-            if c.interface != True and "Abstract" in mm.mods and "Abstract" not in c.mods:
-                logging.error("Duplicate declaration of method %s" % mm)
-                sys.exit(42)
             c.declare.append(mm)
 
         # Constructors
@@ -393,4 +389,11 @@ def class_hierarchy(ast_list, pkg_index):
                 continue
             else:
                 c.inherit = determine_inherit(c)
+
+    # final checks
+    for c in class_dict.values():
+        # A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1, well-formedness constraint 4)
+        if c.interface != True and "Abstract" not in c.mods and True in [True for x in contain(c) if "Abstract" in x.mods]:
+            logging.error("%s is not abstract but contains an abstract method" % c)
+            sys.exit(42)
 
