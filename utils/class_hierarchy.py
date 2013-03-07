@@ -253,11 +253,16 @@ def class_hierarchy(ast_list, pkg_index):
                 c.extends = "java.lang.Object"
             else:
                 c.extends = ""
-        #print(" # EXTENDS:   ", c.extends)
 
         c.implements = [typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
             for tn in c.implements.children]
-        #print(" # IMPLEMENTS:", c.implements)
+
+        # An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3) 
+        for i in c.implements:
+            if len([x for x in c.implements if x == i]) > 1:
+                logging.error("%s is an interface that is repeated (for %s)."
+                    % (i, c.name))
+                sys.exit(42)
         
         #decl.pprint()
         """
@@ -307,11 +312,6 @@ def class_hierarchy(ast_list, pkg_index):
             # An interface must not extend a class. (JLS 9.1.2) 
             if i.interface != True:
                 logging.error("%s is not an interface (for %s)."
-                    % (i, c.name))
-                sys.exit(42)
-            # An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3) 
-            if i in [x for x in c.implements if x != i]:
-                logging.error("%s is an interface that is repeated (for %s)."
                     % (i, c.name))
                 sys.exit(42)
 
