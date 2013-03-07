@@ -196,7 +196,7 @@ def determine_inherit(c):
 
         # non-abstract inherit
         if x not in c.declare and "Abstract" not in x.mods:
-            replace(x, [y for y in super_contain if y == x and "Abstract" in x.mods])
+            replace(x, [y for y in super_contain if y == x and "Abstract" in y.mods])
             inherit.append(x)
         # all abstract inherit
         elif x not in c.declare and False not in ["Abstract" in y.mods for y in super_contain if y == x]:
