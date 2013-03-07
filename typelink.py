@@ -4,6 +4,7 @@ import sys
 import environment
 
 from utils import logging
+from utils.node import Node
 
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
@@ -12,7 +13,8 @@ def typelink(asts, pkg_index):
 
     for pkg in pkg_index.values():
         for e in pkg:
-            merge_on_demand_imports(e, type_index, pkg_index)
+            #merge_on_demand_imports(e, type_index, pkg_index)
+            pass
 
     for pkg_name in pkg_index:
         for cu_env in pkg_index[pkg_name]:
@@ -47,8 +49,6 @@ def typelink(asts, pkg_index):
                 if (x[len(t)] == "."):
                     logging.error('"%s" is a prefix of "%s"' % (t, x))
                     sys.exit(42)
-                    
-
 
 def resolve_type(type_index, cu_env, pkg_name, type_node):
     """
@@ -62,6 +62,12 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     unit
     """
 
+    type_name = '.'.join(l.value.value for l in type_node.leafs())
+
+    # maybe it's fully qualified?
+    if type_name in type_index:
+        return type_name
+   
     # build a list of imports in this CU
     imports = list(cu_env.select(['CompilationUnit', 'TypeImport']))
     if imports:
@@ -69,35 +75,49 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     else:
         imports = set()
 
-    # the local type is also in the imports!
-    imports.add('%s.%s' % (pkg_name, environment.env_type_name(cu_env)))
+    # is it a local type?
+    if environment.env_type_name(cu_env) == type_name:
+        return '%s.%s' % (pkg_name, environment.env_type_name(cu_env))
 
-    candidates = set()
-    # now we resolve type_name to something canonical.
     # is it one of the imports?
-    type_name = '.'.join(l.value.value for l in type_node.leafs())
+    candidates = set()
     for i in imports:
         i_pkg = '.'.join(i.split('.')[:-1])
         canon_type = '%s.%s' % (i_pkg, type_name)
         if canon_type in imports:
             candidates.add(canon_type)
 
-    # maybe it's java.lang?
-    if 'java.lang.%s' % type_name in type_index:
-        candidates.add('java.lang.%s' % type_name)
-    
-    # maybe it's fully qualified?
-    if type_name in type_index:
-        candidates.add(type_name)
+    if len(candidates) == 1:
+        return candidates.pop()
+    elif len(candidates) > 1:
+        logging.error('Could not resolve type %s; candidates: %s' % (type_name,
+            candidates))
+        sys.exit(42)
+
+    # is it in the same package?
+    canon_type = '%s.%s' % (pkg_name, type_name)
+    if canon_type in type_index:
+        return canon_type
+
+    # is it an an ondemand package?
+    candidates = set()
+    on_demands = list(cu_env.select(['CompilationUnit', 'PackageImports']))[0].names
+    on_demands['java.lang'] = Node('JAVA.LANG.PACKAGE')
+    if len(on_demands) != 0:
+        for i in on_demands:
+            canon_type = '%s.%s' % (i, type_name)
+            if canon_type in type_index:
+                candidates.add(canon_type)
 
     if len(candidates) == 1:
         return candidates.pop()
-    elif len(candidates) == 0:
-        return None
-    else:
+    elif len(candidates) > 1:
         logging.error('Could not resolve type %s; candidates: %s' % (type_name,
             candidates))
+        sys.exit(42)
 
+    return None
+    
 def find_type_nodes(cu_env):
     n = environment.env_type_node(cu_env)
     for node in n.select(['ReferenceType']):
@@ -126,23 +146,6 @@ def weed_single_type_imports(type_index):
             len(ti.names):
             logging.error("Two single-type-import declarations must not clash with each other")
             sys.exit(42)
-
-def merge_on_demand_imports(cu, type_index, pkg_index):
-    """
-    given the env compulation unit, type index, and package index
-
-    convert/move the import-on-demands under compulation unit node
-    into single-type imports
-    """
-
-    pkg_imports = cu.find_child("PackageImports")
-    if pkg_imports == None:
-        return
-
-    for pkg_name in pkg_imports.names:
-        for type_name in [t for t in type_index if t.startswith(pkg_name+'.')]:
-            if '.' not in type_name[len(pkg_name)+1:]:
-                cu.find_child("TypeImport").names[type_name] = pkg_imports.names[pkg_name]
 
 def build_canonical_type_index(pkg_index):
     """
