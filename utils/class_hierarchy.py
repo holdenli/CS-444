@@ -151,8 +151,12 @@ def replace(m1, list_of_m):
 
     for m2 in list_of_m:
         # A nonstatic method must not replace a static method (JLS 8.4.6.1, dOvs well-formedness constraint 5) 
-        if "Static" not in m1.mods and "Static" in m2.mods:
+        if ("Static" not in m1.mods and "Static" in m2.mods):
             logging.error("a nonstatic method (%s) replaced a static method (%s)" % (m1, m2))
+            sys.exit(42)
+
+        if ("Static" in m1.mods and "Static" not in m2.mods):
+            logging.error("a static method (%s) replaced a nonstatic method (%s)" % (m1, m2))
             sys.exit(42)
 
         # A method must not replace a method with a different return type. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1, dOvs well-formedness constraint 6) 
@@ -245,7 +249,10 @@ def class_hierarchy(ast_list, pkg_index):
         if tn != None:
             c.extends = typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
         else:
-            c.extends = ""
+            if c.interface == False and c.name != "java.lang.Object":
+                c.extends = "java.lang.Object"
+            else:
+                c.extends = ""
         #print(" # EXTENDS:   ", c.extends)
 
         c.implements = [typelink.resolve_type(c.type_index, c.env, c.pkg, tn)
