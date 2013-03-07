@@ -322,25 +322,6 @@ def class_hierarchy(ast_list, pkg_index):
 
     # create fields and methods and fill in declares
     for c in class_dict.values():
-        # Implicit declare for interface without superinterface
-        if c.interface and len(c.implements) == 0:
-            # Add publics of java.lang.Object
-            for (n, t) in [
-                    ("equals", "boolean"),
-                    ("toString", "java.lang.String"),
-                    ("hashCode", "int"),
-                    ("getClass", "java.lang.Class")]:
-                m = Method(None, c)
-                m.mods = ["Public"]
-                m.type = t
-                m.name = n
-                m.params = []
-                if (n == "equals"):
-                    m.params.append("java.lang.Object")
-                elif (n == "getClass"):
-                    m.mods.append("Final")
-                c.declare.append(m)
-
         # Fields
         fields = c.node.find_child("Fields")
         if fields != None: # Interfaces have no fields
@@ -373,6 +354,30 @@ def class_hierarchy(ast_list, pkg_index):
                 logging.error("Duplicate declaration of constructor %s" % ccon)
                 sys.exit(42)
             c.declare.append(ccon)
+
+        # Implicit declare for interface without superinterface
+        if c.interface and len(c.implements) == 0:
+            # Add publics of java.lang.Object
+            for (n, t) in [
+                    ("equals", "boolean"),
+                    ("toString", "java.lang.String"),
+                    ("hashCode", "int"),
+                    ("getClass", "java.lang.Class")
+                    ]:
+                m = Method(None, c)
+                m.mods = ["Public", "Abstract"]
+                m.type = t
+                m.name = n
+                m.params = []
+                if (n == "equals"):
+                    m.params.append("java.lang.Object")
+                elif (n == "getClass"):
+                    pass#m.mods.append("Final")
+                if m not in c.declare:
+                    c.declare.append(m)
+                elif m.type not in [x.type for x in c.declare if x == m]:
+                    logging.error("Implicit decl of %s return type does not match" % m)
+                    sys.exit(42)
 
     # fill in inherits
     # Apologies for this code, but I'm just going to loop through the dictionary
