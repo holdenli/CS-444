@@ -43,10 +43,9 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     # the local type is also in the imports!
     imports.add('%s.%s' % (pkg_name, environment.env_type_name(cu_env)))
 
-    type_name = '.'.join(l.value.value for l in type_node.leafs())
-
     # now we resolve type_name to something canonical.
     # is it one of the imports?
+    type_name = '.'.join(l.value.value for l in type_node.leafs())
     for i in imports:
         i_pkg = '.'.join(i.split('.')[:-1])
         canon_type = '%s.%s' % (i_pkg, type_name)
@@ -56,6 +55,10 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     # maybe it's java.lang?
     if 'java.lang.%s' % type_name in type_index:
         return 'java.lang.%s' % type_name
+
+    # maybe it's fully qualified?
+    if type_name in type_index:
+        return type_name
 
     return None
 

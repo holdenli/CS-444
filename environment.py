@@ -104,14 +104,17 @@ def build_environment(abs_tree):
     """
 
     pkg = list(abs_tree.select(['PackageDeclaration']))
+    pkg_name = ''
     if len(pkg) == 0 or len(pkg[0].children) == 0:
         # default package name
         pkg = Node(name='PackageDeclaration', children=[
             Node(name='Identifier', value=Token(label='Identifier',
             value='MAIN_PKG', pos=-1, line=-1))
         ])
+        pkg_name = 'MAIN_PKG'
     else:
         pkg = pkg[0]
+        pkg_name = '.'.join(pkg[0].select_leaf_values(['Identifier']))
 
     # add the package to the environment
     pkg_env = Environment(name='PackageDeclaration', node=pkg,
@@ -126,8 +129,8 @@ def build_environment(abs_tree):
     # add type imports to CompilationUnit
     ti = {}
     for i in abs_tree.select(['TypeImports', 'ImportDeclaration']):
-        pkg = '.'.join(n.value.value for n in i.leafs())
-        ti[pkg] = i
+        i_name = '.'.join(n.value.value for n in i.leafs())
+        ti[i_name] = i
 
     ti_node = list(abs_tree.select(['TypeImports']))[0]
     cu.children.append(Environment(name='TypeImport',
@@ -137,8 +140,11 @@ def build_environment(abs_tree):
     # add package imports to CompilationUnit
     pi = {}
     for i in abs_tree.select(['PackageImports', 'ImportDeclaration']):
-        pkg = '.'.join(n.value.value for n in i.leafs())
-        pi[pkg] = i
+        p_name = '.'.join(n.value.value for n in i.leafs())
+        pi[p_name] = i
+
+    # also add the package name itself into the package imports
+    pi[pkg_name] = pkg
 
     pi_node = list(abs_tree.select(['PackageImports']))[0]
     cu.children.append(Environment(name='PackageImports',
