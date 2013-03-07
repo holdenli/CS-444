@@ -43,7 +43,7 @@ def typelink(asts, pkg_index):
     prefixes = list(type_index.keys()) + list(pkg_index.keys())
     for t in type_index.keys():
         for x in prefixes:
-            if x == t:
+            if len(x) == len(t):
                 continue
             elif x.startswith(t):
                 if (x[len(t)] == "."):
