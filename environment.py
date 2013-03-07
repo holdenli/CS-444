@@ -297,9 +297,11 @@ def build_block_env(tree, carry):
 def find_nodes(block_tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration
     # we don't go past another Block, though
-    
+    ret = []
     for c in block_tree.children:
         if c in white_list:
-            yield c
+            ret.append(c)
         else:
-            find_nodes(c, white_list)
+            ret.extend(find_nodes(c, white_list))
+
+    return ret
