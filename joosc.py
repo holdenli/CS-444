@@ -107,10 +107,8 @@ def joosc(targets, options):
         sys.exit(0)
 
     # Weed each parse tree.
-    i = 0
-    for parse_tree in parse_trees:
+    for i, parse_tree in enumerate(parse_trees):
         weed_parse_tree(parse_tree, target_files[i], options)
-        i += 1
     if options.stage == 'weeder':
         sys.exit(0)
 
