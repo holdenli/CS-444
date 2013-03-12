@@ -65,8 +65,24 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
 
     type_name = '.'.join(l.value.value for l in type_node.leafs())
 
+    return resolve_type_by_name(type_index, cu_env, pkg_name, type_name)
+
+def resolve_type_by_name(type_index, cu_env, pkg_name, type_name):
+
+    def type_prefix(s):
+        toks = s.split('.')
+        return '.'.join(toks[:-1])
+    
     # maybe it's fully qualified?
     if type_name in type_index:
+        # check that no prefixes of fully qualified types themselves resolve to
+        # types!
+        prefix = type_prefix(type_name)
+        if resolve_type_by_name(type_index, cu_env, pkg_name, prefix) != None:
+            logging.error('Prefix "%s" of type "%s" also resolves to a type' \
+                % (prefix, type_name))
+            sys.exit(42)
+
         return type_name
    
     # build a list of imports in this CU
