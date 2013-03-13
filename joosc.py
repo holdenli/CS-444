@@ -36,7 +36,7 @@ def get_tokens(filename, options):
         # If stdlib files were not included, we print regardless.
         # Otherwise, print only if it's not an stdlib file, unless overridden
         # by JooscOptions.print_stdlib.
-        if options.include_stdlib == False or filename not in stdlib_files or \
+        if options.include_stdlib == False or filename not in opts.stdlib_files or \
                 options.print_stdlib == True:
             print("Tokens returned from scanner for %s:\n" % filename,
                 pprint.pformat(tokens))
@@ -52,7 +52,7 @@ def get_parse_tree(tokens, filename, options):
         sys.exit(42)
 
     if options.stage == 'parser':
-        if options.include_stdlib == False or filename not in stdlib_files or \
+        if options.include_stdlib == False or filename not in opts.stdlib_files or \
                 options.print_stdlib == True:
             print("Unweeded parse tree for %s:" % filename)
             parse_tree.pprint()
@@ -63,7 +63,7 @@ def weed_parse_tree(parse_tree, filename, options):
     weeder.weed(parse_tree, filename)
 
     if options.stage == 'weeder':
-        if options.include_stdlib == False or filename not in stdlib_files or \
+        if options.include_stdlib == False or filename not in opts.stdlib_files or \
                 options.print_stdlib == True:
             print("Weeded parse tree for %s:" % filename)
             parse_tree.pprint()
@@ -71,7 +71,7 @@ def weed_parse_tree(parse_tree, filename, options):
 def get_ast(parse_tree, filename, options):
     abstract_syntax_tree = ast.build_ast(parse_tree)
     if options.stage == 'ast':
-        if options.include_stdlib == False or filename not in stdlib_files or \
+        if options.include_stdlib == False or filename not in opts.stdlib_files or \
                 options.print_stdlib == True:
             abstract_syntax_tree.pprint()
 
