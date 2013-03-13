@@ -124,6 +124,25 @@ class Node:
         for c in self.children:
             c.pprint(tabsize=tabsize+2)
 
+class ASTNode(Node):
+
+    # Reference to a Type declaration.
+    typ = None
+
+    # Store a reference to a declaration (field, method, parameter, or local
+    # variable) node. Only valid for certain types of expressions.
+    decl = None
+
+    def __init__(self, name=None, value=None, children=None):
+        super().__init__(name, value, children)
+
+    def set_typ(node):
+        pass
+
+    def set_decl(node):
+        pass
+        
+
 if __name__ == "__main__":
     n = Node("OMG1",
         children=[
