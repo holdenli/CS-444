@@ -166,6 +166,7 @@ def replace(m1, list_of_m):
 
         # A protected method must not replace a public method. (JLS 8.4.6.3, dOvs well-formedness constraint 7) 
         if "Protected" in m1.mods and "Public" in m2.mods:
+            print(list_of_m)
             logging.error("a protected method (%s) replaced a public method (%s)" % (m1, m2))
             sys.exit(42)
 
@@ -200,8 +201,12 @@ def determine_inherit(c):
             inherit.append(x)
         # all abstract inherit
         elif x not in c.declare and False not in ["Abstract" in y.mods for y in super_contain if y == x]:
-            replace(x, [y for y in super_contain if y == x])
-            inherit.append(x)
+            z = [y for y in inherit if y == x]
+            if len(z) > 0 and z[0].type == x.type:
+                pass # another abstract method of same sig and type: do nothing
+            else:
+                replace(x, [y for y in super_contain if y == x])
+                inherit.append(x)
 
     return inherit
 
