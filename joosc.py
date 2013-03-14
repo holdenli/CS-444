@@ -145,8 +145,8 @@ def joosc(targets, options):
     
     typelink.typelink(ast_list, pkg_index)
 
-    class_hierarchy.class_hierarchy(ast_list, pkg_index)
-
+    class_index = class_hierarchy.class_hierarchy(ast_list, pkg_index)
+    
     if options.stage == 'hierarchy':
         sys.exit(0)
 

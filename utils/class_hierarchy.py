@@ -417,3 +417,5 @@ def class_hierarchy(ast_list, pkg_index):
             logging.error("%s is not abstract but contains an abstract method" % c)
             sys.exit(42)
 
+    return class_dict
+
