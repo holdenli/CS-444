@@ -236,6 +236,15 @@ RULES = {
         ['ArrayAccess'],
     ],
 
+    'Literal': [
+        ['DecimalIntegerLiteral'],
+        # ['FloatingPointLiteral'],
+        ['BooleanLiteral'],
+        ['CharacterLiteral'],
+        ['StringLiteral'],
+        ['NullLiteral'],
+    ],
+
     'Assignment': [
         ['Name', 'Expression'],
         ['FieldAccess', 'Expression'],

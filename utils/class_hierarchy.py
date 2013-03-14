@@ -234,9 +234,7 @@ def determine_inherit(c):
 # class_hierarchy
 # creates all Classes, Fields, and Methods
 # returns a dictionary of all available classes/interfaces
-def class_hierarchy(ast_list, pkg_index):
-    type_index = typelink.build_canonical_type_index(pkg_index)
-
+def class_hierarchy(ast_list, pkg_index, type_index):
     class_dict = {}
 
     # scan ASTs for classes

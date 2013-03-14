@@ -143,12 +143,13 @@ def joosc(targets, options):
 
     pkg_index = build_environments(ast_list)
     
-    typelink.typelink(ast_list, pkg_index)
+    type_index = typelink.typelink(ast_list, pkg_index)
 
-    class_index = class_hierarchy.class_hierarchy(ast_list, pkg_index)
-    
+    class_index = class_hierarchy.class_hierarchy(ast_list, pkg_index, type_index)
     if options.stage == 'hierarchy':
         sys.exit(0)
+
+    # typecheck.typecheck(pkg_index, type_index, class_hierarchy)
 
 # INTERFACE
 ##########################

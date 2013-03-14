@@ -50,6 +50,8 @@ def typelink(asts, pkg_index):
 
     name_link(pkg_index, type_index)
 
+    return type_index
+
 def resolve_type(type_index, cu_env, pkg_name, type_node):
     """
     given a compilation unit, the package it's in,
