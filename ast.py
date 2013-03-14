@@ -2,19 +2,19 @@
 
 import sys
 from utils import logging
-from utils.node import Node
-import traceback
+from utils.node import ASTNode
+
 # Processes the provide parse tree (root) node and returns the root ASTNode
 # of the abstract syntax tree of the input.
 # This is destructive - parse_tree should not be used afterwards.
 def build_ast(parse_tree):
-    ast = Node('Root')
+    ast = ASTNode('Root')
     
     # Start with CompilationUnit.
     unit = parse_tree.find_child('CompilationUnit')
     if unit is not None:
-        cu = Node('CompilationUnit')
-        ast.add(build_top_level(Node('CompilationUnit'), unit))
+        cu = ASTNode('CompilationUnit')
+        ast.add(build_top_level(ASTNode('CompilationUnit'), unit))
 
     return ast
 
@@ -23,7 +23,7 @@ def build_ast(parse_tree):
 # of the AST.
 def build_top_level(ast, unit):
     # Extract package declaration, if it exists.
-    pkg = Node('PackageDeclaration')
+    pkg = ASTNode('PackageDeclaration')
     package_decl = unit.find_child('PackageDeclaration')
     if package_decl is not None:
         #pkg.children = flatten_name(package_decl[1])
@@ -31,8 +31,8 @@ def build_top_level(ast, unit):
     ast.add(pkg)
 
     # Extract imports, if they exist.
-    typ_imports = Node('TypeImports')
-    pkg_imports = Node('PackageImports')
+    typ_imports = ASTNode('TypeImports')
+    pkg_imports = ASTNode('PackageImports')
     import_decl = unit.find_child('ImportDeclarations')
     if import_decl is not None:
         typ_imports.children, pkg_imports.children = flatten_imports(import_decl)
@@ -62,9 +62,9 @@ def flatten_imports(node):
 
         # Append to appropriate list.
         if node[1][0].name == 'SingleTypeImportDeclaration':
-            typ_imports.append(Node('ImportDeclaration', None, id_list.children))
+            typ_imports.append(ASTNode('ImportDeclaration', None, id_list.children))
         else:
-            pkg_imports.append(Node('ImportDeclaration', None, id_list.children))
+            pkg_imports.append(ASTNode('ImportDeclaration', None, id_list.children))
 
         node = node[0]
 
@@ -74,9 +74,9 @@ def flatten_imports(node):
 
     # Append to appropriate list.
     if node[0][0].name == 'SingleTypeImportDeclaration':
-        typ_imports.append(Node('ImportDeclaration', None, id_list.children))
+        typ_imports.append(ASTNode('ImportDeclaration', None, id_list.children))
     else:
-        pkg_imports.append(Node('ImportDeclaration', None, id_list.children))
+        pkg_imports.append(ASTNode('ImportDeclaration', None, id_list.children))
 
     typ_imports.reverse()
     pkg_imports.reverse()
@@ -85,23 +85,23 @@ def flatten_imports(node):
 # Builds the AST node for a type declaration. Assumes that the node is a
 # ClassDeclaration.
 def build_class_structure(node):
-    decl_node = Node('ClassDeclaration')
+    decl_node = ASTNode('ClassDeclaration')
 
     # Add modifiers and name (same for classes and interfaces).
     decl_node.add(flatten_leaves(node[0], 'Modifiers'))
-    decl_node.add(Node('ClassName', None, [node[2]]))
+    decl_node.add(ASTNode('ClassName', None, [node[2]]))
 
     # Extract superclass.
     superstuff = node.find_child('SuperStuff')
     if superstuff is None:
-        decl_node.add(Node('Superclass'))
+        decl_node.add(ASTNode('Superclass'))
     else:
-        typ = Node('Type', None,
+        typ = ASTNode('Type', None,
             [flatten(superstuff, 'ReferenceType', 'Identifier')])
-        decl_node.add(Node('Superclass', None, [typ]))
+        decl_node.add(ASTNode('Superclass', None, [typ]))
 
     # Extract interface implements.
-    interfaces = Node('Interfaces')
+    interfaces = ASTNode('Interfaces')
     decl_ints = node.find_child('Interfaces')
     if decl_ints is not None:
         interfaces = flatten_interfaces(decl_ints)
@@ -125,9 +125,9 @@ def build_class_structure(node):
 
 # Returns a processed Fields AST node for the input Fields node.
 def build_fields(node):
-    fields = Node('Fields')
+    fields = ASTNode('Fields')
     for field_decl in node.children:
-        field = Node('FieldDeclaration')
+        field = ASTNode('FieldDeclaration')
 
         # Extract modifiers.
         field.add(flatten_leaves(field_decl[0], 'Modifiers'))
@@ -142,18 +142,18 @@ def build_fields(node):
         var_declr = field_decl[2][0] # VariableDeclarator
         if len(var_declr.children) > 1:
             initializer = build_expr(var_declr[2][0])
-            field.add(Node('Initializer', None, [initializer]))
+            field.add(ASTNode('Initializer', None, [initializer]))
         else:
-            field.add(Node('Initializer')) # No initializer
+            field.add(ASTNode('Initializer')) # No initializer
 
         fields.add(field)
 
     return fields
 
 def build_constructors(node):
-    constructors = Node('Constructors')
+    constructors = ASTNode('Constructors')
     for cons_decl in node.children:
-        cons = Node('ConstructorDeclaration')
+        cons = ASTNode('ConstructorDeclaration')
 
         # Extract modifiers.
         cons.add(flatten_leaves(cons_decl[0], 'Modifiers'))
@@ -165,30 +165,30 @@ def build_constructors(node):
         if cons_decl[1][2].name == 'FormalParameterList':
             cons.add(build_parameters(cons_decl[1][2]))
         else:
-            cons.add(Node('Parameters'))
+            cons.add(ASTNode('Parameters'))
 
         # Extract body.
         cons.add(build_block(cons_decl[2]))
         # if cons_decl[2][1].name == 'BlockStatements':
         #     cons.add(build_block(cons_decl[2][1]))
         # else:
-        #     cons.add(Node('Block'))
+        #     cons.add(ASTNode('Block'))
 
         constructors.add(cons)
 
     return constructors
 
 def build_methods(node):
-    methods = Node('Methods')
+    methods = ASTNode('Methods')
     for method_decl in node.children:
-        method = Node('MethodDeclaration')
+        method = ASTNode('MethodDeclaration')
 
         # Extract modifiers.
         method.add(flatten_leaves(method_decl[0][0], 'Modifiers'))
 
         # Extract return type.
         if method_decl[0][1].name == 'Void':
-            method.add(Node('Type', None, [method_decl[0][1]]))
+            method.add(ASTNode('Type', None, [method_decl[0][1]]))
         else:
             method.add(build_type(method_decl[0][1])) # Non-void.
 
@@ -199,14 +199,14 @@ def build_methods(node):
         if method_decl[0][2][2].name == 'FormalParameterList':
             method.add(build_parameters(method_decl[0][2][2]))
         else:
-            method.add(Node('Parameters'))
+            method.add(ASTNode('Parameters'))
 
         # Extract body.
         # We have two levels, for differentiating between:
         # 1. Methods with no body (i.e., abstract)
         # 2. Methods with an empty body (i.e., {})
         # 3. Methods with a nonempty body
-        body = Node('MethodBody')
+        body = ASTNode('MethodBody')
         if method_decl[1].name != 'SemiColon' and \
                 method_decl[1][0].name != 'SemiColon':
             body.add(build_block(method_decl[1][0]))
@@ -218,17 +218,17 @@ def build_methods(node):
 
 # Returns a processed Type node.
 def build_type(node):
-    typ = Node('Type')
+    typ = ASTNode('Type')
     # return node
     if node[0].name == 'PrimitiveType':
         typ.add(flatten_leaves(node[0], 'PrimitiveType'))
     elif node[0][0].name == 'ClassOrInterfaceType':
         typ.add(flatten(node[0][0], 'ReferenceType', 'Identifier'))
     elif node[0][0][0].name == 'PrimitiveType': # ArrayType of PrimitiveType
-        typ.add(Node('ArrayType', None,
+        typ.add(ASTNode('ArrayType', None,
             [flatten_leaves(node[0][0][0], 'PrimitiveType')]))
     else: # ArrayType of ClassOrInterfaceType
-        typ.add(Node('ArrayType', None,
+        typ.add(ASTNode('ArrayType', None,
             [flatten(node[0][0][0], 'ReferenceType', 'Identifier')]))
 
     return typ
@@ -236,12 +236,12 @@ def build_type(node):
 # Returns a processed Parameters node, given a FormalParameterList node of the
 # parse tree.
 def build_parameters(node):
-    params = Node('Parameters')
+    params = ASTNode('Parameters')
 
     # Get a list of FormalParameter.
     param_decls = flatten(node, 'Parameters', 'FormalParameter')
     for param_decl in param_decls.children:
-        param = Node('Parameter')
+        param = ASTNode('Parameter')
         param.add(build_type(param_decl[0]))
         param.add(param_decl[1][0]) # Name
 
@@ -252,14 +252,14 @@ def build_parameters(node):
 # Builds the AST node for an interface declaration. node must be an
 # InterfaceDeclaration.
 def build_interface_structure(node):
-    decl_node = Node('InterfaceDeclaration')
+    decl_node = ASTNode('InterfaceDeclaration')
 
     # Add modifiers and name (same for classes and interfaces).
     decl_node.add(flatten_leaves(node[0], 'Modifiers'))
-    decl_node.add(Node('InterfaceName', None, [node[2]]))
+    decl_node.add(ASTNode('InterfaceName', None, [node[2]]))
 
     # Extract interface extends.
-    interfaces = Node('Interfaces')
+    interfaces = ASTNode('Interfaces')
     decl_ints = node.find_child('ExtendsInterfaces')
     if decl_ints is not None:
         interfaces = flatten_interfaces(decl_ints)
@@ -277,7 +277,7 @@ def build_interface_structure(node):
     return decl_node
 
 def build_block(node):
-    block = Node('Block')
+    block = ASTNode('Block')
 
     # If no statements, return empty block.
     if node[1].name != 'BlockStatements':
@@ -298,7 +298,7 @@ def build_block(node):
 
 # Builds the AST node for a LocalVariableDeclaration.
 def build_local_variable_declaration(node):
-    local_var = Node('LocalVariableDeclaration')
+    local_var = ASTNode('LocalVariableDeclaration')
     local_var.add(build_type(node[0]))
 
     # Extract name and initializer.
@@ -306,9 +306,9 @@ def build_local_variable_declaration(node):
     local_var.add(var_declr[0][0])
     if len(var_declr.children) > 1:
         initializer = build_expr(var_declr[2][0])
-        local_var.add(Node('Initializer', None, [initializer]))
+        local_var.add(ASTNode('Initializer', None, [initializer]))
     else:
-        local_var.add(Node('Initializer')) # No initializer
+        local_var.add(ASTNode('Initializer')) # No initializer
 
     return local_var
 
@@ -341,16 +341,16 @@ def build_statement_wts(node):
         return build_block(node[0])
 
     elif node[0].name == 'EmptyStatement':
-        return Node('EmptyStatement')
+        return ASTNode('EmptyStatement')
 
     # ExpressionStatement => StatementExpression.
     elif node[0].name == 'ExpressionStatement':
-        expr_stmt = Node('ExpressionStatement')
+        expr_stmt = ASTNode('ExpressionStatement')
         expr_stmt.add(build_expr(node[0][0]))
         return expr_stmt
 
     else: # ReturnStatement
-        return_stmt = Node('ReturnStatement')
+        return_stmt = ASTNode('ReturnStatement')
         if node[0][1].name == 'Expression':
             return_stmt.add(build_expr(node[0][1]))
         return return_stmt
@@ -398,32 +398,32 @@ def build_expr(node):
         if len(node.children) == 1: # recurse
             return build_expr(node[0])
         else: # Expression => Expression Operation Expression
-            return Node(node.name, None,
+            return ASTNode(node.name, None,
                 [build_expr(node[0]), node[1], build_expr(node[2])])
 
     elif node.name == 'RelationalExpression':
         if len(node.children) == 1: # recurse
             return build_expr(node[0])
         elif node[1].name == 'Instanceof':
-            return Node('InstanceofExpression', None,
+            return ASTNode('InstanceofExpression', None,
                 [build_expr(node[0]), node[1],
-                    build_type(Node('Type', None, [node[2]]))])
+                    build_type(ASTNode('Type', None, [node[2]]))])
         else:
-            return Node(node.name, None,
+            return ASTNode(node.name, None,
                 [build_expr(node[0]), node[1], build_expr(node[2])])
 
     elif node.name in ['UnaryExpression', 'UnaryExpressionNotPlusMinus']:
         if len(node.children) == 1:
             return build_expr(node[0])
         else:
-            return Node('UnaryExpression', None, # Don't care about NotPlusMinus.
+            return ASTNode('UnaryExpression', None, # Don't care about NotPlusMinus.
                 [node[0], build_expr(node[1])])
 
     elif node.name == 'PostfixExpression':
         if node[0].name == 'Primary':
-            return Node('PostfixExpression', None, [build_primary(node[0])])
+            return ASTNode('PostfixExpression', None, [build_primary(node[0])])
         else: # Name
-            return Node('PostfixExpression', None,
+            return ASTNode('PostfixExpression', None,
                 [flatten(node[0], 'Name', 'Identifier')])
 
     elif node.name == 'CastExpression':
@@ -434,14 +434,14 @@ def build_expr(node):
         sys.exit(1) # Crash
 
 def build_cast_expression(node):
-    cast_expr = Node('CastExpression')
-    typ = Node('Type')
+    cast_expr = ASTNode('CastExpression')
+    typ = ASTNode('Type')
     if node[2].name == 'Dims': # array type
         if node[1].name == 'PrimitiveType':
-            typ.add(Node('ArrayType', None,
+            typ.add(ASTNode('ArrayType', None,
                 [flatten_leaves(node[1], 'PrimitiveType')]))
         else: # Name
-            typ.add(Node('ArrayType', None,
+            typ.add(ASTNode('ArrayType', None,
                 [flatten(node[1], 'ReferenceType', 'Identifier')]))
 
     elif node[1].name == 'Expression': # Actually a name.
@@ -460,21 +460,21 @@ def build_cast_expression(node):
 # ArrayCreationExpression.
 # TODO: Decide whether to split these.
 def build_creation_expression(node):
-    creation = Node('CreationExpression')
+    creation = ASTNode('CreationExpression')
 
     # We do some funky stuff to make sure that it matches 'Type'.
-    typ = Node('Type')
+    typ = ASTNode('Type')
 
     # Note: both creation expression types have ClassType at second index.
     # For ArrayCreationExpression, we actually need to nest the type.
     if node.name == 'ArrayCreationExpression':
         # Type => ArrayType => PrimitiveType
         if node[1].name == 'PrimitiveType':
-            typ.add(Node('ArrayType', None,
+            typ.add(ASTNode('ArrayType', None,
                 [flatten_leaves(node[1], 'PrimitiveType')]))
         # Type => ArrayType => ReferenceType
         else:
-            typ.add(Node('ArrayType', None,
+            typ.add(ASTNode('ArrayType', None,
                 [flatten(node[1], 'ReferenceType', 'Identifier')]))
 
     else: # ClassInstanceCreationExpression
@@ -486,7 +486,7 @@ def build_creation_expression(node):
     creation.add(typ)
 
     # Get the arguments.
-    args = Node('Arguments')
+    args = ASTNode('Arguments')
     if node.name == 'ArrayCreationExpression':
         if node[2].name == 'DimExprs':
             args.add(build_expr(node[2][0][1]))
@@ -499,11 +499,11 @@ def build_creation_expression(node):
     return creation
 
 def build_method_invocation(node):
-    method_invo = Node('MethodInvocation')
+    method_invo = ASTNode('MethodInvocation')
 
     # First, extract the method name and receiver (i.e., the "thing we're
     # calling the method on").
-    method_receiver = Node('MethodReceiver')
+    method_receiver = ASTNode('MethodReceiver')
     if node[0].name == 'Name':
         qualified_name = flatten(node[0], 'MethodName', 'Identifier')
         
@@ -516,12 +516,12 @@ def build_method_invocation(node):
             method_invo.add(qualified_name)
         else:
             method_name = qualified_name.children.pop()
-            method_invo.add(Node('MethodName', None, [method_name]))
+            method_invo.add(ASTNode('MethodName', None, [method_name]))
             qualified_name.name = 'Name'
             method_receiver.add(qualified_name)
 
     else: # Name is at position 2, receiver is the Primary at position 0.
-        method_invo.add(Node('MethodName', None, [node[2]]))
+        method_invo.add(ASTNode('MethodName', None, [node[2]]))
         method_receiver.add(build_primary(node[0]))
 
     method_invo.add(method_receiver)
@@ -533,7 +533,7 @@ def build_method_invocation(node):
     return method_invo
 
 def build_arguments(node):
-    arguments = Node('Arguments')
+    arguments = ASTNode('Arguments')
     args = flatten(node, 'Arguments', 'Expression')
     for arg in args:
         arguments.add(build_expr(arg))
@@ -563,21 +563,20 @@ def build_primary(node):
     elif node[0].name == 'ArrayAccess':
         return build_array_access(node[0])
     else:
-        traceback.print_stack()
         logging.error('AST: Invalid Primary in build_primary()')
         sys.exit(1)
 
 def build_field_access(node):
-    field_access = Node('FieldAccess')
-    field_access.add(Node('FieldName', None, [node[2]]))
+    field_access = ASTNode('FieldAccess')
+    field_access.add(ASTNode('FieldName', None, [node[2]]))
     if node[0].name == 'Primary':
-        field_access.add(Node('FieldReceiver', None, [build_primary(node[0])]))
+        field_access.add(ASTNode('FieldReceiver', None, [build_primary(node[0])]))
     else: # Super
-        field_access.add(Node('FieldReceiver', None, [node[0]]))
+        field_access.add(ASTNode('FieldReceiver', None, [node[0]]))
     return field_access
 
 def build_assignment(node):
-    assignment = Node('Assignment')
+    assignment = ASTNode('Assignment')
     assignment.add(build_left_hand_side(node[0]))
     assignment.add(build_expr(node[2]))
     return assignment
@@ -591,10 +590,10 @@ def build_left_hand_side(node):
         return build_array_access(node[0])
 
 def build_array_access(node):
-    array_access = Node('ArrayAccess')
+    array_access = ASTNode('ArrayAccess')
 
     # Determine the receiver (i.e., array being accessed).
-    array_receiver = Node('ArrayReceiver')
+    array_receiver = ASTNode('ArrayReceiver')
     if node[0].name == 'Name':
         array_receiver.add(flatten(node[0], 'Name', 'Identifier'))
     else:
@@ -607,7 +606,7 @@ def build_array_access(node):
     return array_access
 
 def build_if_statement(node):
-    stmt = Node('IfStatement')
+    stmt = ASTNode('IfStatement')
     stmt.add(build_expr(node[2])) # Condition
     stmt.add(build_statement(node[4]))
 
@@ -617,13 +616,13 @@ def build_if_statement(node):
     return stmt
 
 def build_while_statement(node):
-    stmt = Node('WhileStatement')
+    stmt = ASTNode('WhileStatement')
     stmt.add(build_expr(node[2])) # Condition
     stmt.add(build_statement(node[4]))
     return stmt
 
 def build_for_statement(node):
-    stmt = Node('ForStatement')
+    stmt = ASTNode('ForStatement')
     for_init = node.find_child('ForInit')
     for_cond = node.find_child('Expression')
     for_updt = node.find_child('ForUpdate')
@@ -631,7 +630,7 @@ def build_for_statement(node):
     if for_body is None:
         for_body = node.find_child('Statement')
 
-    init_node = Node('ForInit')
+    init_node = ASTNode('ForInit')
     if for_init is not None:
         if for_init[0].name == 'StatementExpressionList':
             init_node.add(build_expr(for_init[0][0]))
@@ -639,17 +638,17 @@ def build_for_statement(node):
             init_node.add(build_local_variable_declaration(for_init[0]))
     stmt.add(init_node)
 
-    cond_node = Node('ForCondition')
+    cond_node = ASTNode('ForCondition')
     if for_cond is not None:
         cond_node.add(build_expr(for_cond))
     stmt.add(cond_node)
 
-    updt_node = Node('ForUpdate')
+    updt_node = ASTNode('ForUpdate')
     if for_updt is not None:
         updt_node.add(build_expr(for_updt[0][0]))
     stmt.add(updt_node)
 
-    body_node = Node('ForBody')
+    body_node = ASTNode('ForBody')
     if for_body is not None:
         body_node.add(build_statement(for_body))
     stmt.add(body_node)
@@ -657,14 +656,14 @@ def build_for_statement(node):
     return stmt
 
 def flatten_interfaces(node):
-    interfaces = Node('Interfaces')
+    interfaces = ASTNode('Interfaces')
 
     # Find all InterfaceType nodes.
     int_types = flatten(node, 'Interfaces', 'InterfaceType')
 
     # Flatten each InterfaceType name.
     for int_type in int_types.children:
-        typ = Node('Type', None,
+        typ = ASTNode('Type', None,
             [flatten(int_type, 'ReferenceType', 'Identifier')])
         interfaces.add(typ)
 
@@ -674,7 +673,7 @@ def flatten_interfaces(node):
 # root_name with all occurrences of leaf_name in node as its children.
 # Children are in-order.
 def flatten(node, root_name, leaf_name):
-    root = Node(root_name)
+    root = ASTNode(root_name)
     stack = [node]
 
     while len(stack) > 0:
@@ -691,7 +690,7 @@ def flatten(node, root_name, leaf_name):
 # Given a node, find all the leaves in-order, and returns them as children of
 # a node node with name root_name.
 def flatten_leaves(node, root_name):
-    root = Node(root_name)
+    root = ASTNode(root_name)
     stack = node.children
     
     while len(stack) > 0:
@@ -707,8 +706,8 @@ def flatten_leaves(node, root_name):
 
 # Makes a simple root_name => identifiers structure.
 def make_name_node(root_name, identifiers):
-    return Node(root_name, None,
-        [Node('Identifier', id) for identifier in identifiers])
+    return ASTNode(root_name, None,
+        [ASTNode('Identifier', id) for identifier in identifiers])
 
 ###############################################################################
 
