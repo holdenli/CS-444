@@ -22,10 +22,13 @@ class Environment(Node):
         self.value used in PackageDeclaration and ClassDeclaration, and it
         represents the name of the package or class
 
+        self.parent is used in ClassDeclaration, and points to the parent/super
+        ClassDeclaration environment
     """
 
     def __init__(self, name=None, value=None,
-        node=None, children=None, names=None):
+        node=None, children=None, names=None,
+        parent=None):
 
        # dictionary of names -> declarations
        # a declaration is just the reference to the Node
@@ -43,20 +46,24 @@ class Environment(Node):
        self.fields = {}
        self.methods = {}
 
+       self.parent = parent
+
        self.children = children
 
     def __repr__(self):
         return '<Env: %s=%s Node=%s> %s' % (self.name, self.value, self.node, self.names)
 
     def __getitem__(self, key):
-        k = Environment(key)
-        children = [c for c in self.children if c == k]
+        children = [c for c in self.children if c.name == key]
         if len(children) == 0:
             return None
         elif len(children) == 1:
             return children[0]
         else:
             return children
+
+    def __eq__(self, o):
+        return (self.__class__ == o.__class__) and (self.name == o.name)
 
 def env_type_node(env):
     cls = list(env.select(['ClassDeclaration']))
@@ -85,7 +92,7 @@ def env_type_name(env):
 
 def build_environments(ast_list):
     # index of packages;  package -> list of compilation units
-    # index of canonincal named types;  canonical name -> type
+    # index of canonical named types;  canonical name -> compilation unit
     pkg_index = {}
 
     for ast in ast_list:
@@ -176,6 +183,18 @@ def build_environment(abs_tree):
 
     return pkg_env
 
+def build_method_params(method_node):
+    params = {}
+    for p in method_node.select(['Parameters', 'Parameter']):
+        param_name = p[1].value.value
+        if param_name in params:
+            logging.error('Two params=%s have cannot have the same name'
+                % (param_name))
+            sys.exit(42)
+        
+        params[param_name] = p
+    return params
+
 def build_class_env(cls_node):
     """
         returns a class environment
@@ -198,16 +217,8 @@ def build_class_env(cls_node):
         for method_node in methods[method_name]:
 
             # get the parameters
-            params = {}
-            for p in method_node.select(['Parameters', 'Parameter']):
-                param_name = p[1].value.value
-                if param_name in params:
-                    logging.error('Two params=%s have cannot have the same name'
-                        % (param_name))
-                    sys.exit(42)
-                
-                params[param_name] = p
-
+            params = build_method_params(method_node)
+            
             method_env = build_block_env(method_node, set(params))
             if len(method_env) > 0:
                 # add the params into the root method_env
