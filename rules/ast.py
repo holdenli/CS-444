@@ -128,7 +128,11 @@ RULES = {
         ['Block'],
     ],
 
-    'Block': [ # Zero or more of any of these
+    'Block': [ # Zero or more
+        ['Statement'],
+    ],
+
+    'Statement': [
         ['LocalVariableDeclaration'],
         ['Block'],
         ['EmptyStatement'],
