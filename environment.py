@@ -314,7 +314,9 @@ def build_block_env(tree, carry):
 
             env.children.extend(build_block_env(block[3], new_carry))
         else:
-            for stmt in block.children:
+            for stmt in find_nodes(block, [Node('Block'), Node('ForStatement'),
+                Node('LocalVariableDeclaration')]):
+
                 # are we making a new block?
                 if stmt == Node('Block') or stmt == Node('ForStatement'):
                     env.children.extend(build_block_env(block, new_carry))
