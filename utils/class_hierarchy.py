@@ -8,7 +8,7 @@ import typelink
 from utils import logging
 
 class Field:
-    def __init__(self, node, c):
+    def __init__(self, node, c=None):
         if node == None or node.name != "FieldDeclaration":
             self.mods = []
             self.name = ""
@@ -17,7 +17,7 @@ class Field:
             self.mods = ast.get_modifiers(node.find_child("Modifiers"))
             self.name = node.find_child("Identifier").value.value
             self.type = c.get_type(node.find_child("Type"))
-        if c.interface:
+        if c != None and c.interface:
             self.mods.append("Abstract")
 
     def __repr__(self):
@@ -31,7 +31,7 @@ class Field:
 # This is kinda overloaded to represent constructors as well cause I'm a terrible person
 # When self.type == None, it is a constructor
 class Method:
-    def __init__(self, node, c):
+    def __init__(self, node, c=None):
         if node == None or (node.name != "MethodDeclaration" and node.name != "ConstructorDeclaration"):
             self.mods = []
             self.type = None
@@ -45,9 +45,9 @@ class Method:
                 self.type = c.get_type(node.find_child("Type"))
             self.name = node.find_child("Identifier").value.value
             self.params = c.get_parameters(node.find_child("Parameters"))
-        if c.interface:
+        if c != None and c.interface:
             self.mods.append("Abstract")
-
+    
     def __repr__(self):
         if (self.type == None):
             return "<Constructor: %s>" % self.name
@@ -60,6 +60,25 @@ class Method:
                 return False
             return self.name == other.name and self.params == other.params
         return False
+
+def Temp_Field(name):
+    r = Field(None)
+    r.name = name
+    return r
+
+def Temp_Method(name, params):
+    r = Method(None)
+    r.type = "TEMP"
+    r.name = name
+    r.params = params
+    return r
+
+def Temp_Constructor(name, params):
+    r = Method(None)
+    r.type = None
+    r.name = name
+    r.params = params
+    return r
 
 # Design notes:
 #   - a "parallel bottom up tree structure" for super classes and interfaces
