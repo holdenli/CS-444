@@ -18,10 +18,7 @@ class Node:
             return "<Node: %s>" % (self.name)
 
     def __eq__(self, other):
-        if self.__class__ is other.__class__:
-            return self.name == other.name
-        
-        return False
+        return (other.__class__ == ASTNode or other.__class__ == Node) and (self.name == other.name)
 
     def __getitem__(self, key):
         return self.children[key]
@@ -69,7 +66,7 @@ class Node:
         return list(self.dfs_iter(leafs=True))
 
     def leaf_values(self):
-        return [l.value.value for l in self.leafs(self)]
+        return [l.value.value for l in self.leafs()]
 
     def select(self, names, deep=False, inclusive=True):
         """
