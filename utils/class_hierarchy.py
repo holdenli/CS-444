@@ -355,6 +355,16 @@ def class_hierarchy(ast_list, pkg_index):
                 sys.exit(42)
             c.declare.append(ccon)
 
+        # annoying edge case check yo
+        if c.interface:
+            m = Method(None, c)
+            m.type = "java.lang.Class"
+            m.name = "getClass"
+            m.params = []
+            if m in c.declare:
+                logging.error("interface declared a final method:", m)
+                sys.exit(42)
+
         # Implicit declare for interface without superinterface
         if c.interface and len(c.implements) == 0:
             # Add publics of java.lang.Object
@@ -372,7 +382,7 @@ def class_hierarchy(ast_list, pkg_index):
                 if (n == "equals"):
                     m.params.append("java.lang.Object")
                 elif (n == "getClass"):
-                    pass#m.mods.append("Final")
+                    pass
                 if m not in c.declare:
                     c.declare.append(m)
                 elif m.type not in [x.type for x in c.declare if x == m]:
