@@ -18,6 +18,7 @@ from utils import class_hierarchy
 from environment import build_environments
 import typelink
 import typecheck
+import name_resolve
 
 # Globals
 ##########################
@@ -150,11 +151,11 @@ def joosc(targets, options):
     if options.stage == 'hierarchy':
         sys.exit(0)
 
+    name_resolve.name_link(pkg_index, type_index, class_index)
     typecheck.typecheck(type_index, class_index)
 
 # INTERFACE
 ##########################
-
 
 def parse_options(args=sys.argv):
     parser = optparse.OptionParser()

@@ -66,7 +66,7 @@ class Node:
         return list(self.dfs_iter(leafs=True))
 
     def leaf_values(self):
-        return [l.value.value for l in self.leafs()]
+        return [l.value.value for l in self.leafs() if l.value != None]
 
     def select(self, names, deep=False, inclusive=True):
         """
@@ -139,6 +139,17 @@ class ASTNode(Node):
     def set_decl(node):
         pass
         
+def find_nodes(tree, white_list):
+    # we traverse through block_tree looking for LocalVariableDeclaration
+    # we don't go past another Block, though
+    ret = []
+    for c in tree.children:
+        if c in white_list:
+            ret.append(c)
+        else:
+            ret.extend(find_nodes(c, white_list))
+
+    return ret
 
 if __name__ == "__main__":
     n = Node("OMG1",

@@ -2,6 +2,7 @@
 import sys
 
 from utils.node import Node
+from utils.node import find_nodes
 from utils import logging
 from scanner import Token
 
@@ -337,14 +338,4 @@ def build_block_env(tree, carry):
 
     return envs
 
-def find_nodes(block_tree, white_list):
-    # we traverse through block_tree looking for LocalVariableDeclaration
-    # we don't go past another Block, though
-    ret = []
-    for c in block_tree.children:
-        if c in white_list:
-            ret.append(c)
-        else:
-            ret.extend(find_nodes(c, white_list))
 
-    return ret
