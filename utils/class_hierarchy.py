@@ -19,6 +19,7 @@ class Field:
             self.type = c.get_type(node.find_child("Type"))
         if c != None and c.interface:
             self.mods.append("Abstract")
+        self.node = node
 
     def __repr__(self):
         return "<Field: %s>" % self.name
@@ -47,6 +48,7 @@ class Method:
             self.params = c.get_parameters(node.find_child("Parameters"))
         if c != None and c.interface:
             self.mods.append("Abstract")
+        self.node = node
     
     def __repr__(self):
         if (self.type == None):
