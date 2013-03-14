@@ -46,10 +46,17 @@ class Environment(Node):
        self.children = children
 
     def __repr__(self):
-        return '<Env: %s=%s> %s' % (self.name, self.value, self.names)
+        return '<Env: %s=%s Node=%s> %s' % (self.name, self.value, self.node, self.names)
 
     def __getitem__(self, key):
-        return
+        k = Environment(key)
+        children = [c for c in self.children if c == k]
+        if len(children) == 0:
+            return None
+        elif len(children) == 1:
+            return children[0]
+        else:
+            return children
 
 def env_type_node(env):
     cls = list(env.select(['ClassDeclaration']))
@@ -120,11 +127,13 @@ def build_environment(abs_tree):
     pkg_env = Environment(name='PackageDeclaration', node=pkg,
         value='.'.join([l.value.value for l in pkg.leafs()])
         )
+    pkg.env = pkg_env # link the node back to here
     
     cu_node = list(abs_tree.select(['CompilationUnit']))
     if len(cu_node) != 1:
         return pkg_env
     cu = Environment(name='CompilationUnit', node=cu_node[0])
+    cu_node[0].env = cu
 
     # add type imports to CompilationUnit
     ti = {}
@@ -134,9 +143,10 @@ def build_environment(abs_tree):
         ti[i_name] = i
 
     ti_node = list(abs_tree.select(['TypeImports']))[0]
-    cu.children.append(Environment(name='TypeImport',
-        node=ti_node,
-        names=ti))
+    ti_env = Environment(name='TypeImport', node=ti_node,
+                         names=ti)
+    cu.children.append(ti_env)
+    ti_node.env = ti_env
 
     # add package imports to CompilationUnit
     pi = {}
@@ -148,9 +158,10 @@ def build_environment(abs_tree):
     pi[pkg_name] = pkg
 
     pi_node = list(abs_tree.select(['PackageImports']))[0]
-    cu.children.append(Environment(name='PackageImports',
-        node=pi_node,
-        names=pi))
+    pi_env = Environment(name='PackageImports', node=pi_node,
+                         names=pi)
+    cu.children.append(pi_env)
+    pi_node.env = pi_env
 
     # add a class or interface to the package
     cls = list(abs_tree.select(['ClassDeclaration']))
@@ -170,7 +181,7 @@ def build_class_env(cls_node):
         returns a class environment
     """
     # builds properties
-    (fields, methods) = build_type_props(cls_node)
+    (fields, methods) = build_member_props(cls_node)
 
     # class Environment
     env = Environment(name='ClassDeclaration', node=cls_node)
@@ -179,6 +190,8 @@ def build_class_env(cls_node):
     env.fields = fields
     env.methods = methods
     env.children = []
+
+    cls_node.env = env
 
     # each child environment represents a method's environment
     for method_name in methods:
@@ -205,7 +218,7 @@ def build_class_env(cls_node):
 
 def build_interface_env(iface_node):
     # builds properties
-    (fields, methods) = build_type_props(iface_node)
+    (fields, methods) = build_member_props(iface_node)
 
     # class Environment
     env = Environment(name='InterfaceDeclaration', node=iface_node)
@@ -215,9 +228,11 @@ def build_interface_env(iface_node):
     env.methods = methods
     env.children = []
 
+    iface_node.env = env
+
     return env
 
-def build_type_props(tree):
+def build_member_props(tree):
     fields = {}
     methods = {}
 
@@ -263,6 +278,8 @@ def build_block_env(tree, carry):
         # get all the variables in this environment
         env = Environment(name='Block')
         env.node = block
+        block.env = env # the block should point back to the env
+        
         new_carry = set(carry)
 
         if block == Node('ForStatement'):
@@ -286,26 +303,23 @@ def build_block_env(tree, carry):
 
             env.children.extend(build_block_env(block[3], new_carry))
         else:
-            for e in find_nodes(block, [Node('LocalVariableDeclaration'),
-                Node('Block'), Node('ForStatement')]):
-
-                if e == Node('Block') or e == Node('ForStatement'):
-                    # look for subenvs in this environment:
+            for stmt in block.children:
+                # are we making a new block?
+                if stmt == Node('Block') or stmt == Node('ForStatement'):
                     env.children.extend(build_block_env(block, new_carry))
-                else:
-                    var = e
-                    name = list(var.select(['LocalVariableDeclaration', 'Identifier']))
-                    name = name[0].value.value
 
-                    # variables same name in an overlapping scope?
+                # are we declaring a variable?
+                elif stmt == Node('LocalVariableDeclaration'):
+                    name = list(stmt.select(['LocalVariableDeclaration', 'Identifier']))
+                    name = name[0].value.value
                     if name in new_carry:
                         logging.error("No two local variables=%s with overlapping scope have the same name"
                             % name)
                         sys.exit(42)
 
-                    env.names[name] = var
+                    env.names[name] = stmt
                     new_carry.add(name)
-            
+                       
         envs.append(env)
 
     return envs

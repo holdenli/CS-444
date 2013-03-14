@@ -1,17 +1,15 @@
 #!/usr/bin/python3
 
-import os
-import sys
-
 class Node:
 
-    def __init__(self, name=None, value=None, children=None):
+    def __init__(self, name=None, value=None, children=None, env=None):
         if children == None:
             children = []
         
         self.name = name
         self.value = value
         self.children = children
+        self.env = env
 
     def __repr__(self):
         if self.value != None:
@@ -47,7 +45,7 @@ class Node:
         """
         return self.children[0]
 
-    def bfs_iter(self, leafs=False, filterfn=None):
+    def bfs_iter(self, leafs=False):
         queue = [self]
         while len(queue) > 0:
             node = queue.pop(0)
@@ -57,7 +55,7 @@ class Node:
 
             yield node
 
-    def dfs_iter(self, leafs=False, filterfn=None):
+    def dfs_iter(self, leafs=False):
         stack = [self]
         while len(stack) > 0:
             node = stack.pop(0)
@@ -68,7 +66,10 @@ class Node:
             yield node
 
     def leafs(self):
-        return list(self.dfs_iter(True))
+        return list(self.dfs_iter(leafs=True))
+
+    def leaf_values(self):
+        return [l.value.value for l in self.leafs(self)]
 
     def select(self, names, deep=False, inclusive=True):
         """
@@ -117,7 +118,6 @@ class Node:
             ret.extend(i.value.value for i in s.leafs())
 
         return ret
-
 
     def pprint(self, tabsize=0):
         print(' '*tabsize, self)
