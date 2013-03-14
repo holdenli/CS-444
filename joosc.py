@@ -22,6 +22,7 @@ import typelink
 ##########################
 
 parse_table = parser.read_parse_table('grammar.lr1')
+stdlib_asts = None
 
 # COMPILING
 ##########################
@@ -79,6 +80,12 @@ def get_ast(parse_tree, filename, options):
 
 # Main work
 def joosc(targets, options):
+    
+    # SETUP
+    ########
+
+    global stdlib_asts
+
     # Build a list of targets to compile.
     target_files = []
     for target in targets:
@@ -89,8 +96,11 @@ def joosc(targets, options):
         else:
             logging.error("Invalid target %s, exiting..." % target)
 
-    if options.include_stdlib == True:
+    if options.include_stdlib == True and stdlib_asts == None:
         target_files.extend(opts.stdlib_files)
+
+    # BUILD AST
+    ############
 
     # Build token list for each file.
     token_lists = []
@@ -117,6 +127,19 @@ def joosc(targets, options):
         ast_list.append(get_ast(parse_tree, target_files[i], options))
     if options.stage == 'ast':
         sys.exit(0)
+
+    # stdlib optimization
+    if options.include_stdlib == True:
+        if stdlib_asts != None:
+            ast_list.extend(stdlib_asts)
+        else:
+            stdlib_asts = []
+            for i, ast in enumerate(ast_list):
+                if target_files[i] in opts.stdlib_files:
+                    stdlib_asts.append(ast)
+
+    # TYPE RESOLUTION
+    ##################
 
     pkg_index = build_environments(ast_list)
     

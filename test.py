@@ -108,7 +108,6 @@ class TestRunner:
 # Primary Test Functions
 ##########################
 
-
 # Initializes test running and executes the testing procedure.
 # Called by joosc.py.
 def setup_and_run(test_name, show_errors, verbose, joosc_options):
