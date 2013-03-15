@@ -184,8 +184,7 @@ def is_assignable(type1, type2, class_dict):
     elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
         return is_nonstrict_subclass(type2, type1, class_dict)
     else:
-        # Should probably not happen.
-        sys.error(1)
+        return False
 
 
 # Returns True if type1 and type2 refer to the same class, or 
