@@ -85,7 +85,7 @@ def resolve_type(type_index, cu_env, pkg_name, type_node):
     unit
     """
 
-    type_name = '.'.join(l.value.value for l in type_node.leafs())
+    type_name = '.'.join(type_node.leaf_values())
 
     return resolve_type_by_name(type_index, cu_env, pkg_name, type_name)
 
