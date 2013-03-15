@@ -6,6 +6,8 @@ import environment
 from utils import logging
 from utils.node import Node
 
+from utils.node import find_nodes
+
 def typelink(asts, pkg_index):
     type_index = build_canonical_type_index(pkg_index)
 
@@ -39,14 +41,30 @@ def typelink(asts, pkg_index):
 
             # then, we find type references and resolve those
             for type_node in find_type_nodes(cu_env):
-                canon_name = resolve_type(type_index, cu_env, pkg_name, type_node)
-                if canon_name == None:
-                    type_name = type_node.select_leaf_values(['Identifier'])[0]
-                    logging.error('Cant type link "%s"' % type_name)
-                    sys.exit(42)
 
-                # lets link the type node to its compilation unit
-                type_node.env = type_index[canon_name]
+                if type_node[0] == Node('ArrayType'):
+                    type_node = type_node[0]
+
+                if type_node[0] == Node('PrimitiveType'):
+                    type_node.canon = type_node[0][0].name
+
+                elif type_node[0] == Node('Void'):
+                    type_node.canon = 'Void'
+
+                elif type_node[0] == Node('ReferenceType'):
+                    ref_type_node = type_node[0]
+
+                    canon_name = resolve_type(type_index, cu_env, pkg_name,
+                        ref_type_node)
+
+                    if canon_name == None:
+                        type_name = ref_type_node.select_leaf_values(['Identifier'])[0]
+                        logging.error('Cant type link "%s"' % type_name)
+                        sys.exit(42)
+
+                    # lets link the type node to its compilation unit
+                    type_node.env = type_index[canon_name]
+                    type_node.canon = canon_name
 
     return type_index
 
@@ -133,7 +151,7 @@ def resolve_type_by_name(type_index, cu_env, pkg_name, type_name):
     
 def find_type_nodes(cu_env):
     n = environment.env_type_node(cu_env)
-    for node in n.select(['ReferenceType']):
+    for node in n.select(['Type']):
         yield node
 
 def weed_single_type_imports(type_index, pkg_index):

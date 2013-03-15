@@ -2,15 +2,14 @@
 
 class Node:
 
-    def __init__(self, name=None, value=None, children=None, env=None):
+    def __init__(self, name=None, value=None, children=None):
         if children == None:
             children = []
         
         self.name = name
         self.value = value
         self.children = children
-        self.env = env
-
+        
     def __repr__(self):
         if self.value != None:
             return "<Node: %s=%s>" % (self.name, self.value)
@@ -123,22 +122,40 @@ class Node:
 
 class ASTNode(Node):
 
-    # Reference to a Type declaration.
-    typ = None
+    def __init__(self, name=None, value=None, children=None,
+                env=None, decl=None, canon=None):
 
-    # Store a reference to a declaration (field, method, parameter, or local
-    # variable) node. Only valid for certain types of expressions.
-    decl = None
+        super().__init__(name, value, children)
 
-    def __init__(self, name=None, value=None, children=None, env=None):
-        super().__init__(name, value, children, env)
+        # Reference to a Type declaration.
+        self.typ = None
 
-    def set_typ(node):
-        pass
+        self.env = env
 
-    def set_decl(node):
-        pass
-        
+        # Store a reference to a declaration (field, method, parameter, or local
+        # variable) node. Only valid for certain types of expressions.
+        self.decl = decl
+
+        self.canon = canon
+
+    def __repr__(self):
+        d = ""
+        if self.decl != None:
+            d = '-> %s' % self.decl
+
+        v = ""
+        if self.value != None:
+            v = '=%s' % self.value
+
+        e = ""
+        if self.env:
+            e = "[env=%s]" % self.env.name
+
+        c = ""
+        if self.canon:
+            c = "[typ=%s]" % self.canon
+        return "<ASTNode: %s%s %s %s%s>" % (self.name, v, d, e, c)
+
 def find_nodes(tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration
     # we don't go past another Block, though

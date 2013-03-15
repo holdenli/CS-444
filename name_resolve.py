@@ -98,13 +98,13 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars):
                 find_and_resolve_names(type_index, cu_env, pkg_name, node[2],
                     local_vars)
 
-            # FIXME: now resolve the method name itself
             continue
 
         elif node == Node('Name'):
             name = node.leaf_values()
 
         resolved_node = name_link_name(type_index, cu_env, pkg_name, local_vars, '.'.join(name))
+        node.decl = resolved_node
 
         if resolved_node == None:
             logging.error('Could not resolve name %s in %s.%s with %s' % (name, pkg_name,
@@ -150,7 +150,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name):
 
         if canon_name and (i+1 != len(name_parts)):
             canon_pkg = canon_name.rsplit('.', 1)[0]
-            # make sure we can resolve 
+            # make sure we can resolve the field in this type
             return name_link_name(type_index, type_index[canon_name], canon_pkg,
                 {}, '.'.join(name_parts[i+1:]))
 

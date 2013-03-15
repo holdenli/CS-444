@@ -1,6 +1,6 @@
 from utils import node
 
-primitive_types = ['int', 'short', 'char', 'byte', 'boolean', 'null']
+primitive_types = ['Int', 'Short', 'Char', 'Byte', 'Boolean', 'Null', 'Void']
 
 primitive_dict = {k:node.Node(k) for k in primitive_types}
 
