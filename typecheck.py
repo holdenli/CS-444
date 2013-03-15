@@ -82,6 +82,10 @@ def typecheck_methods(c, env, t_i, c_i):
 # 3. Return the assigned type, so that it can be used by the caller.
 ###############################################################################
 
+# Get the type from the input name node.
+def typecheck_name(node):
+    return node.typ
+
 def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     # see if type for expr has already been resolved
     if hasattr(node, 'typ') and node.typ != None:
@@ -114,7 +118,7 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
             logging.error("FATAL ERROR")
             sys.exit(1)
         if node[0].name == 'Name':
-            pass
+            t = typecheck_name(node[0])
         else:
             t = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
     elif node.name == 'CastExpression':
@@ -288,10 +292,6 @@ def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
         logging.error("FATAL ERROR?: Could not resolve literal.")
         sys.exit(1) # Could not resolve type, compiler error?
 
-    return node.typ
-
-# Get the type from the input name node.
-def typecheck_name(class_env, local_env, return_type, node, t_i):
     return node.typ
 
 # Operators
