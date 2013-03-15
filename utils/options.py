@@ -11,5 +11,5 @@ def directory_crawl(path):
 JooscOptions = namedtuple('JooscOptions',
     ['stage', 'include_stdlib', 'print_stdlib', 'directory_crawl'])
 
-stdlib_files = directory_crawl('stdlib/5.0/java')
+stdlib_files = directory_crawl('stdlib/5.1/java')
 
