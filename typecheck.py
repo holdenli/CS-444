@@ -98,6 +98,9 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     # return the type
     return t
 
+# def typecheck_primary(node, c, class_env, return_type, type_index, class_dict):
+
+
 def typecheck_assignment(class_env, local_env, return_type, node):
     lhs_type = None
     if node[0].name == 'Name':
@@ -107,13 +110,38 @@ def typecheck_assignment(class_env, local_env, return_type, node):
     elif node[0].name == 'ArrayAccess':
         lhs_type == typecheck_array_access(node[0])
     else:
+        logging.error('FATAL ERROR: Invalid typecheck_assignment')
         sys.exit(1) # should not happen
 
-    rhs_type = typecheck_expression(node[1])
+    rhs_type = typecheck_expr(node[1])
+    
+    if is_assignable(lhs_type, rhs_type, class_dict):
+        node.typ = lhs_type
+    else:
+        logging.error('Cannot assign expression of type %s to LHS of type %s' %
+            rhs_type.canon, lhs_type.canon)
+        sys.exit(42)
+    return node.typ
+
+def typecheck_cast_expression(node, class_dict, class_env, return_type):
+    if node.name != 'CastExpression':
+        logging.error('FATAL: Invalid node %s for typecheck_cast_expression' %
+            node.name)
+        sys.exit(1)
+
+    expr_type = typecheck_expr(node[1])
+    if is_assignable(expr_type, node[0]) or is_assignable(node[0], expr_type):
+        node.typ = node[0].typ
+        return node.typ
+    else:
+        logging.error('Cast expression of type %s into %s invalid' %
+            (expr_type.canon, node[0].canon))
+        sys.exit(42)
 
 def typecheck_literal(node, c, class_env, return_type, t_i):
     if node.name != 'Literal':
-        logging.error("FATAL ERROR: typecheck_literal") 
+        logging.error('FATAL ERROR: Invalid node %s for typecheck_literal' %
+            node.name)
         sys.exit(1)
     
     # Check children to determine type.
@@ -146,18 +174,38 @@ def typecheck_name(class_env, local_env, return_type, node, t_i):
     
     return node.typ
 
-# TODO: finish this
-def is_assignable(type1, type2, class_env):
-    if type1 == type2:
+def is_assignable(type1, type2, class_dict):
+    if type1.canon == type2.canon:
         return True
     elif not primitive.is_primitive(type1) and type2.name == 'Null':
         return True
     elif primitive.is_numeric(type1) and primitive.is_numeric(type2):
         return primitive.is_widening_conversion(type1, type2)
     elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
-        return True
-        # we require type2 <= type1 (type2 is a subclass of type1)
-        #
+        return is_nonstrict_subclass(type2, type1, class_dict)
+    else:
+        # Should probably not happen.
+        sys.error(1)
+
+
+# Returns True if type1 and type2 refer to the same class, or 
+def is_nonstrict_subclass(type1, type2, class_dict):
+    # Do a BFS up the hierarchy.
+    queue = [type2.canon]
+    while len(queue) > 0:
+        typename = queue.pop(0)
+
+        # Found type1 as a superclass of type2.
+        if type1.canon == typename:
+            return True
+        else:
+            cls = class_dict[typename]
+            queue.extend(list(cls.implements))
+            if cls.extends != None:
+                queue.append(cls.extends)
+
+    # Did not find type1 as a superclass of type2.
+    return False
 
 # Operators
 
