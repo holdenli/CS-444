@@ -1,4 +1,5 @@
 import sys
+import name_resolve
 from utils import logging
 from utils import node
 from utils import primitives
@@ -33,9 +34,6 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['ForStatement']))
     return exprs
 
-def isNumType(t):
-    return t == "Byte" or t == "Char" or t == "Short" or t == "Int"
-
 def typecheck(t_i, c_i):
     for type_name, env in t_i.items():
         c = c_i[type_name]
@@ -47,14 +45,17 @@ def typecheck_methods(c, env, t_i, c_i):
         # TODO
         return
 
+    #print("  #", c)
     # Run typecheck on each field
     for field_node in env['ClassDeclaration'].names.values():
+        #print("    !", field_node)
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
             typecheck_expr(expr, c, env, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
+        #print("    @", method_env)
         n = method_env.node
         exprs = get_exprs_from_node(n)
         for expr in exprs:
@@ -84,18 +85,13 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
         pass
     elif node.name == 'CreationExpression':
         pass
-    elif node.name == 'ConditionalOrExpression':
-        pass
-    elif node.name == 'ConditionalAndExpression':
-        pass
-    elif node.name == 'InclusiveOrExpression':
-        pass
-    elif node.name == 'ExclusiveOrExpression':
-        pass
-    elif node.name == 'AndExpression':
-        pass
+    elif node.name == 'ConditionalOrExpression' \
+    or node.name == 'ConditionalAndExpression':
+        t = typecheck_conditional(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'EqualityExpression':
-        pass
+        t = typecheck_equality(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'RelationalExpression':
+        t = typecheck_relational(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'AdditiveExpression':
         t = typecheck_add(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'MultiplicativeExpression':
@@ -105,14 +101,32 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     elif node.name == 'PostfixExpression':
         z = node.find_child('Literal')
         if z != None:
-            t = typecheck_literal(z, c, class_env, return_type, t_i)
+            t = typecheck_literal(z, c, class_env, return_type, t_i, c_i)
         else:
             pass
+    elif node.name == 'CastExpression':
+        t = typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i)
 
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'IfStatement' \
+    or   node.name == 'WhileStatement':
+        pass
+    elif node.name == 'ForStatement':
+        pass
+
+    elif node.name == 'InclusiveOrExpression' \
+        or   node.name == 'ExclusiveOrExpression' \
+        or   node.name == 'AndExpression':
+        logging.error("SHOULD NOT SEE THESE")
+        sys.exit(1)
+    elif node.name == 'This':
+        return c.name
     else:
         pass
+
+    if not isinstance(t, str) and t != None:
+        logging.warning("typecheck found a non-type", node.name, t)
 
     # set type
     node.typ = t
@@ -146,37 +160,93 @@ def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
         sys.exit(42)
     return node.typ
 
+# Note: static field accesses are always ambiguous.
 def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
-    pass
     if node.name != 'FieldAccess':
         logging.error('FATAL ERROR: invalid node %s for field access' %
             node.name)
         sys.exit(1)
 
-    # if node[0].name == 
+    receiver_type = typecheck_expr(node[1][0], c, class_env, return_type, t_i,
+        c_i)
+    field_name = node[0][0].value.value
+    if is_array_type(receiver_type):
+        if field_name == 'length':
+            return 'Int'
+        else:
+            logging.error('Invalid field access on array type %s' %
+                receiver_type)
+            sys.exit(42)
+    elif primitive.is_primitive(receiver_type) == True:
+        logging.error('Invalid field access on primitive type %s' %
+            receiver_type)
+    else:
+        field_type = name_resolve.accessible_field(c_i, t_i, receiver_type,
+            field_name, c.name)
+        if field_type is None:
+            logging.error('Cannot access field %s of type %s from class %s' %
+                (field_name, receiver_type, c.name))
+            sys.exit(42)
+        else:
+            return field_type
 
 def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
-    pass
+    if node.name != 'ArrayAccess':
+        logging.error('FATAL ERROR: invalid node %s for array access' %
+            node.name)
+        sys.exit(1)
+
+    receiver_type = None
+    if node[0][0].name == 'Name':
+        receiver_type = typecheck_name(node[0][0])
+    else:
+        receiver_type = typecheck_expr(node[0][0], c, class_env, return_type,
+            t_i, c_i)
+
+    # Must be array type.
+    if not is_array_type(receiver_type):
+        logging.error('Cannot index into non-array type')
+        sys.exit(42)
+
+    # Expression must be a number.
+    expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+    if not primary.is_numeric(expr_type):
+        logging.error('Array access with non-numeric type %s' % expr_type)
+        sys.exit(42)
+
+    return get_arraytype(receiver_type)
 
 def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
-    pass
+    if node.name != 'MethodInvocation':
+        logging.error('FATAL ERROR: invalid node %s for method invocation' %
+            node.name)
+        sys.exit(1)
 
-def typecheck_cast_expression(node, class_dict, class_env, return_type):
+    # Get the type of whatever we're calling the method on.
+    receiver_type = None
+    if len(node[1].children) == 0:
+        receiver_type = c.name
+    elif node[1][0].name == 'Name':
+        # name_resolve.name_link_name(t_i, t_i[c.name], c.pkg node[1][0])
+        pass
+    return None
+
+def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'CastExpression':
         logging.error('FATAL: Invalid node %s for typecheck_cast_expression' %
             node.name)
         sys.exit(1)
 
-    expr_type = typecheck_expr(node[1])
-    if is_assignable(expr_type, node[0]) or is_assignable(node[0], expr_type):
-        node.typ = node[0].typ
-        return node.typ
+    expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+    if is_assignable(expr_type, node[0].canon, c_i) \
+    or is_assignable(node[0].canon, expr_type, c_i):
+        return node[0].canon
     else:
-        logging.error('Cast expression of type %s into %s invalid' %
-            (expr_type, node[0]))
-        sys.exit(42)
+        logging.error('Cast expression of type %s into %s' %
+            (expr_type, node[0].canon))
+        #sys.exit(42)
 
-def typecheck_literal(node, c, class_env, return_type, t_i):
+def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'Literal':
         logging.error('FATAL ERROR: Invalid node %s for typecheck_literal' %
             node.name)
@@ -190,7 +260,7 @@ def typecheck_literal(node, c, class_env, return_type, t_i):
     elif node[0].name == 'CharacterLiteral':
         node.typ = 'Char'
     elif node[0].name == 'StringLiteral':
-        node.typ = t_i['java.lang.String']
+        node.typ = 'java.lang.String'
     elif node[0].name == 'NullLiteral':
         node.typ = 'Null'
 
@@ -202,14 +272,6 @@ def typecheck_literal(node, c, class_env, return_type, t_i):
 
 # Get the type from the input name node.
 def typecheck_name(class_env, local_env, return_type, node, t_i):
-    target_env = node.decl
-    if target_env.name == '':
-        pass
-    elif target_env.name == 'ClassDeclaration':
-        pass
-    elif target_env.name == 'InterfaceDeclaration':
-        pass
-    
     return node.typ
 
 # Operators
@@ -225,23 +287,111 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
 
     elif node[0].name == "NotOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
-        if t != "Bool":
-            #logging.error("typecheck failed:", node)
+        if t != "Boolean":
+            logging.error("typecheck failed:", node)
             #sys.exit(42)
-            pass
-        else:
-            logging.warning("typecheck passed", node)
-            pass
         return t
 
     elif node[0].name == "CastExpression":
-        pass
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
 
     elif node[0].name == "SubtractOperator":
-        pass
+        t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+        if primitives.is_numeric(t):
+            logging.error("typecheck failed:", node)
+            #sys.exit(42)
+        return t
 
     else:
         logging.warning("UnaryExpression", "has unexpected child", node[0].name) 
+        sys.exit(1) 
+
+def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
+    expected_node = ['ConditionalAndExpression', 'ConditionalOrExpression']
+    if node.name not in expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: has no children", expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'AndOperator' \
+    or node[1].name == 'OrOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
+            return "Boolean"
+        else:
+            logging.error("typecheck failed: and/or not bool")
+            #sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
+        sys.exit(1) 
+
+def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
+    expected_node = ['EqualityExpression']
+    if node.name not in expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: has no children", expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'EqualOperator' \
+    or node[1].name == 'NotEqualOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
+            return "Boolean"
+        elif t1 == "Boolean" and t2 == "Boolean":
+            return "Boolean"
+        elif (t1 == "Null" or primitives.is_reference(t1)) \
+        and  (t2 == "Null" or primitives.is_reference(t2)):
+            return "Boolean"
+        else:
+            logging.error("typecheck failed", expected_node)
+            #sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
+        sys.exit(1) 
+
+def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
+    expected_node = ['RelationalExpression']
+    if node.name not in expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: has no children", expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'LessThanOperator' \
+    or node[1].name == 'GreaterThanOperator' \
+    or node[1].name == 'LessThanEqualOperator' \
+    or node[1].name == 'GreaterThanEqualOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
+            return "Boolean"
+        else:
+            logging.error("typecheck failed", expected_node)
+            #sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
 def typecheck_add(node, c, class_env, return_type, t_i, c_i):
@@ -267,7 +417,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             else:
                 logging.error("typecheck failed: string add void")
                 sys.exit(42)
-        elif isNumType(t1) and isNumType(t2):
+        elif primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
             logging.error("typecheck failed: add/sub not num")
@@ -295,7 +445,7 @@ def typecheck_mult(node, c, class_env, return_type, t_i, c_i):
     or node[1].name == 'ModuloOperator':
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
-        if isNumType(t1) and isNumType(t2):
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
             logging.error("typecheck failed: mult/div/mod not num")
@@ -318,31 +468,47 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
     else:
         t = typecheck_expr(node.children[0], c, class_env, return_type, t_i, c_i)
     
-    if t != return_type:
-        #logging.error("typecheck failed:", node)
-        #sys.exit(42)
-        pass
-    else:
+    if t == return_type \
+    or (primitives.is_reference(return_type) and t == "Null"):
         #logging.warning("typecheck passed", node)
         pass
+    else:
+        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
+        #sys.exit(42)
 
-    return t
+    return None
 
 def is_assignable(type1, type2, c_i):
+    # Call other helper for anything having to do with arrays.
+    if is_array_type(type1) or is_array_type(type2):
+        return is_array_assignable(type1, type2, c_i)
+
     if type1 == type2:
         return True
-    elif not primitive.is_primitive(type1) and type2.name == 'Null':
+    elif primitives.is_reference(type1) and type2 == 'Null':
         return True
-    elif primitive.is_numeric(type1) and primitive.is_numeric(type2):
-        return primitive.is_widening_conversion(type1, type2)
-    elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
+    elif primitives.is_numeric(type1) and primitives.is_numeric(type2):
+        return primitives.is_widening_conversion(type1, type2)
+    elif not primitives.is_primitive(type1) and primitives.is_primitive(type2):
         return is_nonstrict_subclass(type2, type1, c_i)
     else:
         return False
 
+def is_array_assignable(type1, type2, c_i):
+    if type1 == 'java.lang.Object' and is_array_type(type2):
+        return True
+    elif type1 == 'java.lang.Cloneable' and is_array_type(type2):
+        return True
+    elif type1 == 'java.lang.Serializable' and is_array_type(type2):
+        return True
+    elif is_array_type(type1) and is_array_type(type2):
+        return is_assignable(get_arraytype(type1), get_arraytype(type2), c_i)
 
 # Returns True if type1 and type2 refer to the same class, or type
 def is_nonstrict_subclass(type1, type2, c_i):
+    if type1 == None or type2 == None:
+        return False
+
     # Do a BFS up the hierarchy.
     queue = [type2]
     while len(queue) > 0:
@@ -359,3 +525,15 @@ def is_nonstrict_subclass(type1, type2, c_i):
 
     # Did not find type1 as a superclass of type2.
     return False
+
+def is_array_type(typ):
+    return typ.endswith('[]')
+
+def get_arraytype(typ):
+    if is_array_type(typ):
+        return typ[:-2]
+    else:
+        logging.error("FATAL ERROR: non-array type %s provided to get_arraytype" %
+            typ)
+        sys.exit(-1)
+
