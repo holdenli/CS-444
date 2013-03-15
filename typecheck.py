@@ -117,6 +117,9 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     else:
         pass
 
+    if not isinstance(t, str) and t != None:
+        logging.warning("typecheck found a non-type", node.name, t)
+
     # set type
     node.typ = t
 
@@ -193,7 +196,7 @@ def typecheck_literal(node, c, class_env, return_type, t_i):
     elif node[0].name == 'CharacterLiteral':
         node.typ = 'Char'
     elif node[0].name == 'StringLiteral':
-        node.typ = t_i['java.lang.String']
+        node.typ = 'java.lang.String'
     elif node[0].name == 'NullLiteral':
         node.typ = 'Null'
 
@@ -228,20 +231,20 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
 
     elif node[0].name == "NotOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
-        if t != "Bool":
-            #logging.error("typecheck failed:", node)
+        if t != "Boolean":
+            logging.error("typecheck failed:", node)
             #sys.exit(42)
-            pass
-        else:
-            logging.warning("typecheck passed", node)
-            pass
         return t
 
     elif node[0].name == "CastExpression":
-        pass
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
 
     elif node[0].name == "SubtractOperator":
-        pass
+        t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+        if primitives.is_numeric(t):
+            logging.error("typecheck failed:", node)
+            #sys.exit(42)
+        return t
 
     else:
         logging.warning("UnaryExpression", "has unexpected child", node[0].name) 
@@ -265,7 +268,7 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Bool"
+            return "Boolean"
         else:
             logging.error("typecheck failed: and/or not bool")
             #sys.exit(42)
@@ -292,12 +295,12 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Bool"
-        elif t1 == "Bool" and t2 == "Bool":
-            return "Bool"
+            return "Boolean"
+        elif t1 == "Boolean" and t2 == "Boolean":
+            return "Boolean"
         elif (t1 == "Null" or primitives.is_reference(t1)) \
         and  (t2 == "Null" or primitives.is_reference(t2)):
-            return "Bool"
+            return "Boolean"
         else:
             logging.error("typecheck failed", expected_node)
             #sys.exit(42)
@@ -326,7 +329,7 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Bool"
+            return "Boolean"
         else:
             logging.error("typecheck failed", expected_node)
             #sys.exit(42)
