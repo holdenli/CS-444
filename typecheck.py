@@ -84,16 +84,9 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
         pass
     elif node.name == 'CreationExpression':
         pass
-    elif node.name == 'ConditionalOrExpression':
-        pass
-    elif node.name == 'ConditionalAndExpression':
-        pass
-    elif node.name == 'InclusiveOrExpression':
-        pass
-    elif node.name == 'ExclusiveOrExpression':
-        pass
-    elif node.name == 'AndExpression':
-        pass
+    elif node.name == 'ConditionalOrExpression' \
+    or node.name == 'ConditionalAndExpression':
+        t = typecheck_conditional(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'EqualityExpression':
         pass
     elif node.name == 'AdditiveExpression':
@@ -111,6 +104,11 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
 
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'InclusiveOrExpression' \
+    or node.name == 'ExclusiveOrExpression' \
+    or node.name == 'AndExpression':
+        logging.error("SHOULD NOT SEE THESE")
+        sys.exit(1)
     else:
         pass
 
@@ -260,6 +258,33 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
         logging.warning("UnaryExpression", "has unexpected child", node[0].name) 
         sys.exit(1) 
 
+def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
+    expected_node = ['ConditionalAndExpression', 'ConditionalOrExpression']
+    if node.name not in expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: has no children", expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'AndOperator' \
+    or node[1].name == 'OrOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if isNumType(t1) and isNumType(t2):
+            return "Bool"
+        else:
+            logging.error("typecheck failed: and/or not bool")
+            #sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
+        sys.exit(1) 
+
 def typecheck_add(node, c, class_env, return_type, t_i, c_i):
     expected_node = 'AdditiveExpression'
     if node.name != expected_node:
@@ -342,5 +367,5 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
         #logging.warning("typecheck passed", node)
         pass
 
-    return t
+    return None
 
