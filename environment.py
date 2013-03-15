@@ -79,13 +79,13 @@ def env_type_node(env):
 
 def env_type_name(env):
 
-    cls = list(env.select(['ClassDeclaration']))
-    iface = list(env.select(['InterfaceDeclaration']))
+    cls = env['ClassDeclaration']
+    iface = env['InterfaceDeclaration']
 
     if cls:
-        name = cls[0].node.select_leaf_values(['ClassName', 'Identifier'])[0]
+        name = cls.node.select_leaf_values(['ClassName', 'Identifier'])[0]
     elif iface:
-        name = iface[0].node.select_leaf_values(['InterfaceName', 'Identifier'])[0]
+        name = iface.node.select_leaf_values(['InterfaceName', 'Identifier'])[0]
     else:
         return None
 
@@ -217,14 +217,24 @@ def build_class_env(cls_node):
     for method_name in methods:
         for method_node in methods[method_name]:
 
-            # get the parameters
+            method_env = Environment('MethodDeclaration',
+                node=method_node)
+            method_node.env = method_env
+
+            # method_env.value = method name
+            method_env.value = method_node.find_child('Identifier').value.value
+           
+           # get the parameters
             params = build_method_params(method_node)
-            
-            method_env = build_block_env(method_node, set(params))
-            if len(method_env) > 0:
+
+            block_env = build_block_env(method_node, set(params))
+
+            if len(block_env) > 0:
                 # add the params into the root method_env
-                method_env[0].names.update(params)
-                env.children.extend(method_env)
+                block_env[0].names.update(params)
+                method_env.children.append(block_env[0])
+
+            env.children.append(method_env)
 
     return env
 
