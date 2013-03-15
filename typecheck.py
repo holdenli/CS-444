@@ -3,6 +3,9 @@ from utils import logging
 from utils import node
 from utils import primitives
 
+# Note: I'm going to call some statements expressions cause why not?
+# ie. ReturnStatement
+
 # gets a list of all nodes that need to be type checked
 def get_exprs_from_node(n):
     exprs = []
@@ -22,15 +25,20 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['UnaryExpression']))
     exprs.extend(n.select(['PostfixExpression']))
     exprs.extend(n.select(['CastExpression']))
+
+    # statement "exprs"
     exprs.extend(n.select(['ReturnStatement']))
+    exprs.extend(n.select(['IfStatement']))
+    exprs.extend(n.select(['WhileStatement']))
+    exprs.extend(n.select(['ForStatement']))
     return exprs
 
-def typecheck(type_index, class_index):
-    for type_name, env in type_index.items():
-        c = class_index[type_name]
-        typecheck_methods(c, env, type_index, class_index)
+def typecheck(t_i, c_i):
+    for type_name, env in t_i.items():
+        c = c_i[type_name]
+        typecheck_methods(c, env, t_i, c_i)
 
-def typecheck_methods(c, env, type_index, class_index):
+def typecheck_methods(c, env, t_i, c_i):
     # interface has typecheck on field inits
     if c.interface:
         # TODO
@@ -40,7 +48,7 @@ def typecheck_methods(c, env, type_index, class_index):
     for field_node in env['ClassDeclaration'].names.values():
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
-            typecheck_expr(expr, c, env, None, type_index, class_index)
+            typecheck_expr(expr, c, env, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
@@ -50,7 +58,7 @@ def typecheck_methods(c, env, type_index, class_index):
             t = n.find_child('Type')
             if t != None:
                 t = t.canon
-            typecheck_expr(expr, c, env, t, type_index, class_index)
+            typecheck_expr(expr, c, env, t, t_i, c_i)
 
 #
 # Type check functions.
@@ -59,10 +67,10 @@ def typecheck_methods(c, env, type_index, class_index):
 # 2. Assign the above type to the input node.
 # 3. Return the assigned type, so that it can be used by the caller.
 
-def typecheck_expr(node, c, class_env, return_type, type_index, class_index):
+def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     # see if type for expr has already been resolved
     if hasattr(node, 'typ') and node.typ != None:
-        return node.typ.name
+        return node.typ
     
     t = None
 
@@ -70,15 +78,17 @@ def typecheck_expr(node, c, class_env, return_type, type_index, class_index):
     if node.name == 'PostfixExpression':
         z = node.find_child('Literal')
         if z != None:
-            t = typecheck_literal(z, c, class_env, return_type, type_index)
+            t = typecheck_literal(z, c, class_env, return_type, t_i)
         else:
             pass
+    elif node.name == 'UnaryExpression':
+        t = typecheck_unary(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'Assignment':
         pass
     elif node.name == 'MethodInvocation':
         pass
     elif node.name == 'ReturnStatement':
-        typecheck_return(node, c, class_env, return_type, type_index, class_index)
+        t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
     else:
         pass
 
@@ -86,8 +96,6 @@ def typecheck_expr(node, c, class_env, return_type, type_index, class_index):
     node.typ = t
 
     # return the type
-    if t != None:
-        t = t.name
     return t
 
 def typecheck_assignment(class_env, local_env, return_type, node):
@@ -103,7 +111,7 @@ def typecheck_assignment(class_env, local_env, return_type, node):
 
     rhs_type = typecheck_expression(node[1])
 
-def typecheck_literal(node, c, class_env, return_type, type_index):
+def typecheck_literal(node, c, class_env, return_type, t_i):
     if node.name != 'Literal':
         logging.error("FATAL ERROR: typecheck_literal") 
         sys.exit(1)
@@ -116,7 +124,7 @@ def typecheck_literal(node, c, class_env, return_type, type_index):
     elif node[0].name == 'CharacterLiteral':
         node.typ = primitives.get_type('Char')
     elif node[0].name == 'StringLiteral':
-        node.typ = type_index['java.lang.String']
+        node.typ = t_i['java.lang.String']
     elif node[0].name == 'NullLiteral':
         node.typ = primitives.get_type('Null')
 
@@ -127,7 +135,7 @@ def typecheck_literal(node, c, class_env, return_type, type_index):
     return node.typ
 
 # Get the type from the input name node.
-def typecheck_name(class_env, local_env, return_type, node, type_index):
+def typecheck_name(class_env, local_env, return_type, node, t_i):
     target_env = node.decl
     if target_env.name == '':
         pass
@@ -151,7 +159,41 @@ def is_assignable(type1, type2, class_env):
         # we require type2 <= type1 (type2 is a subclass of type1)
         #
 
-def typecheck_return(node, c, class_env, return_type, type_index, class_index):
+# Operators
+
+def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
+    if node.name != 'UnaryExpression':
+        logging.error("FATAL ERROR: typecheck_unary") 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: UnaryExpression has no children") 
+        sys.exit(1) 
+
+    elif node[0].name == "NotOperator":
+        t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+        if t != "Bool":
+            #logging.error("typecheck failed:", node)
+            #sys.exit(42)
+            pass
+        else:
+            logging.warning("typecheck passed", node)
+            pass
+        return t
+
+    elif node[0].name == "CastExpression":
+        pass
+
+    elif node[0].name == "SubtractOperator":
+        pass
+
+    else:
+        logging.warning("WARNING: UnaryExpression has unexpected children", node[0].name) 
+        sys.exit(1) 
+
+# Statements
+
+def typecheck_return(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'ReturnStatement':
         logging.error("FATAL ERROR: typecheck_return") 
         sys.exit(1)
@@ -160,7 +202,7 @@ def typecheck_return(node, c, class_env, return_type, type_index, class_index):
     if len(node.children) == 0:
         t = "Void"
     else:
-        t = typecheck_expr(node.children[0], c, class_env, return_type, type_index, class_index)
+        t = typecheck_expr(node.children[0], c, class_env, return_type, t_i, c_i)
     
     if t != return_type:
         #logging.error("typecheck failed:", node)
