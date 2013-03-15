@@ -17,6 +17,7 @@ from utils import class_hierarchy
 
 from environment import build_environments
 import typelink
+import typecheck
 
 # Globals
 ##########################
@@ -149,7 +150,7 @@ def joosc(targets, options):
     if options.stage == 'hierarchy':
         sys.exit(0)
 
-    # typecheck.typecheck(pkg_index, type_index, class_hierarchy)
+    typecheck.typecheck(type_index, class_index)
 
 # INTERFACE
 ##########################

@@ -1,20 +1,35 @@
 import sys
 from utils import node
 
-def typecheck(type_index, class_hierarchy):
-    for fqtype, cu in enumerate(type_index):
-        hierarchy = class_hierarchy[fqtype]
-        typecheck_methods(cu, type_index, hierarchy)
+def typecheck(type_index, class_index):
+    for type_name, env in type_index.items():
+        c = class_index[type_name]
+        typecheck_methods(c, env, type_index)
 
-def typecheck_methods(cu, type_index, hierarchy):
-    for method in cu['ClassDeclaration'].methods:
-        
-
-
-# This function should be called for each statement in a method body.
-def typecheck_statement(class_env, local_env, return_type, statement):
-    pass
-
+def typecheck_methods(c, env, type_index):
+    if c.interface:
+        return
+    for method_env in env['ClassDeclaration'].children:
+        n = method_env.node
+        exprs = []
+        exprs.extend(n.select(['Assignment']))
+        exprs.extend(n.select(['MethodInvocation']))
+        exprs.extend(n.select(['CreationExpression']))
+        exprs.extend(n.select(['ConditionalOrExpression']))
+        exprs.extend(n.select(['ConditionalAndExpression']))
+        exprs.extend(n.select(['InclusiveOrExpression']))
+        exprs.extend(n.select(['ExclusiveOrExpression']))
+        exprs.extend(n.select(['AndExpression']))
+        exprs.extend(n.select(['EqualityExpression']))
+        exprs.extend(n.select(['AdditiveExpression']))
+        exprs.extend(n.select(['MultiplicativeExpression']))
+        exprs.extend(n.select(['RelationalExpression']))
+        exprs.extend(n.select(['InstanceofExpression']))
+        exprs.extend(n.select(['UnaryExpression']))
+        exprs.extend(n.select(['PostfixExpression']))
+        exprs.extend(n.select(['CastExpression']))
+        for expr in exprs:
+            typecheck_expr(expr, c, env, type_index)
 #
 # Type check functions.
 # Each type check function must do the following:
@@ -22,8 +37,7 @@ def typecheck_statement(class_env, local_env, return_type, statement):
 # 2. Assign the above type to the input node.
 # 3. Return the assigned type, so that it can be used by the caller.
 
-# This function is called by typecheck_statement on a single expression.
-def typecheck(class_env, local_env, return_type, node):
+def typecheck_expr(node, c, class_env, type_index):
     pass
 
 def typecheck_literal(class_env, local_env, return_type, node):
@@ -39,7 +53,7 @@ def typecheck_literal(class_env, local_env, return_type, node):
         node.typ = Node('char')
     elif node[0].name == 'StringLiteral':
         node.typ = type_index['java.lang.String']
-    else
+    else:
         node.typ = Node('null')
 
     return node.typ
