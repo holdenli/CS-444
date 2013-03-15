@@ -3,38 +3,55 @@ from utils import logging
 from utils import node
 from utils import primitives
 
+# gets a list of all nodes that need to be type checked
+def get_exprs_from_node(n):
+    exprs = []
+    exprs.extend(n.select(['Assignment']))
+    exprs.extend(n.select(['MethodInvocation']))
+    exprs.extend(n.select(['CreationExpression']))
+    exprs.extend(n.select(['ConditionalOrExpression']))
+    exprs.extend(n.select(['ConditionalAndExpression']))
+    exprs.extend(n.select(['InclusiveOrExpression']))
+    exprs.extend(n.select(['ExclusiveOrExpression']))
+    exprs.extend(n.select(['AndExpression']))
+    exprs.extend(n.select(['EqualityExpression']))
+    exprs.extend(n.select(['AdditiveExpression']))
+    exprs.extend(n.select(['MultiplicativeExpression']))
+    exprs.extend(n.select(['RelationalExpression']))
+    exprs.extend(n.select(['InstanceofExpression']))
+    exprs.extend(n.select(['UnaryExpression']))
+    exprs.extend(n.select(['PostfixExpression']))
+    exprs.extend(n.select(['CastExpression']))
+    exprs.extend(n.select(['ReturnStatement']))
+    return exprs
+
 def typecheck(type_index, class_index):
     for type_name, env in type_index.items():
         c = class_index[type_name]
         typecheck_methods(c, env, type_index, class_index)
 
 def typecheck_methods(c, env, type_index, class_index):
+    # interface has typecheck on field inits
     if c.interface:
+        # TODO
         return
+
+    # Run typecheck on each field
+    for field_node in env['ClassDeclaration'].names.values():
+        exprs = get_exprs_from_node(field_node)
+        for expr in exprs:
+            typecheck_expr(expr, c, env, None, type_index, class_index)
+
+    # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
         n = method_env.node
-        exprs = []
-        exprs.extend(n.select(['Assignment']))
-        exprs.extend(n.select(['MethodInvocation']))
-        exprs.extend(n.select(['CreationExpression']))
-        exprs.extend(n.select(['ConditionalOrExpression']))
-        exprs.extend(n.select(['ConditionalAndExpression']))
-        exprs.extend(n.select(['InclusiveOrExpression']))
-        exprs.extend(n.select(['ExclusiveOrExpression']))
-        exprs.extend(n.select(['AndExpression']))
-        exprs.extend(n.select(['EqualityExpression']))
-        exprs.extend(n.select(['AdditiveExpression']))
-        exprs.extend(n.select(['MultiplicativeExpression']))
-        exprs.extend(n.select(['RelationalExpression']))
-        exprs.extend(n.select(['InstanceofExpression']))
-        exprs.extend(n.select(['UnaryExpression']))
-        exprs.extend(n.select(['PostfixExpression']))
-        exprs.extend(n.select(['CastExpression']))
+        exprs = get_exprs_from_node(n)
         for expr in exprs:
             t = n.find_child('Type')
             if t != None:
                 t = t.canon
             typecheck_expr(expr, c, env, t, type_index, class_index)
+
 #
 # Type check functions.
 # Each type check function must do the following:
@@ -45,7 +62,7 @@ def typecheck_methods(c, env, type_index, class_index):
 def typecheck_expr(node, c, class_env, return_type, type_index, class_index):
     # see if type for expr has already been resolved
     if hasattr(node, 'typ') and node.typ != None:
-        return node.typ
+        return node.typ.name
     
     t = None
 
@@ -60,11 +77,17 @@ def typecheck_expr(node, c, class_env, return_type, type_index, class_index):
         pass
     elif node.name == 'MethodInvocation':
         pass
+    elif node.name == 'ReturnStatement':
+        typecheck_return(node, c, class_env, return_type, type_index, class_index)
     else:
         pass
 
-    # return the type
+    # set type
     node.typ = t
+
+    # return the type
+    if t != None:
+        t = t.name
     return t
 
 def typecheck_assignment(class_env, local_env, return_type, node):
@@ -98,7 +121,7 @@ def typecheck_literal(node, c, class_env, return_type, type_index):
         node.typ = primitives.get_type('Null')
 
     if node.typ == None:
-        logging.error("FATAL ERROR: Could not resolve literal.")
+        logging.error("FATAL ERROR?: Could not resolve literal.")
         sys.exit(1) # Could not resolve type, compiler error?
 
     return node.typ
@@ -128,4 +151,20 @@ def is_assignable(type1, type2, class_env):
         # we require type2 <= type1 (type2 is a subclass of type1)
         #
 
+def typecheck_return(node, c, class_env, return_type, type_index, class_index):
+    if node.name != 'ReturnStatement':
+        logging.error("FATAL ERROR: typecheck_return") 
+        sys.exit(1)
+    
+    t = typecheck_expr(node.children[0], c, class_env, return_type, type_index, class_index)
+    
+    if t != return_type:
+        #logging.error("typecheck failed:", node)
+        #sys.exit(42)
+        pass
+    else:
+        #logging.warning("typecheck passed", node)
+        pass
+
+    return t
 
