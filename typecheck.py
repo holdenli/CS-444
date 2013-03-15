@@ -1,4 +1,5 @@
 import sys
+import name_resolve
 from utils import logging
 from utils import node
 from utils import primitives
@@ -115,10 +116,12 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
         pass
 
     elif node.name == 'InclusiveOrExpression' \
-    or   node.name == 'ExclusiveOrExpression' \
-    or   node.name == 'AndExpression':
+        or   node.name == 'ExclusiveOrExpression' \
+        or   node.name == 'AndExpression':
         logging.error("SHOULD NOT SEE THESE")
         sys.exit(1)
+    elif node.name == 'This':
+        return c.name
     else:
         pass
 
@@ -157,20 +160,76 @@ def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
         sys.exit(42)
     return node.typ
 
+# Note: static field accesses are always ambiguous.
 def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
-    pass
     if node.name != 'FieldAccess':
         logging.error('FATAL ERROR: invalid node %s for field access' %
             node.name)
         sys.exit(1)
 
-    # if node[0].name == 
+    receiver_type = typecheck_expr(node[1][0], c, class_env, return_type, t_i,
+        c_i)
+    field_name = node[0][0].value.value
+    if is_array_type(receiver_type):
+        if field_name == 'length':
+            return 'Int'
+        else:
+            logging.error('Invalid field access on array type %s' %
+                receiver_type)
+            sys.exit(42)
+    elif primitive.is_primitive(receiver_type) == True:
+        logging.error('Invalid field access on primitive type %s' %
+            receiver_type)
+    else:
+        field_type = name_resolve.accessible_field(c_i, t_i, receiver_type,
+            field_name, c.name)
+        if field_type is None:
+            logging.error('Cannot access field %s of type %s from class %s' %
+                (field_name, receiver_type, c.name))
+            sys.exit(42)
+        else:
+            return field_type
 
 def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
-    pass
+    if node.name != 'ArrayAccess':
+        logging.error('FATAL ERROR: invalid node %s for array access' %
+            node.name)
+        sys.exit(1)
+
+    receiver_type = None
+    if node[0][0].name == 'Name':
+        receiver_type = typecheck_name(node[0][0])
+    else:
+        receiver_type = typecheck_expr(node[0][0], c, class_env, return_type,
+            t_i, c_i)
+
+    # Must be array type.
+    if not is_array_type(receiver_type):
+        logging.error('Cannot index into non-array type')
+        sys.exit(42)
+
+    # Expression must be a number.
+    expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+    if not primary.is_numeric(expr_type):
+        logging.error('Array access with non-numeric type %s' % expr_type)
+        sys.exit(42)
+
+    return get_arraytype(receiver_type)
 
 def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
-    pass
+    if node.name != 'MethodInvocation':
+        logging.error('FATAL ERROR: invalid node %s for method invocation' %
+            node.name)
+        sys.exit(1)
+
+    # Get the type of whatever we're calling the method on.
+    receiver_type = None
+    if len(node[1].children) == 0:
+        receiver_type = c.name
+    elif node[1][0].name == 'Name':
+        # name_resolve.name_link_name(t_i, t_i[c.name], c.pkg node[1][0])
+        pass
+    return None
 
 def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'CastExpression':
@@ -213,14 +272,6 @@ def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
 
 # Get the type from the input name node.
 def typecheck_name(class_env, local_env, return_type, node, t_i):
-    target_env = node.decl
-    if target_env.name == '':
-        pass
-    elif target_env.name == 'ClassDeclaration':
-        pass
-    elif target_env.name == 'InterfaceDeclaration':
-        pass
-    
     return node.typ
 
 # Operators
@@ -428,6 +479,10 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
     return None
 
 def is_assignable(type1, type2, c_i):
+    # Call other helper for anything having to do with arrays.
+    if is_array_type(type1) or is_array_type(type2):
+        return is_array_assignable(type1, type2, c_i)
+
     if type1 == type2:
         return True
     elif primitives.is_reference(type1) and type2 == 'Null':
@@ -439,6 +494,15 @@ def is_assignable(type1, type2, c_i):
     else:
         return False
 
+def is_array_assignable(type1, type2, c_i):
+    if type1 == 'java.lang.Object' and is_array_type(type2):
+        return True
+    elif type1 == 'java.lang.Cloneable' and is_array_type(type2):
+        return True
+    elif type1 == 'java.lang.Serializable' and is_array_type(type2):
+        return True
+    elif is_array_type(type1) and is_array_type(type2):
+        return is_assignable(get_arraytype(type1), get_arraytype(type2), c_i)
 
 # Returns True if type1 and type2 refer to the same class, or type
 def is_nonstrict_subclass(type1, type2, c_i):
@@ -461,3 +525,15 @@ def is_nonstrict_subclass(type1, type2, c_i):
 
     # Did not find type1 as a superclass of type2.
     return False
+
+def is_array_type(typ):
+    return typ.endswith('[]')
+
+def get_arraytype(typ):
+    if is_array_type(typ):
+        return typ[:-2]
+    else:
+        logging.error("FATAL ERROR: non-array type %s provided to get_arraytype" %
+            typ)
+        sys.exit(-1)
+

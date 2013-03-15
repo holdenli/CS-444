@@ -300,9 +300,13 @@ RULES = {
         ['FieldName', 'FieldReceiver'],
     ],
 
+    'FieldName': [
+        ['Identifier'],
+    ],
+
     'FieldReceiver': [
         ['Primary'],
-        ['Super'],
+        # ['Super'],
     ],
 }
 
