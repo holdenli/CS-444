@@ -44,14 +44,17 @@ def typecheck_methods(c, env, t_i, c_i):
         # TODO
         return
 
+    #print("  #", c)
     # Run typecheck on each field
     for field_node in env['ClassDeclaration'].names.values():
+        #print("    !", field_node)
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
             typecheck_expr(expr, c, env, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
+        #print("    @", method_env)
         n = method_env.node
         exprs = get_exprs_from_node(n)
         for expr in exprs:
@@ -97,9 +100,11 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     elif node.name == 'PostfixExpression':
         z = node.find_child('Literal')
         if z != None:
-            t = typecheck_literal(z, c, class_env, return_type, t_i)
+            t = typecheck_literal(z, c, class_env, return_type, t_i, c_i)
         else:
             pass
+    elif node.name == 'CastExpression':
+        t = typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i)
 
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
@@ -167,22 +172,22 @@ def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
 def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     pass
 
-def typecheck_cast_expression(node, class_dict, class_env, return_type):
+def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'CastExpression':
         logging.error('FATAL: Invalid node %s for typecheck_cast_expression' %
             node.name)
         sys.exit(1)
 
-    expr_type = typecheck_expr(node[1])
-    if is_assignable(expr_type, node[0]) or is_assignable(node[0], expr_type):
-        node.typ = node[0].typ
-        return node.typ
+    expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
+    if is_assignable(expr_type, node[0].canon, c_i) \
+    or is_assignable(node[0].canon, expr_type, c_i):
+        return node[0].canon
     else:
-        logging.error('Cast expression of type %s into %s invalid' %
-            (expr_type, node[0]))
-        sys.exit(42)
+        logging.error('Cast expression of type %s into %s' %
+            (expr_type, node[0].canon))
+        #sys.exit(42)
 
-def typecheck_literal(node, c, class_env, return_type, t_i):
+def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'Literal':
         logging.error('FATAL ERROR: Invalid node %s for typecheck_literal' %
             node.name)
@@ -425,7 +430,7 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
 def is_assignable(type1, type2, c_i):
     if type1 == type2:
         return True
-    elif not primitives.is_primitive(type1) and type2.name == 'Null':
+    elif primitives.is_reference(type1) and type2 == 'Null':
         return True
     elif primitives.is_numeric(type1) and primitives.is_numeric(type2):
         return primitives.is_widening_conversion(type1, type2)
@@ -437,6 +442,9 @@ def is_assignable(type1, type2, c_i):
 
 # Returns True if type1 and type2 refer to the same class, or type
 def is_nonstrict_subclass(type1, type2, c_i):
+    if type1 == None or type2 == None:
+        return False
+
     # Do a BFS up the hierarchy.
     queue = [type2]
     while len(queue) > 0:
