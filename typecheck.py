@@ -70,10 +70,9 @@ def typecheck_assignment(class_env, local_env, return_type, node):
     elif node[0].name == 'ArrayAccess':
         lhs_type == typecheck_array_access(node[0])
     else:
-    
         sys.exit(1) # should not happen
 
-# def typecheck_array
+    rhs_type = typecheck_expression(node[1])
 
 def typecheck_literal(node, c, class_env, return_type, type_index):
     if node.name != 'Literal':
@@ -81,15 +80,15 @@ def typecheck_literal(node, c, class_env, return_type, type_index):
     
     # Check children to determine type.
     if node[0].name == 'DecimalIntegerLiteral':
-        node.typ = primitives.get_type('int')
+        node.typ = primitives.get_type('Int')
     elif node[0].name == 'BooleanLiteral':
-        node.typ = primitives.get_type('boolean')
+        node.typ = primitives.get_type('Boolean')
     elif node[0].name == 'CharacterLiteral':
-        node.typ = primitives.get_type('char')
+        node.typ = primitives.get_type('Char')
     elif node[0].name == 'StringLiteral':
         node.typ = type_index['java.lang.String']
-    else:
-        node.typ = primitives.get_type('null')
+    elif node[0].name == 'NullLiteral':
+        node.typ = primitives.get_type('Null')
 
     if node.typ == None:
         logging.error("FATAL ERROR: Could not resolve literal.")
@@ -113,12 +112,13 @@ def typecheck_name(class_env, local_env, return_type, node, type_index):
 def is_assignable(type1, type2, class_env):
     if type1 == type2:
         return True
-    if is_numeric(type1) and is_numeric(type2): # Widening conversions.
-        return is_widening_conversion(type1, type2)
-    elif type1 == 'int' and type2 in ['short', 'byte', 'char']:
+    elif not primitive.is_primitive(type1) and type2.name == 'Null':
         return True
-    elif type1 == 'short' and type2 in ['byte', 'char']:
+    elif primitive.is_numeric(type1) and primitive.is_numeric(type2):
+        return primitive.is_widening_conversion(type1, type2)
+    elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
         return True
-    elif type1 not in ['int', 'short', 'byte', 'char'] and type2 == 'null':
-        return True
+        # we require type2 <= type1 (type2 is a subclass of type1)
+        #
+
 
