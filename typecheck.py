@@ -36,6 +36,9 @@ def get_exprs_from_node(n):
 def isNumType(t):
     return t == "Byte" or t == "Char" or t == "Short" or t == "Int"
 
+def is_reference(t):
+    return False
+
 def typecheck(t_i, c_i):
     for type_name, env in t_i.items():
         c = c_i[type_name]
@@ -88,7 +91,9 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     or node.name == 'ConditionalAndExpression':
         t = typecheck_conditional(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'EqualityExpression':
-        pass
+        t = typecheck_equality(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'RelationalExpression':
+        t = typecheck_relational(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'AdditiveExpression':
         t = typecheck_add(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'MultiplicativeExpression':
@@ -279,6 +284,67 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
             return "Bool"
         else:
             logging.error("typecheck failed: and/or not bool")
+            #sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
+        sys.exit(1) 
+
+def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
+    expected_node = ['EqualityExpression']
+    if node.name not in expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: has no children", expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'EqualOperator' \
+    or node[1].name == 'NotEqualOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if isNumType(t1) and isNumType(t2):
+            return "Bool"
+        elif t1 == "Bool" and t2 == "Bool":
+            return "Bool"
+        elif (t1 == "Null" or is_reference(t1)) \
+        and  (t2 == "Null" or is_reference(t2)):
+            return "Bool"
+        else:
+            logging.error("typecheck failed", expected_node)
+            #sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
+        sys.exit(1) 
+
+def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
+    expected_node = ['RelationalExpression']
+    if node.name not in expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: has no children", expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'LessThanOperator' \
+    or node[1].name == 'GreaterThanOperator' \
+    or node[1].name == 'LessThanEqualOperator' \
+    or node[1].name == 'GreaterThanEqualOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if isNumType(t1) and isNumType(t2):
+            return "Bool"
+        else:
+            logging.error("typecheck failed", expected_node)
             #sys.exit(42)
 
     else:
