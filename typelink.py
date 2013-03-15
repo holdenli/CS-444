@@ -41,8 +41,9 @@ def typelink(asts, pkg_index):
 
             # then, we find type references and resolve those
             for type_node in find_type_nodes(cu_env):
-
+                array_parent = None
                 if type_node[0] == Node('ArrayType'):
+                    array_parent = type_node
                     type_node = type_node[0]
 
                 if type_node[0] == Node('PrimitiveType'):
@@ -65,6 +66,10 @@ def typelink(asts, pkg_index):
                     # lets link the type node to its compilation unit
                     type_node.env = type_index[canon_name]
                     type_node.canon = canon_name
+
+                if array_parent != None:
+                    array_parent.env = type_node.env
+                    array_parent.canon = type_node.canon + "[]"
 
     return type_index
 
