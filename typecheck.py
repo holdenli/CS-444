@@ -10,6 +10,16 @@ from utils import primitives
 # gets a list of all nodes that need to be type checked
 def get_exprs_from_node(n):
     exprs = []
+    
+    # pimary "exprs"
+    exprs.extend(n.select(['Literal']))
+    exprs.extend(n.select(['This']))
+    exprs.extend(n.select(['FieldAccess']))
+    exprs.extend(n.select(['MethodInvocation']))
+    exprs.extend(n.select(['ArrayAccess']))
+
+
+    # exprs
     exprs.extend(n.select(['Assignment']))
     exprs.extend(n.select(['MethodInvocation']))
     exprs.extend(n.select(['CreationExpression']))
@@ -70,6 +80,7 @@ def typecheck_methods(c, env, t_i, c_i):
 # 1. Determine the correct type of the input node.
 # 2. Assign the above type to the input node.
 # 3. Return the assigned type, so that it can be used by the caller.
+###############################################################################
 
 def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     # see if type for expr has already been resolved
@@ -99,14 +110,17 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     elif node.name == 'UnaryExpression':
         t = typecheck_unary(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'PostfixExpression':
-        z = node.find_child('Literal')
-        if z != None:
-            t = typecheck_literal(z, c, class_env, return_type, t_i, c_i)
-        else:
+        if len(node.children) == 0:
+            logging.error("FATAL ERROR")
+            sys.exit(1)
+        if node[0].name == 'Name':
             pass
+        else:
+            t = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
     elif node.name == 'CastExpression':
         t = typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i)
 
+    # Statements
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'IfStatement' \
@@ -115,13 +129,17 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     elif node.name == 'ForStatement':
         pass
 
+    # Primarys
+    elif node.name == 'Literal':
+        t = typecheck_literal(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'This':
+        t = c.name
+
     elif node.name == 'InclusiveOrExpression' \
         or   node.name == 'ExclusiveOrExpression' \
         or   node.name == 'AndExpression':
         logging.error("SHOULD NOT SEE THESE")
         sys.exit(1)
-    elif node.name == 'This':
-        return c.name
     else:
         pass
 
@@ -133,6 +151,8 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
 
     # return the type
     return t
+
+###############################################################################
 
 def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
     lhs_type = None
@@ -527,7 +547,7 @@ def is_nonstrict_subclass(type1, type2, c_i):
     return False
 
 def is_array_type(typ):
-    return typ.endswith('[]')
+    return isinstance(typ, str) and typ.endswith('[]')
 
 def get_arraytype(typ):
     if is_array_type(typ):
