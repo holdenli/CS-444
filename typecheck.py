@@ -184,7 +184,7 @@ def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
         sys.exit(42)
     return node.typ
 
-# Note: static field accesses are always ambiguous.
+# Note: static field accesses are always ambiguous, and are handled elsewhere.
 def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'FieldAccess':
         logging.error('FATAL ERROR: invalid node %s for field access' %
@@ -196,6 +196,7 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
     field_name = node[0][0].value.value
     if is_array_type(receiver_type):
         if field_name == 'length':
+            node.typ = 'Int'
             return 'Int'
         else:
             logging.error('Invalid field access on array type %s' %
@@ -212,6 +213,7 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
                 (field_name, receiver_type, c.name))
             sys.exit(42)
         else:
+            node.typ = field_type
             return field_type
 
 def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
@@ -238,7 +240,8 @@ def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
         logging.error('Array access with non-numeric type %s' % expr_type)
         sys.exit(42)
 
-    return get_arraytype(receiver_type)
+    node.typ = get_arraytype(receiver_type)
+    return node.typ
 
 def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'MethodInvocation':
@@ -246,14 +249,48 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
             node.name)
         sys.exit(1)
 
+    method_name = node[0][0].value.value
+
     # Get the type of whatever we're calling the method on.
     receiver_type = None
+    is_static = False
     if len(node[1].children) == 0:
         receiver_type = c.name
     elif node[1][0].name == 'Name':
-        # name_resolve.name_link_name(t_i, t_i[c.name], c.pkg node[1][0])
-        pass
-    return None
+        if node[1][0].canon == None:
+            receiver_type = typecheck_name(node[1][0])
+        else:
+            receiver_type = node[1][0].canon
+            is_static = True
+    else: # Primary
+        receiver_type = typecheck_expr(node[1][0])
+
+    # Build types of arguments.
+    arg_canon_types = []
+    for argument_expr in node[2].children:
+        arg_canon_types.append(typecheck_expr(argument_expr))
+
+    # Call helper to find a method with the given signature (name and args).
+    method_decl = name_resolve.accessible_method(c_i, t_i,
+        receiver_type, method_name, c.name, arg_canon_types)
+    if method_decl == None:
+        logging.error('Invalid method invocation')
+        sys.exit(42)
+        
+    if 'static' in method_decl.modifiers and is_static == False:
+        logging.error('Invalid static method invocation')
+        sys.exit(42)
+    elif 'static' not in method_decl.modifier and is_static == True:
+        logging.error('Invalid instance method invocation (of static method)')
+        sys.exit(42)
+
+    # Get the return type of the method.
+    if method_decl[1].name == 'Void':
+        node.typ = 'Void'
+    else:
+        node.typ = method_decl[1].canon
+
+    return node.typ
 
 def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'CastExpression':
