@@ -1,4 +1,5 @@
 import sys
+from utils import logging
 from utils import node
 from utils import primitives
 
@@ -30,7 +31,7 @@ def typecheck_methods(c, env, type_index):
         exprs.extend(n.select(['PostfixExpression']))
         exprs.extend(n.select(['CastExpression']))
         for expr in exprs:
-            typecheck_expr(expr, c, env, type_index)
+            typecheck_expr(expr, c, env, "TODO", type_index)
 #
 # Type check functions.
 # Each type check function must do the following:
@@ -38,13 +39,27 @@ def typecheck_methods(c, env, type_index):
 # 2. Assign the above type to the input node.
 # 3. Return the assigned type, so that it can be used by the caller.
 
-def typecheck_expr(node, c, class_env, type_index):
+def typecheck_expr(node, c, class_env, return_type, type_index):
     """
     if node.name == 'Assignment':
         return typecheck_assignment(class_env, local_env, return_type, node)
     elif node.name == 'MethodInvocation':
         return typecheck_method_invo(class_env, local_env, return_type, node)
     """
+
+    if hasattr(node, 'typ') and node.typ != None:
+        return node.typ
+    
+    t = None
+
+    # DO STUFF HERE...
+    if node.name == 'PostfixExpression':
+        z = node.find_child('Literal')
+        if z != None:
+            t = typecheck_literal(z, c, class_env, return_type, type_index)
+
+    node.typ = t
+    return t
 
 def typecheck_assignment(class_env, local_env, return_type, node):
     lhs_type = None
@@ -60,9 +75,9 @@ def typecheck_assignment(class_env, local_env, return_type, node):
 
 # def typecheck_array
 
-def typecheck_literal(class_env, local_env, return_type, node, type_index):
+def typecheck_literal(node, c, class_env, return_type, type_index):
     if node.name != 'Literal':
-        sys.exit(42)
+        sys.exit(1)
     
     # Check children to determine type.
     if node[0].name == 'DecimalIntegerLiteral':
@@ -77,7 +92,8 @@ def typecheck_literal(class_env, local_env, return_type, node, type_index):
         node.typ = primitives.get_type('null')
 
     if node.typ == None:
-        sys.exit(42) # Could not resolve type, compiler error?
+        logging.error("FATAL ERROR: Could not resolve literal.")
+        sys.exit(1) # Could not resolve type, compiler error?
 
     return node.typ
 
