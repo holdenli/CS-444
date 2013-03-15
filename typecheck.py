@@ -33,6 +33,9 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['ForStatement']))
     return exprs
 
+def isNumType(t):
+    return t == "Byte" or t == "Char" or t == "Short" or t == "Int"
+
 def typecheck(t_i, c_i):
     for type_name, env in t_i.items():
         c = c_i[type_name]
@@ -75,18 +78,37 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     t = None
 
     # DO STUFF HERE...
-    if node.name == 'PostfixExpression':
+    if node.name == 'Assignment':
+        pass
+    elif node.name == 'MethodInvocation':
+        pass
+    elif node.name == 'CreationExpression':
+        pass
+    elif node.name == 'ConditionalOrExpression':
+        pass
+    elif node.name == 'ConditionalAndExpression':
+        pass
+    elif node.name == 'InclusiveOrExpression':
+        pass
+    elif node.name == 'ExclusiveOrExpression':
+        pass
+    elif node.name == 'AndExpression':
+        pass
+    elif node.name == 'EqualityExpression':
+        pass
+    elif node.name == 'AdditiveExpression':
+        t = typecheck_add(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'MultiplicativeExpression':
+        t = typecheck_mult(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'UnaryExpression':
+        t = typecheck_unary(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'PostfixExpression':
         z = node.find_child('Literal')
         if z != None:
             t = typecheck_literal(z, c, class_env, return_type, t_i)
         else:
             pass
-    elif node.name == 'UnaryExpression':
-        t = typecheck_unary(node, c, class_env, return_type, t_i, c_i)
-    elif node.name == 'Assignment':
-        pass
-    elif node.name == 'MethodInvocation':
-        pass
+
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
     else:
@@ -188,13 +210,77 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
         pass
 
     else:
-        logging.warning("WARNING: UnaryExpression has unexpected children", node[0].name) 
+        logging.warning("UnaryExpression", "has unexpected child", node[0].name) 
+        sys.exit(1) 
+
+def typecheck_add(node, c, class_env, return_type, t_i, c_i):
+    expected_node = 'AdditiveExpression'
+    if node.name != expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: %s has no children" % expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'AddOperator' or node[1].name == 'SubtractOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if node[1].name == 'AddOperator' \
+        and (t1 == "java.lang.String" or t2 == "java.lang.String"):
+            if t1 != "Void" and t2 != "Void":
+                return "java.lang.String"
+            else:
+                logging.error("typecheck failed: string add void")
+                sys.exit(42)
+        elif isNumType(t1) and isNumType(t2):
+            return "Int"
+        else:
+            logging.error("typecheck failed: add/sub not num")
+            sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
+        sys.exit(1) 
+
+def typecheck_mult(node, c, class_env, return_type, t_i, c_i):
+    expected_node = 'MultiplicativeExpression'
+    if node.name != expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+    
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: %s has no children" % expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        return typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    elif node[1].name == 'MultiplyOperator' \
+    or node[1].name == 'DivideOperator' \
+    or node[1].name == 'ModuloOperator':
+        t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
+        if isNumType(t1) and isNumType(t2):
+            return "Int"
+        else:
+            print(c)
+            print(node.children)
+            print(t1, t2)
+            logging.error("typecheck failed: mult/div/mod not num")
+            sys.exit(42)
+
+    else:
+        logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
 # Statements
 
 def typecheck_return(node, c, class_env, return_type, t_i, c_i):
-    if node.name != 'ReturnStatement':
+    if node.name != 'ReturnStatement' or return_type == None:
         logging.error("FATAL ERROR: typecheck_return") 
         sys.exit(1)
     
