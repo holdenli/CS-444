@@ -24,12 +24,19 @@ def name_link(pkg_index, type_index, cls_idx):
                 continue
 
             typedecl_env = cu_env['ClassDeclaration']
+
+            # name link everything inside methods!
             for method_env in typedecl_env.children:
                 method_node = method_env.node
                 for block_node in method_node.select(['Block']):
                     name_link_block(type_index, cu_env, pkg_name, block_node,
                             local_vars=environment.build_method_params(method_node),
                             method_node=method_node)
+
+            # namelink field initializers
+            for field_decl in typedecl_env.node.select(['Fields',
+                'FieldDeclaration']):
+                pass
 
 def name_link_block(type_index, cu_env, pkg_name, stmts,
         local_vars,
@@ -103,8 +110,42 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             Node('FieldAccess')]):
         if node == Node('MethodInvocation'):
             # node.children = ['MethodName', 'MethodReceiver', 'Arguments']
-            name = node[1].leaf_values() + node[0].leaf_values()
 
+            # resolve the receiver as much as possible
+            meth_recv = node[1]
+            if len(meth_recv.children) > 0:
+                if meth_recv[0] == Node('Name'):
+                    meth_recv_name = '.'.join(meth_recv.leaf_values())
+
+                    resolved_node = name_link_name(type_index, cu_env,
+                        pkg_name, local_vars,
+                        meth_recv_name.split('.'))
+
+                    canon_type = resolve_type_by_name(type_index,
+                        cu_env,
+                        pkg_name,
+                        meth_recv_name)
+                    
+                    # it could an ambig name
+                    if resolved_node != None:
+                        node.decl = resolved_node
+                        node.typ = resolved_node.find_child('Type').canon
+                        node.canon = node.typ
+                    elif canon_type != None:
+                        node.typ = canon_type
+                    else:
+                        print(local_vars)
+                        logging.error('method receiver %s could not be resolved!' %
+                            (meth_recv_name))
+                        sys.exit(42)
+
+                else:
+                    # resolve some more!
+                    find_and_resolve_names(type_index, cu_env, pkg_name,
+                        meth_recv,
+                        local_vars,
+                        method_node)
+                
             # if it has arguments, name resolve those
             if len(node.children) == 3:
                 find_and_resolve_names(type_index, cu_env, pkg_name, node[2],
@@ -139,7 +180,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
 
 def member_accessable(class_index, type_index, canon_type, member, viewer_canon_type):
         """
-            return canon_type of field if canon_type.field is accessible from
+            return ASTNode of field if canon_type.field is accessible from
             viewer_canon_type
         """
         
@@ -151,7 +192,7 @@ def member_accessable(class_index, type_index, canon_type, member, viewer_canon_
             'protected' not in contain_set[field_i].node.modifiers):
                 # name was 'a.b.c.d'
                 # we now try to link 'b.c.d' in the context of 'a'
-                return contain_set[field_i].node.find_child('Type').canon
+                return contain_set[field_i].node
         else:
             return None
 
