@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+
+import logging
 class Node:
 
     def __init__(self, name=None, value=None, children=None):
@@ -145,7 +147,7 @@ class ASTNode(Node):
 
         v = ""
         if self.value != None:
-            v = '=%s' % self.value
+            v = "=%s" % self.value
 
         e = ""
         if self.env:

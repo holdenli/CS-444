@@ -3,6 +3,7 @@
 import sys
 from utils import logging
 from utils.node import ASTNode
+from utils.node import Node
 
 # Processes the provide parse tree (root) node and returns the root ASTNode
 # of the abstract syntax tree of the input.
@@ -15,6 +16,9 @@ def build_ast(parse_tree):
     if unit is not None:
         cu = ASTNode('CompilationUnit')
         ast.add(build_top_level(ASTNode('CompilationUnit'), unit))
+
+    # Make sure that we use AST nodes.
+    # ensure_ast_children(ast)
 
     return ast
 
@@ -708,6 +712,14 @@ def flatten_leaves(node, root_name):
 def make_name_node(root_name, identifiers):
     return ASTNode(root_name, None,
         [ASTNode('Identifier', id) for identifier in identifiers])
+
+# Recursively converts all nodes to ASTNodes.
+def ensure_ast_children(node):
+    for i in range(0, len(node.children)):
+        if node[i].__class__ == Node:
+            node.children[i] = ASTNode(node[i].name, node[i].value, node[i].children)
+        ensure_ast_children(node[i])
+            # logging.error(node[i].value)
 
 ###############################################################################
 
