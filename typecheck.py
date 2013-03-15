@@ -33,9 +33,6 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['ForStatement']))
     return exprs
 
-def isNumType(t):
-    return t == "Byte" or t == "Char" or t == "Short" or t == "Int"
-
 def is_reference(t):
     return False
 
@@ -109,9 +106,15 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
 
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'IfStatement' \
+    or   node.name == 'WhileStatement':
+        pass
+    elif node.name == 'ForStatement':
+        pass
+
     elif node.name == 'InclusiveOrExpression' \
-    or node.name == 'ExclusiveOrExpression' \
-    or node.name == 'AndExpression':
+    or   node.name == 'ExclusiveOrExpression' \
+    or   node.name == 'AndExpression':
         logging.error("SHOULD NOT SEE THESE")
         sys.exit(1)
     else:
@@ -264,7 +267,7 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
     or node[1].name == 'OrOperator':
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
-        if isNumType(t1) and isNumType(t2):
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Bool"
         else:
             logging.error("typecheck failed: and/or not bool")
@@ -291,7 +294,7 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
     or node[1].name == 'NotEqualOperator':
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
-        if isNumType(t1) and isNumType(t2):
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Bool"
         elif t1 == "Bool" and t2 == "Bool":
             return "Bool"
@@ -325,7 +328,7 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
     or node[1].name == 'GreaterThanEqualOperator':
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
-        if isNumType(t1) and isNumType(t2):
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Bool"
         else:
             logging.error("typecheck failed", expected_node)
@@ -358,7 +361,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             else:
                 logging.error("typecheck failed: string add void")
                 sys.exit(42)
-        elif isNumType(t1) and isNumType(t2):
+        elif primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
             logging.error("typecheck failed: add/sub not num")
@@ -386,7 +389,7 @@ def typecheck_mult(node, c, class_env, return_type, t_i, c_i):
     or node[1].name == 'ModuloOperator':
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
-        if isNumType(t1) and isNumType(t2):
+        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
             logging.error("typecheck failed: mult/div/mod not num")
@@ -410,7 +413,7 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
         t = typecheck_expr(node.children[0], c, class_env, return_type, t_i, c_i)
     
     if t != return_type:
-        #logging.error("typecheck failed:", node)
+        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
         #sys.exit(42)
         pass
     else:
@@ -422,11 +425,11 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
 def is_assignable(type1, type2, c_i):
     if type1 == type2:
         return True
-    elif not primitive.is_primitive(type1) and type2.name == 'Null':
+    elif not primitives.is_primitive(type1) and type2.name == 'Null':
         return True
-    elif primitive.is_numeric(type1) and primitive.is_numeric(type2):
-        return primitive.is_widening_conversion(type1, type2)
-    elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
+    elif primitives.is_numeric(type1) and primitives.is_numeric(type2):
+        return primitives.is_widening_conversion(type1, type2)
+    elif not primitives.is_primitive(type1) and primitives.is_primitive(type2):
         return is_nonstrict_subclass(type2, type1, c_i)
     else:
         return False
