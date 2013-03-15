@@ -33,9 +33,6 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['ForStatement']))
     return exprs
 
-def is_reference(t):
-    return False
-
 def typecheck(t_i, c_i):
     for type_name, env in t_i.items():
         c = c_i[type_name]
@@ -298,8 +295,8 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
             return "Bool"
         elif t1 == "Bool" and t2 == "Bool":
             return "Bool"
-        elif (t1 == "Null" or is_reference(t1)) \
-        and  (t2 == "Null" or is_reference(t2)):
+        elif (t1 == "Null" or primitives.is_reference(t1)) \
+        and  (t2 == "Null" or primitives.is_reference(t2)):
             return "Bool"
         else:
             logging.error("typecheck failed", expected_node)
@@ -412,13 +409,13 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
     else:
         t = typecheck_expr(node.children[0], c, class_env, return_type, t_i, c_i)
     
-    if t != return_type:
-        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
-        #sys.exit(42)
-        pass
-    else:
+    if t == return_type \
+    or (primitives.is_reference(return_type) and t == "Null"):
         #logging.warning("typecheck passed", node)
         pass
+    else:
+        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
+        #sys.exit(42)
 
     return None
 
