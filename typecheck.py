@@ -6,9 +6,9 @@ from utils import primitives
 def typecheck(type_index, class_index):
     for type_name, env in type_index.items():
         c = class_index[type_name]
-        typecheck_methods(c, env, type_index)
+        typecheck_methods(c, env, type_index, class_index)
 
-def typecheck_methods(c, env, type_index):
+def typecheck_methods(c, env, type_index, class_index):
     if c.interface:
         return
     for method_env in env['ClassDeclaration'].children:
@@ -31,7 +31,10 @@ def typecheck_methods(c, env, type_index):
         exprs.extend(n.select(['PostfixExpression']))
         exprs.extend(n.select(['CastExpression']))
         for expr in exprs:
-            typecheck_expr(expr, c, env, "TODO", type_index)
+            t = n.find_child('Type')
+            if t != None:
+                t = t.canon
+            typecheck_expr(expr, c, env, t, type_index, class_index)
 #
 # Type check functions.
 # Each type check function must do the following:
@@ -39,14 +42,8 @@ def typecheck_methods(c, env, type_index):
 # 2. Assign the above type to the input node.
 # 3. Return the assigned type, so that it can be used by the caller.
 
-def typecheck_expr(node, c, class_env, return_type, type_index):
-    """
-    if node.name == 'Assignment':
-        return typecheck_assignment(class_env, local_env, return_type, node)
-    elif node.name == 'MethodInvocation':
-        return typecheck_method_invo(class_env, local_env, return_type, node)
-    """
-
+def typecheck_expr(node, c, class_env, return_type, type_index, class_index):
+    # see if type for expr has already been resolved
     if hasattr(node, 'typ') and node.typ != None:
         return node.typ
     
@@ -57,7 +54,16 @@ def typecheck_expr(node, c, class_env, return_type, type_index):
         z = node.find_child('Literal')
         if z != None:
             t = typecheck_literal(z, c, class_env, return_type, type_index)
+        else:
+            pass
+    elif node.name == 'Assignment':
+        pass
+    elif node.name == 'MethodInvocation':
+        pass
+    else:
+        pass
 
+    # return the type
     node.typ = t
     return t
 
@@ -76,6 +82,7 @@ def typecheck_assignment(class_env, local_env, return_type, node):
 
 def typecheck_literal(node, c, class_env, return_type, type_index):
     if node.name != 'Literal':
+        logging.error("FATAL ERROR: typecheck_literal") 
         sys.exit(1)
     
     # Check children to determine type.
