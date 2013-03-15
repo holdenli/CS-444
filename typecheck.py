@@ -156,7 +156,11 @@ def typecheck_return(node, c, class_env, return_type, type_index, class_index):
         logging.error("FATAL ERROR: typecheck_return") 
         sys.exit(1)
     
-    t = typecheck_expr(node.children[0], c, class_env, return_type, type_index, class_index)
+    t = None
+    if len(node.children) == 0:
+        t = "Void"
+    else:
+        t = typecheck_expr(node.children[0], c, class_env, return_type, type_index, class_index)
     
     if t != return_type:
         #logging.error("typecheck failed:", node)
