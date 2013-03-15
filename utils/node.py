@@ -125,9 +125,12 @@ class Node:
 class ASTNode(Node):
 
     def __init__(self, name=None, value=None, children=None,
-                env=None, decl=None, canon=None):
+                env=None, decl=None, canon=None, modifiers=None):
 
         super().__init__(name, value, children)
+
+        if modifiers == None:
+            modifiers = set()
 
         # Reference to a Type declaration.
         self.typ = None
@@ -138,7 +141,12 @@ class ASTNode(Node):
         # variable) node. Only valid for certain types of expressions.
         self.decl = decl
 
+        # canonical type name, as a string (set of Type astnodes)
         self.canon = canon
+
+        # set of modifier values for MethodDecl, ConstructorDecl, FieldDecl
+        # e.g. set('public', 'static')
+        self.modifiers = modifiers
 
     def __repr__(self):
         d = ""
@@ -155,7 +163,7 @@ class ASTNode(Node):
 
         c = ""
         if self.canon:
-            c = "[typ=%s]" % self.canon
+            c = "[canon=%s]" % self.canon
         return "<ASTNode: %s%s %s %s%s>" % (self.name, v, d, e, c)
 
 def find_nodes(tree, white_list):

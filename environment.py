@@ -217,14 +217,14 @@ def build_class_env(cls_node):
     for method_name in methods:
         for method_node in methods[method_name]:
 
-            method_env = Environment('MethodDeclaration',
-                node=method_node)
+            # MethodDecl's children = [Modifiers, Type, ..]
+            method_env = Environment('MethodDeclaration', node=method_node)
             method_node.env = method_env
-
+            
             # method_env.value = method name
             method_env.value = method_node.find_child('Identifier').value.value
            
-           # get the parameters
+            # get the parameters
             params = build_method_params(method_node)
 
             block_env = build_block_env(method_node, set(params))
@@ -262,6 +262,8 @@ def build_member_props(tree):
     for field in tree.select(['Fields', 'FieldDeclaration']):
         f = list(field.select(['FieldDeclaration',
             'Identifier']))[0].value.value
+        
+        field.modifiers = set(field.find_child('Modifiers').leaf_values())
 
         if f in fields:
             logging.error("No two fields=%s declared in the same class may have the same name." % f)
@@ -271,8 +273,8 @@ def build_member_props(tree):
 
     # build constructors
     for cons in tree.select(['Constructors', 'ConstructorDeclaration']):
-        c = list(cons.select(['ConstructorDeclaration',
-            'Identifier']))[0].value.value
+        c = cons.find_child('Identifier').leaf_values()[0]
+        cons.modifiers = set(cons.find_child('Modifiers').leaf_values())
 
         if c not in methods:
             methods[c] = []
@@ -280,8 +282,9 @@ def build_member_props(tree):
 
     # build methods
     for meth in tree.select(['Methods', 'MethodDeclaration']):
-        m = list(meth.select(['MethodDeclaration',
-            'Identifier']))[0].value.value
+
+        m = meth.find_child('Identifier').leaf_values()[0]
+        meth.modifiers = set(meth.find_child('Modifiers').leaf_values())
 
         if m not in methods:
             methods[m] = []
