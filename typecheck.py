@@ -120,30 +120,46 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     # return the type
     return t
 
-# def typecheck_primary(node, c, class_env, return_type, type_index, class_dict):
-
-
-def typecheck_assignment(class_env, local_env, return_type, node):
+def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
     lhs_type = None
     if node[0].name == 'Name':
-        lhs_type == get_typeof_name(node[0])
+        lhs_type == typecheck_name(node[0]) # TODO
     elif node[0].name == 'FieldAccess':
-        lhs_type == typecheck_field_access(node[0])
+        lhs_type == typecheck_field_access(node[0], c, class_env, return_type,
+            t_i, c_i)
+        # Special case: Cannot assign to the "length" field of an array.
+        field_receiver == field_access
     elif node[0].name == 'ArrayAccess':
-        lhs_type == typecheck_array_access(node[0])
+        lhs_type == typecheck_array_access(node[0], c, class_env, return_type,
+            t_i, c_i)
     else:
         logging.error('FATAL ERROR: Invalid typecheck_assignment')
         sys.exit(1) # should not happen
 
     rhs_type = typecheck_expr(node[1])
     
-    if is_assignable(lhs_type, rhs_type, class_dict):
+    if is_assignable(lhs_type, rhs_type, c_i):
         node.typ = lhs_type
     else:
         logging.error('Cannot assign expression of type %s to LHS of type %s' %
-            rhs_type.canon, lhs_type.canon)
+            (rhs_type, lhs_type))
         sys.exit(42)
     return node.typ
+
+def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
+    pass
+    if node.name != 'FieldAccess':
+        logging.error('FATAL ERROR: invalid node %s for field access' %
+            node.name)
+        sys.exit(1)
+
+    # if node[0].name == 
+
+def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
+    pass
+
+def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
+    pass
 
 def typecheck_cast_expression(node, class_dict, class_env, return_type):
     if node.name != 'CastExpression':
@@ -157,7 +173,7 @@ def typecheck_cast_expression(node, class_dict, class_env, return_type):
         return node.typ
     else:
         logging.error('Cast expression of type %s into %s invalid' %
-            (expr_type.canon, node[0].canon))
+            (expr_type, node[0]))
         sys.exit(42)
 
 def typecheck_literal(node, c, class_env, return_type, t_i):
@@ -168,15 +184,15 @@ def typecheck_literal(node, c, class_env, return_type, t_i):
     
     # Check children to determine type.
     if node[0].name == 'DecimalIntegerLiteral':
-        node.typ = primitives.get_type('Int')
+        node.typ = 'Int'
     elif node[0].name == 'BooleanLiteral':
-        node.typ = primitives.get_type('Boolean')
+        node.typ = 'Boolean'
     elif node[0].name == 'CharacterLiteral':
-        node.typ = primitives.get_type('Char')
+        node.typ = 'Char'
     elif node[0].name == 'StringLiteral':
         node.typ = t_i['java.lang.String']
     elif node[0].name == 'NullLiteral':
-        node.typ = primitives.get_type('Null')
+        node.typ = 'Null'
 
     if node.typ == None:
         logging.error("FATAL ERROR?: Could not resolve literal.")
@@ -195,38 +211,6 @@ def typecheck_name(class_env, local_env, return_type, node, t_i):
         pass
     
     return node.typ
-
-def is_assignable(type1, type2, class_dict):
-    if type1.canon == type2.canon:
-        return True
-    elif not primitive.is_primitive(type1) and type2.name == 'Null':
-        return True
-    elif primitive.is_numeric(type1) and primitive.is_numeric(type2):
-        return primitive.is_widening_conversion(type1, type2)
-    elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
-        return is_nonstrict_subclass(type2, type1, class_dict)
-    else:
-        return False
-
-
-# Returns True if type1 and type2 refer to the same class, or 
-def is_nonstrict_subclass(type1, type2, class_dict):
-    # Do a BFS up the hierarchy.
-    queue = [type2.canon]
-    while len(queue) > 0:
-        typename = queue.pop(0)
-
-        # Found type1 as a superclass of type2.
-        if type1.canon == typename:
-            return True
-        else:
-            cls = class_dict[typename]
-            queue.extend(list(cls.implements))
-            if cls.extends != None:
-                queue.append(cls.extends)
-
-    # Did not find type1 as a superclass of type2.
-    return False
 
 # Operators
 
@@ -344,3 +328,34 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
 
     return t
 
+def is_assignable(type1, type2, c_i):
+    if type1 == type2:
+        return True
+    elif not primitive.is_primitive(type1) and type2.name == 'Null':
+        return True
+    elif primitive.is_numeric(type1) and primitive.is_numeric(type2):
+        return primitive.is_widening_conversion(type1, type2)
+    elif not primitive.is_primitive(type1) and primitive.is_primitive(type2):
+        return is_nonstrict_subclass(type2, type1, c_i)
+    else:
+        return False
+
+
+# Returns True if type1 and type2 refer to the same class, or type
+def is_nonstrict_subclass(type1, type2, c_i):
+    # Do a BFS up the hierarchy.
+    queue = [type2]
+    while len(queue) > 0:
+        typename = queue.pop(0)
+
+        # Found type1 as a superclass of type2.
+        if type1 == typename:
+            return True
+        else:
+            cls = c_i[typename]
+            queue.extend(list(cls.implements))
+            if cls.extends != None:
+                queue.append(cls.extends)
+
+    # Did not find type1 as a superclass of type2.
+    return False

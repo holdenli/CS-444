@@ -281,5 +281,28 @@ RULES = {
     'CastExpression': [
         ['Type', 'Expression'],
     ],
+
+    'PostfixExpression': [
+        ['Primary'],
+        ['Name'],
+    ],
+
+    'ArrayAccess': [
+        ['ArrayReceiver', 'Expression'],
+    ],
+
+    'ArrayReceiver': [
+        ['Name'],
+        ['Primary'],
+    ],
+
+    'FieldAccess': [
+        ['FieldName', 'FieldReceiver'],
+    ],
+
+    'FieldReceiver': [
+        ['Primary'],
+        ['Super'],
+    ],
 }
 

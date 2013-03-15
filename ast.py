@@ -365,13 +365,13 @@ def build_expr(node):
     skipped_expressions = [
         'ConditionalExpression',
         'ShiftExpression',
+        'AndExpression',
     ]
     binary_expressions = [
         'ConditionalOrExpression',
         'ConditionalAndExpression',
         'InclusiveOrExpression',
         'ExclusiveOrExpression',
-        'AndExpression',
         'EqualityExpression',
         # 'RelationalExpression', # have to check special case Instanceof
         'AdditiveExpression',
