@@ -287,7 +287,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             return "Int"
         else:
             logging.error("typecheck failed: add/sub not num")
-            sys.exit(42)
+            #sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -314,11 +314,8 @@ def typecheck_mult(node, c, class_env, return_type, t_i, c_i):
         if isNumType(t1) and isNumType(t2):
             return "Int"
         else:
-            print(c)
-            print(node.children)
-            print(t1, t2)
             logging.error("typecheck failed: mult/div/mod not num")
-            sys.exit(42)
+            #sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
