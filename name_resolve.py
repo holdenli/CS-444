@@ -52,23 +52,38 @@ def name_link(pkg_index, type_index, cls_idx):
                 static_context_flag = False
 
             # name link field initializers
-            field_names = {}
-            for field_decl in typedecl_env.node.select(['Fields',
-                'FieldDeclaration']):
+            all_fields = typedecl_env.node.select(['Fields', 'FieldDeclaration'])
+            all_fields = [f.find_child('Identifier').value.value for f in all_fields]
 
-                field_name = field_decl.find_child('Identifier').value.value
+            fields_so_far = {}
+            for i, field_name in enumerate(all_fields):
+                field_decl = typedecl_env.fields[field_name]
+
+                local_vars = {}
+                lhs_only_vars = {f:typedecl_env.fields[f] for f in all_fields[i:]}
+                simple_names = fields_so_far
+
+                if 'static' in field_decl.modifiers:
+                    local_vars = {}
+                    lhs_only_vars = {}
+                    simple_names = {}
+
+                    static_context_flag = True
+                    
                 find_and_resolve_names(
                     type_index,
                     cu_env,
                     pkg_name,
                     field_decl.find_child('Initializer'),
-                    field_names,
-
-                    lhs_only_vars = {field_name:field_decl},
-                    simple_names = field_names # simple_name
+                    local_vars,
+                    lhs_only_vars = lhs_only_vars,
+                    simple_names = simple_names
                 )
-                
-                field_names[field_name] = field_decl
+
+                if static_context_flag:
+                    static_context_flag = False
+
+                fields_so_far[field_name] = field_decl
 
 def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
     if local_vars == None:
@@ -324,16 +339,11 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
     """
     global static_context_flag
 
-    if simple_names != None and len(name_parts) == 1 \
-        and name_parts[0] not in simple_names:
-        return None
- 
-    candidate = None
-
     name_fields = []
     if len(name_parts) > 0:
         name_fields = name_parts[1:]
-   
+
+    # the contain set of this class
     cu_canon = '%s.%s' % (pkg_name, environment.env_type_name(cu_env))
     cu_contain_set = utils.class_hierarchy.contain(class_index[cu_canon])
     try:
@@ -341,6 +351,21 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
     except ValueError:
         field_i = -1
 
+    # simple names should be enforced if they exist
+    if simple_names != None:
+        if len(name_parts) == 1 and name_parts[0] not in simple_names:
+            return None
+
+        # special case for array.length
+        if len(name_parts) == 2 \
+                and name_parts[0] not in simple_names \
+                and field_i != -1 \
+                and cu_contain_set[field_i].node.find_child('Type').canon.endswith('[]') \
+                and name_parts[1] == 'length':
+
+                return None
+    
+    candidate = None
     canon_type = None
     is_type = False
 
@@ -357,9 +382,9 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
         candidate = cu_contain_set[field_i].node
 
         # can't be static in a static context
-        if static_context_flag and 'static' not in candidate.modifiers:
+        if static_context_flag or 'static' in candidate.modifiers:
             logging.error('Cant reference to non-static in a static context')
-            sys.exit(42)
+            return None
 
     elif check_type:
         # is it a type?
@@ -395,6 +420,11 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                 return None
             return primitives.array_length_node
 
+        if primitives.is_primitive(canon_type):
+            logging.error('%s is a primitive, does not have field %s' % \
+                (name_parts[0], name_fields))
+            return None
+
         fa = field_accessable(class_index, type_index, canon_type, name_fields[0], cu_canon)
         if fa != None:
 
@@ -403,7 +433,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                     # uh oh, this has to be a static field!
                     logging.error('%s is not static of type %s but is being \
                         accessed as one' % (fa, canon_type))
-                    sys.exit(42)
+                    return None
             
                 static_canon_type = fa.find_child('Type').canon
                 
@@ -424,9 +454,10 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                         sys.exit(42)
 
                     elif primitives.is_primitive(static_canon_type):
+                        return None
                         # primitives don't have access! fail
-                        logging.error('Primitives do not have fields to access!')
-                        sys.exit(42)
+                        #logging.error('Primitives do not have fields to access!')
+                        #sys.exit(42)
 
                     fa = name_link_name(type_index,
                             type_index[static_canon_type],
@@ -440,12 +471,18 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                 return fa
             else:
                 # not a type -- we can just recurse down
-                return name_link_name(type_index, type_index[canon_type],
+                save_static_context = static_context_flag
+                static_context_flag = False
+
+                ret = name_link_name(type_index, type_index[canon_type],
                             canon_type.rsplit('.', 1)[0],
                         {},
                         name_fields,
                         check_type=check_type,
                         check_this=check_this)
+
+                static_context_flag = save_static_context
+                return ret
         else:
             return None
     
