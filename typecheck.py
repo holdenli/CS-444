@@ -56,17 +56,17 @@ def typecheck_methods(c, env, t_i, c_i):
         # TODO
         return
 
-    print("  #", c)
+    # print("  #", c)
     # Run typecheck on each field
     for field_node in env['ClassDeclaration'].names.values():
-        print("    !", field_node)
+        # print("    !", field_node)
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
             typecheck_expr(expr, c, env, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
-        print("    @", method_env)
+        # print("    @", method_env)
         n = method_env.node
         exprs = get_exprs_from_node(n)
         for expr in exprs:
@@ -124,7 +124,7 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
             t = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
     elif node.name == 'CastExpression':
         t = typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i)
-    elif node.name == 'InstanceOfExpression':
+    elif node.name == 'InstanceofExpression':
         t = typecheck_instanceof(node, c, class_env, return_type, t_i, c_i)
 
     # Statements
@@ -480,7 +480,6 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
             return "Boolean"
         else:
             logging.error("typecheck failed: Relational:", t1, t2)
-            node.pprint()
             sys.exit(42)
 
     else:
@@ -582,7 +581,9 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
                 t_i, c_i))
 
         cons = class_hierarchy.Temp_Constructor(cons_name, arg_types)
-        if cons in c.declare:
+        # TODO: Check that cons is not protected, and if it is, we have access
+        # to call it.
+        if cons in c_i[creation_type].declare:
             node.typ = creation_type
             return node.typ
         else:
@@ -596,13 +597,14 @@ def typecheck_instanceof(node, c, class_env, return_type, t_i, c_i):
         sys.exit(1)
 
     lhs_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
-    rhs_type = node[1].canon
+    rhs_type = node[2].canon
 
     if primitives.is_primitive(rhs_type):
         logging.error('Invalid Instanceof type %s' % rhs_type)
         sys.exit(42)
     
-    if is_assignable(lhs_type, rhs_type) or is_assignable(rhs_type, lhs_type):
+    if is_assignable(lhs_type, rhs_type, c_i) or \
+            is_assignable(rhs_type, lhs_type, c_i):
         node.typ = 'Boolean'
         return node.typ
     else:
