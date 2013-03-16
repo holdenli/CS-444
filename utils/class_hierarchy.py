@@ -393,9 +393,9 @@ def class_hierarchy(ast_list, pkg_index, type_index):
         if c.interface and len(c.implements) == 0:
             # Add publics of java.lang.Object
             for (n, t) in [
-                    ("equals", "boolean"),
+                    ("equals", "Boolean"),
                     ("toString", "java.lang.String"),
-                    ("hashCode", "int"),
+                    ("hashCode", "Int"),
                     ("getClass", "java.lang.Class")
                     ]:
                 m = Method(None, c)
