@@ -153,14 +153,14 @@ class Node:
         if verbose and isinstance(self, ASTNode):
             if self.typ != None:
                 s += " @typ: %s" % self.typ
-            elif self.canon != None:
+            if self.canon != None:
                 if self.name != "Type" and self.name != "ArrayType":
                     logging.warning("Node.debug: canon appeared in a %s node" % self.name)
                     s += " >>>>"
                 s += " @canon: %s" % self.canon
-            elif self.decl != None:
+            if self.decl != None:
                 s += " @decl"
-            elif self.env != None:
+            if self.env != None:
                 s += " @env"
 
         # Children
