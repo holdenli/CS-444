@@ -188,13 +188,10 @@ def member_accessable(class_index, type_index, canon_type, member, viewer_canon_
         contain_set = utils.class_hierarchy.contain(class_index[canon_type])
         field_i = -1
         try:
-            print(member)
-            print(contain_set)
             field_i = contain_set.index(member)
         except ValueError:
             pass
 
-        print(field_i)
         if field_i >= 0 and (pkg(viewer_canon_type) == pkg(canon_type) or \
             'protected' not in contain_set[field_i].node.modifiers):
                 # name was 'a.b.c.d'
