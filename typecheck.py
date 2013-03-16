@@ -16,7 +16,6 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['Literal']))
     exprs.extend(n.select(['This']))
     exprs.extend(n.select(['FieldAccess']))
-    exprs.extend(n.select(['MethodInvocation']))
     exprs.extend(n.select(['ArrayAccess']))
 
 
@@ -43,7 +42,7 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['IfStatement']))
     exprs.extend(n.select(['WhileStatement']))
     exprs.extend(n.select(['ForStatement']))
-    exprx.extend(n.select(['LocalVariableDeclaration']))
+    exprs.extend(n.select(['LocalVariableDeclaration']))
     return exprs
 
 def typecheck(t_i, c_i):
@@ -57,17 +56,17 @@ def typecheck_methods(c, env, t_i, c_i):
         # TODO
         return
 
-    #print("  #", c)
+    print("  #", c)
     # Run typecheck on each field
     for field_node in env['ClassDeclaration'].names.values():
-        #print("    !", field_node)
+        print("    !", field_node)
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
             typecheck_expr(expr, c, env, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
-        #print("    @", method_env)
+        print("    @", method_env)
         n = method_env.node
         exprs = get_exprs_from_node(n)
         for expr in exprs:
@@ -99,6 +98,7 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     if node.name == 'Assignment':
         pass
     elif node.name == 'MethodInvocation':
+        t = typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i)
         pass
     elif node.name == 'CreationExpression':
         pass
@@ -141,8 +141,6 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     elif node.name == 'This':
         t = c.name
     elif node.name == 'FieldAccess':
-        pass
-    elif node.name == 'MethodInvocation':
         pass
     elif node.name == 'ArrayAccess':
         pass
@@ -214,7 +212,7 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
         logging.error('Invalid field access on primitive type %s' %
             receiver_type)
     else:
-        field_decl = name_resolve.field_accessible(c_i, t_i, receiver_type,
+        field_decl = name_resolve.field_accessable(c_i, t_i, receiver_type,
             field_name, c.name)
         if field_decl is None:
             logging.error('Cannot access field %s of type %s from class %s' %
@@ -279,11 +277,13 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     # Build types of arguments.
     arg_canon_types = []
     for argument_expr in node[2].children:
-        arg_canon_types.append(typecheck_expr(argument_expr))
+        arg_canon_types.append(typecheck_expr(argument_expr, c, class_env,
+            return_type, t_i, c_i))
 
     # Call helper to find a method with the given signature (name and args).
-    method_decl = name_resolve.method_accessible(c_i, t_i,
-        receiver_type, method_name, c.name, arg_canon_types)
+    method_decl = name_resolve.method_accessable(c_i, t_i,
+        receiver_type, method_name, arg_canon_types, c.name)
+    print(method_decl, receiver_type, method_name, arg_canon_types)
     if method_decl == None:
         logging.error('Invalid method invocation')
         sys.exit(42)
@@ -291,7 +291,7 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     if 'static' in method_decl.modifiers and is_static == False:
         logging.error('Invalid static method invocation')
         sys.exit(42)
-    elif 'static' not in method_decl.modifier and is_static == True:
+    elif 'static' not in method_decl.modifiers and is_static == True:
         logging.error('Invalid instance method invocation (of static method)')
         sys.exit(42)
 
