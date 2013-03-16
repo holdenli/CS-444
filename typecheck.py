@@ -258,18 +258,15 @@ def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
         logging.error('Cannot index into non-array type')
         print(receiver_type)
         node[0][0].pprint()
-        node.pprint()
-        #sys.exit(42)
-        return
+        sys.exit(42)
 
     # Expression must be a number.
     expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
     
     if not primitives.is_numeric(expr_type):
         logging.error('Array access with non-numeric type %s' % expr_type)
-        node[1].pprint()
-        #sys.exit(42)
-        return
+        node.pprint()
+        sys.exit(42)
 
     node.typ = get_arraytype(receiver_type)
     return node.typ
@@ -313,16 +310,13 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
         logging.error('Invalid method invocation')
         logging.error(" ", method_decl, receiver_type, method_name, arg_canon_types)
         sys.exit(42)
-        return
         
     if 'static' in method_decl.modifiers and is_static == False:
         logging.error('Invalid static method invocation')
         sys.exit(42)
-        return
     elif 'static' not in method_decl.modifiers and is_static == True:
         logging.error('Invalid instance method invocation (of static method)')
         sys.exit(42)
-        return
 
     # Get the return type of the method.
     if method_decl[1].name == 'Void':
@@ -345,8 +339,7 @@ def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     else:
         logging.error('Cast expression of type %s into %s' %
             (expr_type, node[0].canon))
-        #sys.exit(42)
-        return
+        sys.exit(42)
 
 def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'Literal':
@@ -521,8 +514,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             return "Int"
         else:
             logging.error("typecheck failed: Add:", t1, t2)
-            #sys.exit(42)
-            return
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 

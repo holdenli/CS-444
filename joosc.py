@@ -152,7 +152,6 @@ def joosc(targets, options):
         sys.exit(0)
 
     name_resolve.name_link(pkg_index, type_index, class_index)
-
     if options.stage == 'name':
         for i, _ in enumerate(ast_list): 
             if options.include_stdlib == False or target_files[i] not in opts.stdlib_files or \

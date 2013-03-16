@@ -35,8 +35,8 @@ def name_link(pkg_index, type_index, cls_idx):
                     name_link_block(type_index, cu_env, pkg_name, block_node,
                             local_vars=environment.build_method_params(method_node))
 
-                    if len(list(method_node.select(['This']))) > 0 \
-                        and 'static' in method_node.modifiers:
+                    if len(list(method_node.select(['This']))) > 0 and \
+                        'static' in method_node.modifiers:
 
                         logging.error("Cannot use 'this' inside static method")
                         sys.exit(42)
@@ -58,9 +58,7 @@ def name_link(pkg_index, type_index, cls_idx):
                 
                 field_names[field_name] = field_decl
 
-def name_link_block(type_index, cu_env, pkg_name, stmts,
-        local_vars):
-
+def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
     if local_vars == None:
         local_vars = {}
 
