@@ -160,6 +160,12 @@ def joosc(targets, options):
         sys.exit(0)
 
     typecheck.typecheck(type_index, class_index)
+    if options.stage == 'typecheck':
+        for i, _ in enumerate(ast_list): 
+            if options.include_stdlib == False or target_files[i] not in opts.stdlib_files or \
+                    options.print_stdlib == True:
+                ast_list[i].pprint()
+        sys.exit(0)
 
 # INTERFACE
 ##########################
@@ -185,6 +191,7 @@ def parse_options(args=sys.argv):
         'ast',
         'hierarchy',
         'name',
+        'typecheck',
         'end'
     ]
     parser.add_option('-s', '--stage', action='store', dest='stage',
