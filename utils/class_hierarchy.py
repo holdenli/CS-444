@@ -21,7 +21,7 @@ class Field:
         if c != None and c.interface:
             self.mods.append("Abstract")
         self.node = node
-        self.c = c
+        self.declared_in = c
 
     def __repr__(self):
         return "<Field: %s>" % self.name
@@ -52,7 +52,7 @@ class Method:
         if c != None and c.interface:
             self.mods.append("Abstract")
         self.node = node
-        self.c = c
+        self.declared_in = c
     
     def __repr__(self):
         if (self.type == None):
