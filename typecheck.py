@@ -360,7 +360,7 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
     elif node[0].name == "NotOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if t != "Boolean":
-            logging.error("typecheck failed:", node)
+            logging.error("typecheck failed: NotOp expects boolean; got:",t)
             #sys.exit(42)
             pass
         return t
@@ -370,8 +370,8 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
 
     elif node[0].name == "SubtractOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
-        if primitives.is_numeric(t):
-            logging.error("typecheck failed:", node)
+        if not primitives.is_numeric(t):
+            logging.error("typecheck failed: SubtractOp expects number; got:",t)
             #sys.exit(42)
             pass
         return t
@@ -397,10 +397,10 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
     or node[1].name == 'OrOperator':
         t1 = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
         t2 = typecheck_expr(node[2], c, class_env, return_type, t_i, c_i)
-        if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Boolean"
+        if t1 == 'Boolean' and t2 == 'Boolean':
+            return 'Boolean'
         else:
-            logging.error("typecheck failed: and/or not bool")
+            logging.error("typecheck failed: expected booleans; got:", t1, t2)
             #sys.exit(42)
             pass
 
@@ -433,7 +433,7 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
         and  (t2 == "Null" or primitives.is_reference(t2)):
             return "Boolean"
         else:
-            logging.error("typecheck failed", expected_node)
+            logging.error("typecheck failed: equality between", t1, t2)
             #sys.exit(42)
             pass
 
@@ -463,7 +463,8 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         else:
-            logging.error("typecheck failed", expected_node)
+            logging.error("typecheck failed: Relational:", t1, t2)
+            node.pprint()
             #sys.exit(42)
             pass
 
@@ -497,7 +498,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
         elif primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
-            logging.error("typecheck failed: add/sub not num")
+            logging.error("typecheck failed: Add:", t1, t2)
             #sys.exit(42)
             pass
 
@@ -587,7 +588,7 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
         #logging.warning("typecheck passed", node)
         pass
     else:
-        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
+        logging.error("typecheck failed: Return: expected %s but got %s" % (return_type, t))
         #sys.exit(42)
         pass
 
