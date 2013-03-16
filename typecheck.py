@@ -125,15 +125,18 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
             t = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
     elif node.name == 'CastExpression':
         t = typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'InstanceOfExpression':
+        t = typecheck_instanceof(node, c, class_env, return_type, t_i, c_i)
 
     # Statements
     elif node.name == 'ReturnStatement':
         t = typecheck_return(node, c, class_env, return_type, t_i, c_i)
-    elif node.name == 'IfStatement' \
-    or   node.name == 'WhileStatement':
-        pass
+    elif node.name == 'IfStatement':
+        t = typecheck_if(node, c, class_env, return_type, t_i, c_i)
+    elif node.name == 'WhileStatement':
+        t = typecheck_while(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'ForStatement':
-        pass
+        t = typecheck_for(node, c, class_env, return_type, t_i, c_i)
 
     # Primarys
     elif node.name == 'Literal':
@@ -141,9 +144,9 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
     elif node.name == 'This':
         t = c.name
     elif node.name == 'FieldAccess':
-        pass
+        t = typecheck_field_access(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'ArrayAccess':
-        pass
+        t = typecheck_array_access(node, c, class_env, return_type, t_i, c_i)
 
     elif node.name == 'InclusiveOrExpression' \
         or   node.name == 'ExclusiveOrExpression' \
@@ -168,13 +171,23 @@ def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
     lhs_type = None
     if node[0].name == 'Name':
         lhs_type == typecheck_name(node[0]) # TODO
+
+    # Make sure that 
     elif node[0].name == 'FieldAccess':
-        lhs_type == typecheck_field_access(node[0], c, class_env, return_type,
+        lhs_type = typecheck_field_access(node[0], c, class_env, return_type,
             t_i, c_i)
         # Special case: Cannot assign to the "length" field of an array.
-        field_receiver == field_access
+        field_name = node[0][0][0].value.value
+
+        # Check if field_receiver is an array type.
+        field_receiver_expr = node[0][1][0]
+        field_receiver_typ = typecheck_expr(field_receiver_expr)
+        if is_array_type(field_receiver_typ) and field_name == length:
+            logging.error('Cannot assign to length field of array')
+            sys.exit(42)
+        
     elif node[0].name == 'ArrayAccess':
-        lhs_type == typecheck_array_access(node[0], c, class_env, return_type,
+        lhs_type = typecheck_array_access(node[0], c, class_env, return_type,
             t_i, c_i)
     else:
         logging.error('FATAL ERROR: Invalid typecheck_assignment')
@@ -273,6 +286,10 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
             is_static = True
     else: # Primary
         receiver_type = typecheck_expr(node[1][0])
+
+    if primitives.is_primitive(receiver_type):
+        logging.error('Cannot call method on primitive type %s' % receiver_type)
+        sys.exit(42)
 
     # Build types of arguments.
     arg_canon_types = []
@@ -557,6 +574,11 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
     else:
         cons_name = creation_type.split('.')[-1]
 
+        # Check that we don't call constructor of an abstract class.
+        if abstract in c_i[creation_type].mods:
+            logging.error('Cannot call constructor of abstract class')
+            sys.exit(42)
+
         arg_types = []
         for arg_expr in node[1].children:
             arg_types.append(typecheck_expr(arg_expr, c, class_env, return_type,
@@ -569,6 +591,26 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
         else:
             logging.error('Invalid constructor call')
             sys.exit(42)
+
+def typecheck_instanceof(node, c, class_env, return_type, t_i, c_i):
+    expected_node = 'InstanceofExpression'
+    if node.name != expected_node:
+        logging.error('FATAL ERROR: expected', expected_node)
+        sys.exit(1)
+
+    lhs_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+    rhs_type = node[1].canon
+
+    if primitive.is_primitive(rhs_type):
+        logging.error('Invalid Instanceof type %s' % rhs_type)
+        sys.exit(42)
+    
+    if is_assignable(lhs_type, rhs_type) or is_assignable(rhs_type, lhs_type):
+        node.typ = 'Boolean'
+        return node.typ
+    else:
+        logging.error('Invalid %s instanceof %s' % (lhs_type, rhs_type))
+        sys.exit(42)
 
 # Statements
 
@@ -600,6 +642,7 @@ def typecheck_if(node, c, class_env, return_type, t_i, c_i):
         sys.exit(1)
 
     expr_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+    print(expr_type)
 
     if expr_type != 'Boolean':
         logging.error('Type of expression for if must be a Boolean')
@@ -658,18 +701,22 @@ def is_assignable(type1, type2, c_i):
     if is_array_type(type1) or is_array_type(type2):
         return is_array_assignable(type1, type2, c_i)
 
-    if type1 == type2:
+    if type1 in ['Void', 'Null'] or type2 == 'Void':
+        return False
+    elif type1 == type2:
         return True
     elif primitives.is_reference(type1) and type2 == 'Null':
         return True
     elif primitives.is_numeric(type1) and primitives.is_numeric(type2):
         return primitives.is_widening_conversion(type1, type2)
-    elif not primitives.is_primitive(type1) and primitives.is_primitive(type2):
+    elif primitives.is_reference(type1) and primitives.is_reference(type2):
         return is_nonstrict_subclass(type2, type1, c_i)
     else:
         return False
 
 def is_array_assignable(type1, type2, c_i):
+    if is_array_type(type1) and not is_array_type(type2):
+        return False
     if type1 == 'java.lang.Object' and is_array_type(type2):
         return True
     elif type1 == 'java.lang.Cloneable' and is_array_type(type2):
@@ -677,7 +724,17 @@ def is_array_assignable(type1, type2, c_i):
     elif type1 == 'java.lang.Serializable' and is_array_type(type2):
         return True
     elif is_array_type(type1) and is_array_type(type2):
-        return is_assignable(get_arraytype(type1), get_arraytype(type2), c_i)
+        atyp1 = get_arraytype(type1)
+        atyp2 = get_arraytype(type2)
+        if atyp1 == atyp2:
+            return True
+        # Unequal primitive types.
+        elif primitives.is_primitive(type1) and primitives.is_primitive(type2):
+            return False
+        else:
+            return is_nonstrict_subclass(atyp2, atyp1, c_i)
+    else:
+        return False
 
 # Returns True if type1 and type2 refer to the same class, or type
 def is_nonstrict_subclass(type1, type2, c_i):
