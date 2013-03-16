@@ -533,6 +533,8 @@ def build_method_invocation(node):
     method_args = node.find_child('ArgumentList')
     if method_args is not None:
         method_invo.add(build_arguments(method_args))
+    else:
+        method_invo.add(ASTNode('Arguments'))
 
     return method_invo
 
