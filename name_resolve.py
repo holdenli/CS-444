@@ -50,10 +50,8 @@ def name_link(pkg_index, type_index, cls_idx):
                     cu_env,
                     pkg_name,
                     field_decl.find_child('Initializer'),
-
-                    local_vars=field_names,
-                    lhs_only_vars={field_name:field_decl},
-                    check_fields=False
+                    {field_name:field_decl},
+                    field_names # simple_name
                 )
                 
                 field_names[field_name] = field_decl
@@ -78,6 +76,11 @@ def name_link_block(type_index, cu_env, pkg_name, stmts,
 
             if len(for_vars) != 0:
                 var_name = for_vars[0][1].value.value
+
+                find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
+                    local_vars,
+                    {var_name:for_vars[0]})
+
                 local_vars[var_name] = for_vars[0]
 
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
@@ -125,7 +128,7 @@ def name_link_block(type_index, cu_env, pkg_name, stmts,
 
 def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
         lhs_only_vars=None,
-        check_fields=True):
+        simple_names=None):
 
     if lhs_only_vars == None:
         lhs_only_vars = {}
@@ -146,8 +149,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
 
                     resolved_node = name_link_name(type_index, cu_env,
                         pkg_name, local_vars,
-                        meth_recv_name.split('.'),
-                        check_fields)
+                        meth_recv_name.split('.'))
 
                     canon_type = resolve_type_by_name(type_index,
                         cu_env,
@@ -175,14 +177,14 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                         meth_recv,
                         local_vars,
                         lhs_only_vars,
-                        check_fields)
+                        simple_names)
                 
             # if it has arguments, name resolve those
             if len(node.children) == 3:
                 find_and_resolve_names(type_index, cu_env, pkg_name, node[2],
                     local_vars,
                     lhs_only_vars,
-                    check_fields)
+                    simple_names)
 
             continue
 
@@ -190,8 +192,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             # this?
             # node.children = ['FieldName', 'FieldReceiver']
             if node[1][0] == Node('This'):
-                name = node[0].leaf_values()
-                check_fields = False
+                name = ['this'] + node[0].leaf_values()
             else:
                 continue
 
@@ -202,21 +203,23 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             find_and_resolve_names(type_index, cu_env, pkg_name, node[0],
                 new_vars,
                 {},
-                check_fields)
+                simple_names)
 
             find_and_resolve_names(type_index, cu_env, pkg_name, node[1],
                 local_vars,
                 lhs_only_vars,
-                check_fields)
+                simple_names)
 
             continue
 
         elif node == Node('Name'):
             name = node.leaf_values()
 
-        resolved_node = name_link_name(type_index, cu_env, pkg_name, local_vars,
-            name, check_fields)
-        
+        resolved_node = name_link_name(type_index, cu_env, pkg_name,
+            local_vars,
+            name,
+            simple_names)
+
         if resolved_node == None:
             logging.error('Could not resolve name %s in %s.%s with %s' % (name, pkg_name,
                 cu_env['ClassDeclaration'], local_vars))
@@ -265,11 +268,16 @@ def method_accessable(class_index, type_index, canon_type, method_name, params, 
             viewer_canon_type)
 
 def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
-                    check_fields=True):
+    simple_names=None):
     """
         name_parts is an array:
             e.g. ['a', 'b', 'c'] or ['this', 'c'] representing a.b.c or this.c
     """
+
+    if simple_names != None and len(name_parts) == 1 \
+        and name_parts[0] not in simple_names:
+        print('HA')
+        return None
  
     candidate = None
 
@@ -286,12 +294,16 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
 
     canon_type = None
 
+    if name_parts[0] == 'this':
+        return name_link_name(type_index, cu_env, pkg_name,
+                local_vars, name_fields)
+
     # is it a local variable?
     if name_parts[0] in local_vars:
         candidate = local_vars[name_parts[0]]
     
     # is it in the contains set?
-    elif field_i >= 0 and check_fields:
+    elif field_i >= 0:
         candidate = cu_contain_set[field_i].node
 
     else:
@@ -331,8 +343,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
             return name_link_name(type_index, type_index[canon_type],
                 canon_type.rsplit('.', 1)[0],
                 {},
-                name_fields,
-                check_fields)
+                name_fields)
         else:
             return None
     
