@@ -160,7 +160,7 @@ def joosc(targets, options):
                 ast_list[i].pprint()
         sys.exit(0)
 
-    #typecheck.typecheck(type_index, class_index)
+    typecheck.typecheck(type_index, class_index)
 
 # INTERFACE
 ##########################

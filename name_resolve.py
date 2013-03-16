@@ -196,6 +196,12 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             if node[1][0] == Node('This'):
                 name = ['this'] + node[0].leaf_values()
             else:
+                find_and_resolve_names(type_index, cu_env, pkg_name,
+                    node[1],
+                    local_vars,
+                    lhs_only_vars,
+                    simple_names)
+
                 continue
 
         elif node == Node('Assignment'):
@@ -203,7 +209,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             new_vars.update(lhs_only_vars)
 
             find_and_resolve_names(type_index, cu_env, pkg_name,
-                node[0],
+                ASTNode(children=[node[0]]),
                 new_vars,
                 {},
                 simple_names)
