@@ -152,11 +152,12 @@ class Node:
 
         if verbose and isinstance(self, ASTNode):
             if self.typ != None:
+                if self.canon != None:
+                    logging.warning("Node.debug: typ and canon appeared in " + self.name)
                 s += " @typ: %s" % self.typ
             if self.canon != None:
-                if self.name != "Type" and self.name != "ArrayType":
-                    logging.warning("Node.debug: canon appeared in a %s node" % self.name)
-                    s += " >>>>"
+                if self.name != "Type" and self.name != "ArrayType" and self.name != "Name":
+                    logging.warning("Node.debug: canon appeared in " + self.name)
                 s += " @canon: %s" % self.canon
             if self.decl != None:
                 s += " @decl"
@@ -188,17 +189,28 @@ class ASTNode(Node):
         if modifiers == None:
             modifiers = set()
 
-        # Reference to a Type declaration.
+        # TYPE INFO
+
+        # canonical type name; string
+        # refers to a type name
+        self.canon = canon
+
+        # canonical type; string
+        # refers to an expression with "typ"
         self.typ = None
 
+        # LINKS: links to other structures
+
         self.env = env
+
+        # Class/Method/Field object
+        self.obj = None
 
         # Store a reference to a declaration (field, method, parameter, or local
         # variable) node. Only valid for certain types of expressions.
         self.decl = decl
 
-        # canonical type name, as a string (set of Type astnodes)
-        self.canon = canon
+        # DEPRECATED/MISC
 
         # set of modifier values for MethodDecl, ConstructorDecl, FieldDecl
         # e.g. set('public', 'static')
