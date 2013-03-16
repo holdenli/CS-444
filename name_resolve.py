@@ -2,6 +2,7 @@
 import sys
 
 from utils import logging
+from utils import primitives
 
 from utils.node import Node
 from utils.node import find_nodes
@@ -324,7 +325,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
         if canon_type.endswith('[]'):
             if name_fields != ['length']:
                 return None
-            return candidate
+            return primitives.array_length_node
 
         if field_accessable(class_index, type_index, canon_type, name_fields[0], cu_canon) != None:
             return name_link_name(type_index, type_index[canon_type],

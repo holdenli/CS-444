@@ -99,9 +99,8 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
         pass
     elif node.name == 'MethodInvocation':
         t = typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i)
-        pass
     elif node.name == 'CreationExpression':
-        pass
+        t = typecheck_creation(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'ConditionalOrExpression' \
     or node.name == 'ConditionalAndExpression':
         t = typecheck_conditional(node, c, class_env, return_type, t_i, c_i)
@@ -212,7 +211,9 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
 
     receiver_type = typecheck_expr(node[1][0], c, class_env, return_type, t_i,
         c_i)
+    
     field_name = node[0][0].value.value
+
     if is_array_type(receiver_type):
         if field_name == 'length':
             node.typ = 'Int'
@@ -221,12 +222,13 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
             logging.error('Invalid field access on array type %s' %
                 receiver_type)
             sys.exit(42)
-    elif primitive.is_primitive(receiver_type) == True:
+    elif primitives.is_primitive(receiver_type) == True:
         logging.error('Invalid field access on primitive type %s' %
             receiver_type)
     else:
         field_decl = name_resolve.field_accessable(c_i, t_i, receiver_type,
             field_name, c.name)
+
         if field_decl is None:
             logging.error('Cannot access field %s of type %s from class %s' %
                 (field_name, receiver_type, c.name))
@@ -235,7 +237,7 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
             logging.error('Instance field method on non-static field')
             sys.exit(42)
         else:
-            node.typ = field[1].canon
+            node.typ = field_decl[1].canon
             return node.typ
 
 def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
@@ -254,13 +256,20 @@ def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
     # Must be array type.
     if not is_array_type(receiver_type):
         logging.error('Cannot index into non-array type')
-        sys.exit(42)
+        print(receiver_type)
+        node[0][0].pprint()
+        node.pprint()
+        #sys.exit(42)
+        return
 
     # Expression must be a number.
     expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
-    if not primary.is_numeric(expr_type):
+    
+    if not primitives.is_numeric(expr_type):
         logging.error('Array access with non-numeric type %s' % expr_type)
-        sys.exit(42)
+        node[1].pprint()
+        #sys.exit(42)
+        return
 
     node.typ = get_arraytype(receiver_type)
     return node.typ
@@ -336,8 +345,8 @@ def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     else:
         logging.error('Cast expression of type %s into %s' %
             (expr_type, node[0].canon))
-        sys.exit(42)
-        pass
+        #sys.exit(42)
+        return
 
 def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'Literal':
@@ -478,6 +487,7 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
             return "Boolean"
         else:
             logging.error("typecheck failed: Relational:", t1, t2)
+            node.pprint()
             sys.exit(42)
 
     else:
@@ -511,7 +521,8 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             return "Int"
         else:
             logging.error("typecheck failed: Add:", t1, t2)
-            sys.exit(42)
+            #sys.exit(42)
+            return
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -557,7 +568,7 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
             logging.error('Too many args to array creation')
             sys.exit(42)
         if len(node[1].children) == 1:
-            expr_type = typecheck_args(array_args[1][0], c, class_env,
+            expr_type = typecheck_expr(node[1][0], c, class_env,
                 return_type, t_i, c_i)
             if expr_type != 'Int':
                 logging.error('Invalid array creation argument')
@@ -569,7 +580,7 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
         cons_name = creation_type.split('.')[-1]
 
         # Check that we don't call constructor of an abstract class.
-        if abstract in c_i[creation_type].mods:
+        if 'Abstract' in c_i[creation_type].mods:
             logging.error('Cannot call constructor of abstract class')
             sys.exit(42)
 
@@ -578,7 +589,7 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
             arg_types.append(typecheck_expr(arg_expr, c, class_env, return_type,
                 t_i, c_i))
 
-        cons = class_hierarchy.Temp_Contructor(cons_name, arg_types)
+        cons = class_hierarchy.Temp_Constructor(cons_name, arg_types)
         if cons in c.declare:
             node.typ = creation_type
             return node.typ
@@ -595,7 +606,7 @@ def typecheck_instanceof(node, c, class_env, return_type, t_i, c_i):
     lhs_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
     rhs_type = node[1].canon
 
-    if primitive.is_primitive(rhs_type):
+    if primitives.is_primitive(rhs_type):
         logging.error('Invalid Instanceof type %s' % rhs_type)
         sys.exit(42)
     
@@ -635,7 +646,6 @@ def typecheck_if(node, c, class_env, return_type, t_i, c_i):
         sys.exit(1)
 
     expr_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
-    print(expr_type)
 
     if expr_type != 'Boolean':
         logging.error('Type of expression for if must be a Boolean')
