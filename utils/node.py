@@ -164,7 +164,12 @@ class ASTNode(Node):
         c = ""
         if self.canon:
             c = "[canon=%s]" % self.canon
-        return "<ASTNode: %s%s %s %s%s>" % (self.name, v, d, e, c)
+
+        t = ""
+        if self.typ:
+            t = "[typ=%s]" % self.typ
+
+        return "<ASTNode: %s%s %s %s%s%s>" % (self.name, v, d, e, c, t)
 
 def find_nodes(tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration

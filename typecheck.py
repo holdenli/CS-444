@@ -56,17 +56,17 @@ def typecheck_methods(c, env, t_i, c_i):
         # TODO
         return
 
-    print("  #", c)
+    # print("  #", c)
     # Run typecheck on each field
     for field_node in env['ClassDeclaration'].names.values():
-        print("    !", field_node)
+        # print("    !", field_node)
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
             typecheck_expr(expr, c, env, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
-        print("    @", method_env)
+        # print("    @", method_env)
         n = method_env.node
         exprs = get_exprs_from_node(n)
         for expr in exprs:
@@ -96,7 +96,7 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
 
     # DO STUFF HERE...
     if node.name == 'Assignment':
-        pass
+        t = typecheck_assignment(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'MethodInvocation':
         t = typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'CreationExpression':
@@ -124,7 +124,7 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
             t = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
     elif node.name == 'CastExpression':
         t = typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i)
-    elif node.name == 'InstanceOfExpression':
+    elif node.name == 'InstanceofExpression':
         t = typecheck_instanceof(node, c, class_env, return_type, t_i, c_i)
 
     # Statements
@@ -169,7 +169,7 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
 def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
     lhs_type = None
     if node[0].name == 'Name':
-        lhs_type == typecheck_name(node[0]) # TODO
+        lhs_type = typecheck_name(node[0])
 
     # Make sure that 
     elif node[0].name == 'FieldAccess':
@@ -180,7 +180,8 @@ def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
 
         # Check if field_receiver is an array type.
         field_receiver_expr = node[0][1][0]
-        field_receiver_typ = typecheck_expr(field_receiver_expr)
+        field_receiver_typ = typecheck_expr(field_receiver_expr, c, class_env,
+            return_type, t_i, c_i)
         if is_array_type(field_receiver_typ) and field_name == length:
             logging.error('Cannot assign to length field of array')
             sys.exit(42)
@@ -192,15 +193,16 @@ def typecheck_assignment(node, c, class_env, return_type, t_i, c_i):
         logging.error('FATAL ERROR: Invalid typecheck_assignment')
         sys.exit(1) # should not happen
 
-    rhs_type = typecheck_expr(node[1])
+    rhs_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
     
     if is_assignable(lhs_type, rhs_type, c_i):
         node.typ = lhs_type
+        return node.typ
     else:
+        node.pprint()
         logging.error('Cannot assign expression of type %s to LHS of type %s' %
             (rhs_type, lhs_type))
         sys.exit(42)
-    return node.typ
 
 # Note: static field accesses are always ambiguous, and are handled elsewhere.
 def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
@@ -262,18 +264,15 @@ def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
         logging.error('Cannot index into non-array type')
         print(receiver_type)
         node[0][0].pprint()
-        node.pprint()
-        #sys.exit(42)
-        return
+        sys.exit(42)
 
     # Expression must be a number.
     expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
     
     if not primitives.is_numeric(expr_type):
         logging.error('Array access with non-numeric type %s' % expr_type)
-        node[1].pprint()
-        #sys.exit(42)
-        return
+        node.pprint()
+        sys.exit(42)
 
     node.typ = get_arraytype(receiver_type)
     return node.typ
@@ -298,10 +297,14 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
             receiver_type = node[1][0].canon
             is_static = True
     else: # Primary
-        receiver_type = typecheck_expr(node[1][0])
+        receiver_type = typecheck_expr(node[1][0], c, class_env, return_type,
+            t_i, c_i)
 
     if primitives.is_primitive(receiver_type):
         logging.error('Cannot call method on primitive type %s' % receiver_type)
+        sys.exit(42)
+    if is_array_type(receiver_type):
+        logging.error('Cannot call method on array type %s' % receiver_type)
         sys.exit(42)
 
     # Build types of arguments.
@@ -317,21 +320,23 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
         logging.error('Invalid method invocation')
         logging.error(" ", method_decl, receiver_type, method_name, arg_canon_types)
         sys.exit(42)
-        return
+    if method_decl.name != 'MethodDeclaration':
+        logging.error('Did not find method declaration')
+        sys.exit(42)
         
     if 'static' in method_decl.modifiers and is_static == False:
         logging.error('Invalid static method invocation')
         sys.exit(42)
-        return
     elif 'static' not in method_decl.modifiers and is_static == True:
         logging.error('Invalid instance method invocation (of static method)')
         sys.exit(42)
-        return
 
     # Get the return type of the method.
     if method_decl[1].name == 'Void':
         node.typ = 'Void'
     else:
+        print('method')
+        method_decl.pprint()
         node.typ = method_decl[1].canon
 
     return node.typ
@@ -349,8 +354,7 @@ def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     else:
         logging.error('Cast expression of type %s into %s' %
             (expr_type, node[0].canon))
-        #sys.exit(42)
-        return
+        sys.exit(42)
 
 def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'Literal':
@@ -491,7 +495,6 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
             return "Boolean"
         else:
             logging.error("typecheck failed: Relational:", t1, t2)
-            node.pprint()
             sys.exit(42)
 
     else:
@@ -525,8 +528,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             return "Int"
         else:
             logging.error("typecheck failed: Add:", t1, t2)
-            #sys.exit(42)
-            return
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -577,7 +579,7 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
             if expr_type != 'Int':
                 logging.error('Invalid array creation argument')
                 sys.exit(42)
-        node.typ = get_arraytype(creation_type)
+        node.typ = creation_type
         return node.typ
 
     else:
@@ -594,7 +596,9 @@ def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
                 t_i, c_i))
 
         cons = class_hierarchy.Temp_Constructor(cons_name, arg_types)
-        if cons in c.declare:
+        # TODO: Check that cons is not protected, and if it is, we have access
+        # to call it.
+        if cons in c_i[creation_type].declare:
             node.typ = creation_type
             return node.typ
         else:
@@ -608,13 +612,14 @@ def typecheck_instanceof(node, c, class_env, return_type, t_i, c_i):
         sys.exit(1)
 
     lhs_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
-    rhs_type = node[1].canon
+    rhs_type = node[2].canon
 
     if primitives.is_primitive(rhs_type):
         logging.error('Invalid Instanceof type %s' % rhs_type)
         sys.exit(42)
     
-    if is_assignable(lhs_type, rhs_type) or is_assignable(rhs_type, lhs_type):
+    if is_assignable(lhs_type, rhs_type, c_i) or \
+            is_assignable(rhs_type, lhs_type, c_i):
         node.typ = 'Boolean'
         return node.typ
     else:

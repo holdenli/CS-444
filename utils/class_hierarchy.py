@@ -438,3 +438,24 @@ def class_hierarchy(ast_list, pkg_index, type_index):
 
     return class_dict
 
+# Returns True if type1 and type2 refer to the same class, or type
+def is_nonstrict_subclass(type1, type2, c_i):
+    if type1 == None or type2 == None:
+        return False
+
+    # Do a BFS up the hierarchy.
+    queue = [type2]
+    while len(queue) > 0:
+        typename = queue.pop(0)
+
+        # Found type1 as a superclass of type2.
+        if type1 == typename:
+            return True
+        else:
+            cls = c_i[typename]
+            queue.extend([x.name for x in cls.implements])
+            if cls.extends != None:
+                queue.append(cls.extends.name)
+
+    # Did not find type1 as a superclass of type2.
+    return False

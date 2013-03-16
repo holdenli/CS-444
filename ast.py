@@ -366,12 +366,12 @@ def build_expr(node):
         'ConditionalExpression',
         'ShiftExpression',
         'AndExpression',
+        'ExclusiveOrExpression',
+        'InclusiveOrExpression',
     ]
     binary_expressions = [
         'ConditionalOrExpression',
         'ConditionalAndExpression',
-        'InclusiveOrExpression',
-        'ExclusiveOrExpression',
         'EqualityExpression',
         # 'RelationalExpression', # have to check special case Instanceof
         'AdditiveExpression',
