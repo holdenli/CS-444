@@ -283,17 +283,20 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     # Call helper to find a method with the given signature (name and args).
     method_decl = name_resolve.method_accessable(c_i, t_i,
         receiver_type, method_name, arg_canon_types, c.name)
-    print(method_decl, receiver_type, method_name, arg_canon_types)
     if method_decl == None:
         logging.error('Invalid method invocation')
-        sys.exit(42)
+        logging.error(" ", method_decl, receiver_type, method_name, arg_canon_types)
+        #sys.exit(42)
+        return
         
     if 'static' in method_decl.modifiers and is_static == False:
         logging.error('Invalid static method invocation')
-        sys.exit(42)
+        #sys.exit(42)
+        return
     elif 'static' not in method_decl.modifiers and is_static == True:
         logging.error('Invalid instance method invocation (of static method)')
-        sys.exit(42)
+        #sys.exit(42)
+        return
 
     # Get the return type of the method.
     if method_decl[1].name == 'Void':
@@ -314,8 +317,8 @@ def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     or is_assignable(node[0].canon, expr_type, c_i):
         return node[0].canon
     else:
-        #logging.error('Cast expression of type %s into %s' %
-        #    (expr_type, node[0].canon))
+        logging.error('Cast expression of type %s into %s' %
+            (expr_type, node[0].canon))
         #sys.exit(42)
         pass
 
@@ -357,7 +360,7 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
     elif node[0].name == "NotOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if t != "Boolean":
-            #logging.error("typecheck failed:", node)
+            logging.error("typecheck failed:", node)
             #sys.exit(42)
             pass
         return t
@@ -368,7 +371,7 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
     elif node[0].name == "SubtractOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if primitives.is_numeric(t):
-            #logging.error("typecheck failed:", node)
+            logging.error("typecheck failed:", node)
             #sys.exit(42)
             pass
         return t
@@ -397,7 +400,7 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         else:
-            #logging.error("typecheck failed: and/or not bool")
+            logging.error("typecheck failed: and/or not bool")
             #sys.exit(42)
             pass
 
@@ -430,7 +433,7 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
         and  (t2 == "Null" or primitives.is_reference(t2)):
             return "Boolean"
         else:
-            #logging.error("typecheck failed", expected_node)
+            logging.error("typecheck failed", expected_node)
             #sys.exit(42)
             pass
 
@@ -460,7 +463,7 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         else:
-            #logging.error("typecheck failed", expected_node)
+            logging.error("typecheck failed", expected_node)
             #sys.exit(42)
             pass
 
@@ -494,7 +497,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
         elif primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
-            #logging.error("typecheck failed: add/sub not num")
+            logging.error("typecheck failed: add/sub not num")
             #sys.exit(42)
             pass
 
@@ -584,7 +587,7 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
         #logging.warning("typecheck passed", node)
         pass
     else:
-        #logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
+        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
         #sys.exit(42)
         pass
 
