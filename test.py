@@ -44,10 +44,39 @@ class TestRunner:
     # Run test batch
     def run(self, show_errors):
         tests_path = "%s/%s" % (self.test_folder, self.test_subfolder)
+        test_paths = list(os.listdir(tests_path))
+
+        forks = 1
+        n = len(test_paths)
+        k = int(n/forks)
+        parts = []
+        for i in range(int(n/k)):
+            if i+1 == int(n/k):
+                parts.append(test_paths[i*k:])
+            else:
+                parts.append(test_paths[i*k:(i+1)*k])
+
+        me = forks
+        rdby = forks/2
+        chldrn = []
+        while me%2 == 0 and me > 0:
+
+            r = os.fork()
+            if r == 0:
+                # new!
+                me = me + rdby
+                rdby = rdby/2
+            else:
+                me = me - rdby
+                rdby = rdby/2
+                chldrn.append(r)
+        
+        me = int((int(me) - 1)/2)
+
         test_total = 0
         test_fails = 0
 
-        print("Running test suite: '%s'" % self._name)
+        print("Running test suite: '%s' [%s]" % (self._name, me))
         print("==================================================")
 
         newout = OutputCapture()
@@ -56,7 +85,8 @@ class TestRunner:
             sys.stderr = newout
         
         # Loop through test cases (files)
-        for test_name in os.listdir(tests_path):
+
+        for test_name in parts[me]:
             print(test_name)
             if not test_name.startswith("J"):
                 continue
@@ -85,6 +115,12 @@ class TestRunner:
         sys.stderr = newout.stderr
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
+
+        for c in chldrn:
+            try:
+                os.waitpid(c, 0)
+            except:
+                pass
 
     def run_joosc(self, path):
         try:
