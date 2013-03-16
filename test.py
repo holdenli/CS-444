@@ -46,7 +46,7 @@ class TestRunner:
         tests_path = "%s/%s" % (self.test_folder, self.test_subfolder)
         test_paths = list(os.listdir(tests_path))
 
-        forks = 1
+        forks = 4
         n = len(test_paths)
         k = int(n/forks)
         parts = []
@@ -55,6 +55,9 @@ class TestRunner:
                 parts.append(test_paths[i*k:])
             else:
                 parts.append(test_paths[i*k:(i+1)*k])
+
+        print("Running test suite: '%s' [forks=%s]" % (self._name, forks))
+        print("==================================================")
 
         me = forks
         rdby = forks/2
@@ -76,9 +79,6 @@ class TestRunner:
         test_total = 0
         test_fails = 0
 
-        print("Running test suite: '%s' [%s]" % (self._name, me))
-        print("==================================================")
-
         newout = OutputCapture()
         sys.stdout = newout
         if show_errors == False: # Hide errors if specified.
@@ -99,7 +99,11 @@ class TestRunner:
             # If we did not obtain the desired result, save it.
             if self.is_correct_result(ret, test_name) == False:
                 test_fails += 1
-                newout.stdwrite("# TEST FAIL %d: %s\n" % (test_fails, test_name))
+                d = ''
+                if forks == 1:
+                    d = ' %s' % test_fails
+
+                newout.stdwrite("# TEST FAIL%s: %s\n" % (d, test_name))
 
                 # Capture verbose output (i.e., errors) if necessary.
                 if self.verbose == True:

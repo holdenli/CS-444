@@ -335,8 +335,8 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     if method_decl[1].name == 'Void':
         node.typ = 'Void'
     else:
-        print('method')
-        method_decl.pprint()
+        #print('method')
+        #method_decl.pprint()
         node.typ = method_decl[1].canon
 
     return node.typ
