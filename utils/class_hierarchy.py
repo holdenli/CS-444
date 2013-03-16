@@ -54,7 +54,7 @@ class Method:
         if (self.type == None):
             return "<Constructor: %s>" % self.name
         else:
-            return "<Method: %s>" % self.name
+            return "<Method: %s | %s>" % (self.name, self.params)
 
     def __eq__(self, other):
         if isinstance(other, Method):
@@ -124,9 +124,9 @@ class Class:
         # not a reference type so return primitive or void
         if type_node.find_child("ReferenceType") == None:
             if isArray:
-                return type_node.leafs()[0].value.value + "[]"
+                return type_node.leafs()[0].name + "[]"
             else:
-                return type_node.leafs()[0].value.value
+                return type_node.leafs()[0].name
         # reference type, resolve it
         else:
             t = typelink.resolve_type(self.type_index, self.env, self.pkg, type_node)
