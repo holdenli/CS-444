@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-
 import logging
+from utils.ast import *
+
 class Node:
 
     def __init__(self, name=None, value=None, children=None):
@@ -157,7 +158,7 @@ class Node:
             # Some useful stuff
 
             if self.name == "Root" or self.name == "CompilationUnit":
-                c_node = self.get_class()
+                c_node = get_class(self)
                 if c_node == None:
                     logging.warning("Node.debug: could not find class decl for " + self.name)
                 elif c_node.obj != None:
@@ -260,38 +261,6 @@ class ASTNode(Node):
             t = " [typ=%s]" % self.typ
 
         return "<ASTNode: %s%s%s%s%s%s>" % (self.name, v, d, e, c, t)
-
-    def get_class(self):
-        z = list(self.select(["ClassDeclaration"])) + list(self.select(["InterfaceDeclaration"]))
-        if len(z) != 1:
-            return None
-
-        return z[0]
-
-    def get_fields(self):
-        if self.get_class() == None:
-            return None
-
-        z = list(self.select(["FieldDeclaration"]))
-        
-        return z
-
-    def get_constructors(self):
-        if self.get_class() == None:
-            return None
-
-        z = list(self.select(["ConstructorDeclaration"]))
-        
-        return z
-
-    def get_methods(self):
-        if self.get_class() == None:
-            return None
-
-        z = list(self.select("MethodDeclaration"))
-        
-        return z
-
 
 def find_nodes(tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration
