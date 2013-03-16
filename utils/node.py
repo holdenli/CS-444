@@ -159,10 +159,12 @@ class Node:
                 if self.name != "Type" and self.name != "ArrayType" and self.name != "Name":
                     logging.warning("Node.debug: canon appeared in " + self.name)
                 s += " @canon: %s" % self.canon
-            if self.decl != None:
-                s += " @decl"
             if self.env != None:
                 s += " @env"
+            if self.obj != None:
+                s += " @obj"
+            if self.decl != None:
+                s += " @decl"
 
         # Children
 

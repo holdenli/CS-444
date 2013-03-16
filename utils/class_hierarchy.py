@@ -17,6 +17,7 @@ class Field:
             self.mods = ast.get_modifiers(node.find_child("Modifiers"))
             self.name = node.find_child("Identifier").value.value
             self.type = c.get_type(node.find_child("Type"))
+            node.obj  = self
         if c != None and c.interface:
             self.mods.append("Abstract")
         self.node = node
@@ -46,6 +47,7 @@ class Method:
                 self.type = c.get_type(node.find_child("Type"))
             self.name = node.find_child("Identifier").value.value
             self.params = c.get_parameters(node.find_child("Parameters"))
+            node.obj = self
         if c != None and c.interface:
             self.mods.append("Abstract")
         self.node = node
@@ -263,6 +265,7 @@ def class_hierarchy(ast_list, pkg_index, type_index):
         c.implements = decl.find_child("Interfaces")
 
         c.node = decl
+        decl.obj = c
         c.env = type_index[c.name]
         c.type_index = type_index
 
