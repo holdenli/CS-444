@@ -3,6 +3,7 @@ import name_resolve
 from utils import logging
 from utils import node
 from utils import primitives
+from utils import class_hierarchy
 
 # Note: I'm going to call some statements expressions cause why not?
 # ie. ReturnStatement
@@ -42,6 +43,7 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['IfStatement']))
     exprs.extend(n.select(['WhileStatement']))
     exprs.extend(n.select(['ForStatement']))
+    exprx.extend(n.select(['LocalVariableDeclaration']))
     return exprs
 
 def typecheck(t_i, c_i):
@@ -212,15 +214,18 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
         logging.error('Invalid field access on primitive type %s' %
             receiver_type)
     else:
-        field_type = name_resolve.accessible_field(c_i, t_i, receiver_type,
+        field_decl = name_resolve.field_accessible(c_i, t_i, receiver_type,
             field_name, c.name)
-        if field_type is None:
+        if field_decl is None:
             logging.error('Cannot access field %s of type %s from class %s' %
                 (field_name, receiver_type, c.name))
             sys.exit(42)
+        elif 'static' in field_decl.modifiers:
+            logging.error('Instance field method on non-static field')
+            sys.exit(42)
         else:
-            node.typ = field_type
-            return field_type
+            node.typ = field[1].canon
+            return node.typ
 
 def typecheck_array_access(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'ArrayAccess':
@@ -277,7 +282,7 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
         arg_canon_types.append(typecheck_expr(argument_expr))
 
     # Call helper to find a method with the given signature (name and args).
-    method_decl = name_resolve.accessible_method(c_i, t_i,
+    method_decl = name_resolve.method_accessible(c_i, t_i,
         receiver_type, method_name, c.name, arg_canon_types)
     if method_decl == None:
         logging.error('Invalid method invocation')
@@ -525,6 +530,42 @@ def typecheck_mult(node, c, class_env, return_type, t_i, c_i):
         logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
+def typecheck_creation(node, c, class_env, return_type, t_i, c_i):
+    expected_node = 'CreationExpression'
+    if node.name != expected_node:
+        logging.error("FATAL ERROR: expected", expected_node) 
+        sys.exit(1)
+
+    creation_type = node[0].canon
+    if is_array_type(creation_type):
+        if len(node[1].children) > 1:
+            logging.error('Too many args to array creation')
+            sys.exit(42)
+        if len(node[1].children) == 1:
+            expr_type = typecheck_args(array_args[1][0], c, class_env,
+                return_type, t_i, c_i)
+            if expr_type != 'Int':
+                logging.error('Invalid array creation argument')
+                sys.exit(42)
+        node.typ = get_arraytype(creation_type)
+        return node.typ
+
+    else:
+        cons_name = creation_type.split('.')[-1]
+
+        arg_types = []
+        for arg_expr in node[1].children:
+            arg_types.append(typecheck_expr(arg_expr, c, class_env, return_type,
+                t_i, c_i))
+
+        cons = class_hierarchy.Temp_Contructor(cons_name, arg_types)
+        if cons in c.declare:
+            node.typ = creation_type
+            return node.typ
+        else:
+            logging.error('Invalid constructor call')
+            sys.exit(42)
+
 # Statements
 
 def typecheck_return(node, c, class_env, return_type, t_i, c_i):
@@ -548,6 +589,65 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
         pass
 
     return None
+
+def typecheck_if(node, c, class_env, return_type, t_i, c_i):
+    if node.name != 'IfStatement':
+        logging.error('FATAL ERROR: typecheck_if')
+        sys.exit(1)
+
+    expr_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    if expr_type != 'Boolean':
+        logging.error('Type of expression for if must be a Boolean')
+        sys.exit(42)
+
+    return None
+
+def typecheck_while(node, c, class_env, return_type, t_i, c_i):
+    if node.name != 'WhileStatement':
+        logging.error('FATAL ERROR: typecheck_while')
+        sys.exit(1)
+
+    expr_type = typecheck_expr(node[0], c, class_env, return_type, t_i, c_i)
+
+    if expr_type != 'Boolean':
+        logging.error('Type of expression for \'while\' must be a Boolean')
+        sys.exit(42)
+    
+    return None
+
+def typecheck_for(node, c, class_env, return_type, t_i, c_i):
+    if node.name != 'WhileStatement':
+        logging.error('FATAL ERROR: typecheck_while')
+        sys.exit(1)
+
+    # If there's no 'ForCondition', don't need to do anything.
+    if len(node[1].children) == 0:
+        return None
+    else:
+        expr_type = typecheck_expr(node[1][0], c, class_env, return_type, t_i,
+            c_i)
+
+        if expr_type != 'Boolean':
+            logging.error('Type of expression for \'for\' must be a Boolean')
+            sys.exit(42)
+        
+        return None
+
+def typecheck_local_var_decl(node, c, class_env, return_type, t_i, c_i):
+    var_type = node[0].canon
+    initializer_type = node[0].canon # Extract type from Type node.
+
+    if len(node[2].children) > 0:
+        initializer_type = typecheck_expr(node[2][0], c, class_env,
+            return_type, t_i, c_i)
+
+    if is_assignable(var_type, initializer_type):
+        node.typ = var_type
+        return node.typ
+    else:
+        logging.error('Invalid initializer for variable of type %s' % var_type)
+        sys.exit(42)
 
 def is_assignable(type1, type2, c_i):
     # Call other helper for anything having to do with arrays.
