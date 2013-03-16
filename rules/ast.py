@@ -282,6 +282,10 @@ RULES = {
         ['Type', 'Expression'],
     ],
 
+    'InstanceofExpression': [
+        ['Expression', 'Type'],
+    ],
+
     'PostfixExpression': [
         ['Primary'],
         ['Name'],
