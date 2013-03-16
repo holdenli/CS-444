@@ -708,17 +708,17 @@ RULES = {
 
     'AndExpression': [
         ['EqualityExpression'],
-        ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
+        # ['AndExpression', 'BinaryAndOperator', 'EqualityExpression'],
     ],
 
     'ExclusiveOrExpression': [
         ['AndExpression'],
-        ['ExclusiveOrExpression', 'InverseOperator', 'AndExpression'],
+        # ['ExclusiveOrExpression', 'InverseOperator', 'AndExpression'],
     ],
 
     'InclusiveOrExpression': [
         ['ExclusiveOrExpression'],
-        ['InclusiveOrExpression', 'BinaryOrOperator', 'ExclusiveOrExpression'],
+        # ['InclusiveOrExpression', 'BinaryOrOperator', 'ExclusiveOrExpression'],
     ],
 
     'ConditionalAndExpression': [
