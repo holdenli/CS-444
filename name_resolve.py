@@ -13,6 +13,7 @@ from typelink import resolve_type_by_name
 
 import utils.class_hierarchy 
 from utils.class_hierarchy import Temp_Field, Temp_Method
+from utils.class_hierarchy import is_nonstrict_subclass
 
 class_index = {}
 
@@ -272,7 +273,8 @@ def member_accessable(class_index, type_index, canon_type, member, viewer_canon_
             pass
 
         if field_i >= 0 and (pkg(viewer_canon_type) == pkg(canon_type) \
-            or 'protected' not in contain_set[field_i].node.modifiers):
+            or 'protected' not in contain_set[field_i].node.modifiers) \
+            or is_nonstrict_subclass(canon_type, viewer_canon_type, class_index):
                 # name was 'a.b.c.d'
                 # we now try to link 'b.c.d' in the context of 'a'
                 return contain_set[field_i].node
