@@ -214,6 +214,10 @@ def typecheck_field_access(node, c, class_env, return_type, t_i, c_i):
     
     field_name = node[0][0].value.value
 
+    if receiver_type == None:
+        logging.warning("FATAL: FieldAccess")
+        return
+
     if is_array_type(receiver_type):
         if field_name == 'length':
             node.typ = 'Int'
