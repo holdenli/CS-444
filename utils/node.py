@@ -131,26 +131,44 @@ class Node:
 
         # Basic Info
 
-        if isinstance(self, Node):
-            pass
-        elif isinstance(self, ASTNode):
-            s += "#"
+        if isinstance(self, ASTNode):
+            s += ":"
         else:
-            s += "$"
-
-        s += "%s" % (self.name)
+            s += "."
         
-        if self.name == "Identifier":
-            if self.value == None:
-                logging.warning("Node.debug: Identifier does not have a value")
-            else:
-                s += "='%s'" % (self.value.value)
+        s += "[%s]" % (self.name)
         
-        s += ">"
-
         # Verbose Info
 
+        if self.name == "Identifier":
+            if self.value == None:
+                logging.warning("Node.debug: %s does not have a value" % self.name)
+            else:
+                s += "='%s'" % (self.value.value)
+        elif self.name == "LocalVariableDeclaration":
+            id_node = self.find_child("Identifier")
+            if id_node != None and id_node.value != None:
+                s += "='%s'" % (id_node.value.value)
+            else:
+                logging.warning("Node.debug: %s has an invalid identifier" % self.name)
+
         if verbose and isinstance(self, ASTNode):
+
+            # Some useful stuff
+
+            if self.name == "Root" or self.name == "CompilationUnit":
+                c_node = self.get_class()
+                if c_node == None:
+                    logging.warning("Node.debug: could not find class decl for " + self.name)
+                elif c_node.obj != None:
+                    s += "='%s'" % c_node.obj.name 
+            elif self.obj != None:
+                    s += "='%s'" % self.obj.name 
+
+            s += ">"
+
+            # Additional Info
+
             if self.typ != None:
                 if self.canon != None:
                     logging.warning("Node.debug: typ and canon appeared in " + self.name)
@@ -165,6 +183,8 @@ class Node:
                 s += " @obj"
             if self.decl != None:
                 s += " @decl"
+        else:
+            s += ">"
 
         # Children
 
@@ -219,27 +239,59 @@ class ASTNode(Node):
         self.modifiers = modifiers
 
     def __repr__(self):
-        d = ""
-        if self.decl != None:
-            d = '-> %s' % self.decl
-
         v = ""
         if self.value != None:
             v = "=%s" % self.value
 
+        d = ""
+        if self.decl != None:
+            d = ' -> %s' % self.decl
+
         e = ""
         if self.env:
-            e = "[env=%s]" % self.env.name
+            e = " @env"
 
         c = ""
         if self.canon:
-            c = "[canon=%s]" % self.canon
+            c = " [canon=%s]" % self.canon
 
         t = ""
         if self.typ:
-            t = "[typ=%s]" % self.typ
+            t = " [typ=%s]" % self.typ
 
-        return "<ASTNode: %s%s %s %s%s%s>" % (self.name, v, d, e, c, t)
+        return "<ASTNode: %s%s%s%s%s%s>" % (self.name, v, d, e, c, t)
+
+    def get_class(self):
+        z = list(self.select(["ClassDeclaration"])) + list(self.select(["InterfaceDeclaration"]))
+        if len(z) != 1:
+            return None
+
+        return z[0]
+
+    def get_fields(self):
+        if self.get_class() == None:
+            return None
+
+        z = list(self.select(["FieldDeclaration"]))
+        
+        return z
+
+    def get_constructors(self):
+        if self.get_class() == None:
+            return None
+
+        z = list(self.select(["ConstructorDeclaration"]))
+        
+        return z
+
+    def get_methods(self):
+        if self.get_class() == None:
+            return None
+
+        z = list(self.select("MethodDeclaration"))
+        
+        return z
+
 
 def find_nodes(tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration
