@@ -17,8 +17,13 @@ from utils.class_hierarchy import is_nonstrict_subclass
 
 class_index = {}
 
+static_context_flag = False
+
 def name_link(pkg_index, type_index, cls_idx):
     global class_index
+    global static_context_flag
+    static_context_flag = False
+
     class_index = cls_idx
 
     for pkg_name in pkg_index:
@@ -31,6 +36,8 @@ def name_link(pkg_index, type_index, cls_idx):
             # name link everything inside methods!
             for method_env in typedecl_env.children:
                 method_node = method_env.node
+                static_context_flag = 'static' in method_node.modifiers
+
                 for block_node in method_node.select(['Block']):
                     
                     name_link_block(type_index, cu_env, pkg_name, block_node,
@@ -41,6 +48,8 @@ def name_link(pkg_index, type_index, cls_idx):
 
                         logging.error("Cannot use 'this' inside static method")
                         sys.exit(42)
+
+                static_context_flag = False
 
             # name link field initializers
             field_names = {}
@@ -263,7 +272,8 @@ def member_accessable(class_index, type_index, canon_type, member, viewer_canon_
             return ASTNode of field if canon_type.field is accessible from
             viewer_canon_type
         """
-        
+        global static_context_flag
+
         # if second part is in contain set of the first(canon_type), and is not protected, RECURSE
         contain_set = utils.class_hierarchy.contain(class_index[canon_type])
         field_i = -1
@@ -274,7 +284,10 @@ def member_accessable(class_index, type_index, canon_type, member, viewer_canon_
 
         if field_i >= 0 and (pkg(viewer_canon_type) == pkg(canon_type) \
             or 'protected' not in contain_set[field_i].node.modifiers) \
-            or is_nonstrict_subclass(canon_type, viewer_canon_type, class_index):
+            or is_nonstrict_subclass(canon_type, viewer_canon_type, class_index) \
+            and (static_context_flag == False \
+            or (static_context_flag and 'static' in contain_set[field_i].node.modifiers)):
+
                 # name was 'a.b.c.d'
                 # we now try to link 'b.c.d' in the context of 'a'
                 return contain_set[field_i].node
@@ -298,11 +311,18 @@ def method_accessable(class_index, type_index, canon_type, method_name, params, 
             viewer_canon_type)
 
 def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
-    simple_names=None):
+        simple_names=None,
+
+        check_locals=True,
+        check_contains=True,
+        check_type=True,
+        check_this=True):
+
     """
         name_parts is an array:
             e.g. ['a', 'b', 'c'] or ['this', 'c'] representing a.b.c or this.c
     """
+    global static_context_flag
 
     if simple_names != None and len(name_parts) == 1 \
         and name_parts[0] not in simple_names:
@@ -322,20 +342,26 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
         field_i = -1
 
     canon_type = None
+    is_type = False
 
-    if name_parts[0] == 'this':
+    if name_parts[0] == 'this' and check_this:
         return name_link_name(type_index, cu_env, pkg_name,
                 local_vars, name_fields)
 
     # is it a local variable?
-    if name_parts[0] in local_vars:
+    if name_parts[0] in local_vars and check_locals:
         candidate = local_vars[name_parts[0]]
     
     # is it in the contains set?
-    elif field_i >= 0:
+    elif field_i >= 0 and check_contains:
         candidate = cu_contain_set[field_i].node
 
-    else:
+        # can't be static in a static context
+        if static_context_flag and 'static' not in candidate.modifiers:
+            logging.error('Cant reference to non-static in a static context')
+            sys.exit(42)
+
+    elif check_type:
         # is it a type?
         for i, _ in enumerate(name_parts):
             type_candidate = name_parts[:i+1]
@@ -346,6 +372,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                 if (i+1 != len(name_parts)):
                     canon_type = canon_name
                     name_fields = name_parts[i+1:]
+                    is_type = True
                 else:
                     # this is just a type! names can't be types
                     return None
@@ -360,7 +387,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
         canon_type = candidate.find_child('Type').canon
 
     # now we check if we can access for the field's type
-    if canon_type != None and len(name_fields) > 0:
+    if canon_type != None and len(name_fields) >= 1:
 
         # special case of Array
         if canon_type.endswith('[]'):
@@ -368,11 +395,57 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                 return None
             return primitives.array_length_node
 
-        if field_accessable(class_index, type_index, canon_type, name_fields[0], cu_canon) != None:
-            return name_link_name(type_index, type_index[canon_type],
-                canon_type.rsplit('.', 1)[0],
-                {},
-                name_fields)
+        fa = field_accessable(class_index, type_index, canon_type, name_fields[0], cu_canon)
+        if fa != None:
+
+            if is_type:
+                if 'static' not in fa.modifiers:
+                    # uh oh, this has to be a static field!
+                    logging.error('%s is not static of type %s but is being \
+                        accessed as one' % (fa, canon_type))
+                    sys.exit(42)
+            
+                static_canon_type = fa.find_child('Type').canon
+                
+                if len(name_fields) >= 2: # i.e,  MyClass.staticvar.MORESTUFF
+
+                    # switch context static_canon_type and work with the rest of
+                    # the name.
+                    save_static_context = static_context_flag
+                    static_context_flag = False
+
+                    if static_canon_type.endswith('[]'):
+
+                        if name_fields[1:] == ['length']:
+                            return primitives.array_length_node
+                        
+                        logging.error('Cannot access field %s of static array type %s'
+                            % (name_fields[1:], static_canon_type))
+                        sys.exit(42)
+
+                    elif primitives.is_primitive(static_canon_type):
+                        # primitives don't have access! fail
+                        logging.error('Primitives do not have fields to access!')
+                        sys.exit(42)
+
+                    fa = name_link_name(type_index,
+                            type_index[static_canon_type],
+                            name_fields[1:],
+                            {}, # no locals
+                            check_type=False,
+                            check_this=False)
+                    
+                    static_context_flag = save_static_context
+
+                return fa
+            else:
+                # not a type -- we can just recurse down
+                return name_link_name(type_index, type_index[canon_type],
+                            canon_type.rsplit('.', 1)[0],
+                        {},
+                        name_fields,
+                        check_type=check_type,
+                        check_this=check_this)
         else:
             return None
     
