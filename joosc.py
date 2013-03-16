@@ -201,7 +201,7 @@ def parse_options(args=sys.argv):
             Only has any effect if -s and -i are specified.""")
 
     parser.add_option('-d', '--directory_crawl', action='store_true',
-        dest='directory_crawl',
+        dest='directory_crawl', default=True,
         help="Recursively crawl directories for compilation units")
 
     #
