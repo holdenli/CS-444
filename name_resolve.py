@@ -5,6 +5,7 @@ from utils import logging
 from utils import primitives
 
 from utils.node import Node
+from utils.node import ASTNode
 from utils.node import find_nodes
 import environment
 
@@ -30,6 +31,7 @@ def name_link(pkg_index, type_index, cls_idx):
             for method_env in typedecl_env.children:
                 method_node = method_env.node
                 for block_node in method_node.select(['Block']):
+                    
                     name_link_block(type_index, cu_env, pkg_name, block_node,
                             local_vars=environment.build_method_params(method_node))
 
@@ -51,7 +53,7 @@ def name_link(pkg_index, type_index, cls_idx):
                     pkg_name,
                     field_decl.find_child('Initializer'),
                     {field_name:field_decl},
-                    field_names # simple_name
+                    simple_names=field_names # simple_name
                 )
                 
                 field_names[field_name] = field_decl
@@ -130,6 +132,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
         lhs_only_vars=None,
         simple_names=None):
 
+
     if lhs_only_vars == None:
         lhs_only_vars = {}
 
@@ -146,10 +149,10 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                 if meth_recv[0] == Node('Name'):
                     meth_recv_name = '.'.join(meth_recv.leaf_values())
                     name_node = meth_recv[0]
-
                     resolved_node = name_link_name(type_index, cu_env,
                         pkg_name, local_vars,
-                        meth_recv_name.split('.'))
+                        meth_recv_name.split('.'),
+                        simple_names)
 
                     canon_type = resolve_type_by_name(type_index,
                         cu_env,
@@ -166,7 +169,6 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                     elif canon_type != None:
                         name_node.canon = canon_type
                     else:
-                        print(local_vars)
                         logging.error('method receiver %s could not be resolved!' %
                             (meth_recv_name))
                         sys.exit(42)
@@ -200,7 +202,8 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             new_vars = dict(local_vars)
             new_vars.update(lhs_only_vars)
 
-            find_and_resolve_names(type_index, cu_env, pkg_name, node[0],
+            find_and_resolve_names(type_index, cu_env, pkg_name,
+                node[0],
                 new_vars,
                 {},
                 simple_names)
@@ -243,8 +246,8 @@ def member_accessable(class_index, type_index, canon_type, member, viewer_canon_
         except ValueError:
             pass
 
-        if field_i >= 0 and (pkg(viewer_canon_type) == pkg(canon_type) or \
-            'protected' not in contain_set[field_i].node.modifiers):
+        if field_i >= 0 and (pkg(viewer_canon_type) == pkg(canon_type) \
+            or 'protected' not in contain_set[field_i].node.modifiers):
                 # name was 'a.b.c.d'
                 # we now try to link 'b.c.d' in the context of 'a'
                 return contain_set[field_i].node
@@ -276,7 +279,6 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
 
     if simple_names != None and len(name_parts) == 1 \
         and name_parts[0] not in simple_names:
-        print('HA')
         return None
  
     candidate = None
@@ -284,7 +286,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
     name_fields = []
     if len(name_parts) > 0:
         name_fields = name_parts[1:]
-    
+   
     cu_canon = '%s.%s' % (pkg_name, environment.env_type_name(cu_env))
     cu_contain_set = utils.class_hierarchy.contain(class_index[cu_canon])
     try:
