@@ -92,9 +92,9 @@ def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
                 local_vars)
             
-            for block_stmt in stmt[3].select(['Block']):
-                name_link_block(type_index, cu_env, pkg_name, block_stmt,
-                    local_vars)
+            name_link_block(type_index, cu_env, pkg_name, stmt[3],
+                local_vars)
+
             continue
 
         elif stmt == Node('WhileStatement'):
