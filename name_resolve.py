@@ -30,17 +30,35 @@ def name_link(pkg_index, type_index, cls_idx):
                 method_node = method_env.node
                 for block_node in method_node.select(['Block']):
                     name_link_block(type_index, cu_env, pkg_name, block_node,
-                            local_vars=environment.build_method_params(method_node),
-                            method_node=method_node)
+                            local_vars=environment.build_method_params(method_node))
 
-            # namelink field initializers
+                    if len(list(method_node.select(['This']))) > 0 \
+                        and 'static' in method_node.modifiers:
+
+                        logging.error("Cannot use 'this' inside static method")
+                        sys.exit(42)
+
+            # name link field initializers
+            field_names = {}
             for field_decl in typedecl_env.node.select(['Fields',
                 'FieldDeclaration']):
-                pass
+
+                field_name = field_decl.find_child('Identifier').value.value
+                find_and_resolve_names(
+                    type_index,
+                    cu_env,
+                    pkg_name,
+                    field_decl.find_child('Initializer'),
+
+                    local_vars=field_names,
+                    lhs_only_vars={field_name:field_decl},
+                    check_fields=False
+                )
+                
+                field_names[field_name] = field_decl
 
 def name_link_block(type_index, cu_env, pkg_name, stmts,
-        local_vars,
-        method_node):
+        local_vars):
 
     if local_vars == None:
         local_vars = {}
@@ -49,8 +67,7 @@ def name_link_block(type_index, cu_env, pkg_name, stmts,
 
     for stmt in stmts.children:
         if stmt == Node('Block'):
-            name_link_block(type_index, cu_env, pkg_name, stmt, local_vars,
-                method_node)
+            name_link_block(type_index, cu_env, pkg_name, stmt, local_vars)
             continue
 
         elif stmt == Node('ForStatement'):
@@ -63,51 +80,59 @@ def name_link_block(type_index, cu_env, pkg_name, stmts,
                 local_vars[var_name] = for_vars[0]
 
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
-                local_vars, method_node)
+                local_vars)
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[1],
-                local_vars, method_node)
+                local_vars)
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
-                local_vars, method_node)
+                local_vars)
             
             for block_stmt in stmt[3].select(['Block']):
                 name_link_block(type_index, cu_env, pkg_name, block_stmt,
-                    local_vars, method_node)
+                    local_vars)
             continue
 
         elif stmt == Node('WhileStatement'):
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
-                local_vars, method_node)
+                local_vars)
 
-            name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars,
-                method_node)
+            name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars)
             continue
 
         elif stmt == Node('IfStatement'):
 
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
-                local_vars, method_node)
+                local_vars)
 
-            name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars,
-                method_node)
+            name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars)
             if len(stmt.children) == 3:
                 name_link_block(type_index, cu_env, pkg_name, stmt[2],
-                    local_vars, method_node)
+                    local_vars)
             continue
 
         if stmt == Node('LocalVariableDeclaration'):
             var_name = list(stmt.select(['LocalVariableDeclaration', 'Identifier']))
             var_name = var_name[0].value.value
+
+            find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
+                local_vars,
+                lhs_only_vars={var_name:stmt})
+
             local_vars[var_name] = stmt
 
         # find name references
-        find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
-            method_node)
+        find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars)
 
 def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
-        method_node):
+        lhs_only_vars=None,
+        check_fields=True):
+
+    if lhs_only_vars == None:
+        lhs_only_vars = {}
 
     for node in find_nodes(stmt, [Node('Name'), Node('MethodInvocation'),
-            Node('FieldAccess')]):
+            Node('FieldAccess'),
+            Node('Assignment')]):
+
         if node == Node('MethodInvocation'):
             # node.children = ['MethodName', 'MethodReceiver', 'Arguments']
 
@@ -116,10 +141,12 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             if len(meth_recv.children) > 0:
                 if meth_recv[0] == Node('Name'):
                     meth_recv_name = '.'.join(meth_recv.leaf_values())
+                    name_node = meth_recv[0]
 
                     resolved_node = name_link_name(type_index, cu_env,
                         pkg_name, local_vars,
-                        meth_recv_name.split('.'))
+                        meth_recv_name.split('.'),
+                        check_fields)
 
                     canon_type = resolve_type_by_name(type_index,
                         cu_env,
@@ -128,11 +155,13 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                     
                     # it could an ambig name
                     if resolved_node != None:
-                        node.decl = resolved_node
-                        node.typ = resolved_node.find_child('Type').canon
-                        node.canon = node.typ
+                        name_node.decl = resolved_node
+                        name_node.typ = resolved_node.find_child('Type').canon
+                        name_node.canon = node.typ
+
+                    # it could be a static type
                     elif canon_type != None:
-                        node.typ = canon_type
+                        name_node.canon = canon_type
                     else:
                         print(local_vars)
                         logging.error('method receiver %s could not be resolved!' %
@@ -144,12 +173,15 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                     find_and_resolve_names(type_index, cu_env, pkg_name,
                         meth_recv,
                         local_vars,
-                        method_node)
+                        lhs_only_vars,
+                        check_fields)
                 
             # if it has arguments, name resolve those
             if len(node.children) == 3:
                 find_and_resolve_names(type_index, cu_env, pkg_name, node[2],
-                    local_vars, method_node)
+                    local_vars,
+                    lhs_only_vars,
+                    check_fields)
 
             continue
 
@@ -157,17 +189,32 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             # this?
             # node.children = ['FieldName', 'FieldReceiver']
             if node[1][0] == Node('This'):
-                if 'static' in method_node.modifiers:
-                    logging.error("'this' not allowed in a static method!")
-                    sys.exit(42)
                 name = node[0].leaf_values()
+                check_fields = False
             else:
                 continue
+
+        elif node == Node('Assignment'):
+            new_vars = dict(local_vars)
+            new_vars.update(lhs_only_vars)
+
+            find_and_resolve_names(type_index, cu_env, pkg_name, node[0],
+                new_vars,
+                {},
+                check_fields)
+
+            find_and_resolve_names(type_index, cu_env, pkg_name, node[1],
+                local_vars,
+                lhs_only_vars,
+                check_fields)
+
+            continue
 
         elif node == Node('Name'):
             name = node.leaf_values()
 
-        resolved_node = name_link_name(type_index, cu_env, pkg_name, local_vars, name)
+        resolved_node = name_link_name(type_index, cu_env, pkg_name, local_vars,
+            name, check_fields)
         
         if resolved_node == None:
             logging.error('Could not resolve name %s in %s.%s with %s' % (name, pkg_name,
@@ -216,7 +263,8 @@ def method_accessable(class_index, type_index, canon_type, method_name, params, 
             Temp_Method(method_name, params),
             viewer_canon_type)
 
-def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts):
+def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
+                    check_fields=True):
     """
         name_parts is an array:
             e.g. ['a', 'b', 'c'] or ['this', 'c'] representing a.b.c or this.c
@@ -242,7 +290,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts):
         candidate = local_vars[name_parts[0]]
     
     # is it in the contains set?
-    elif field_i >= 0:
+    elif field_i >= 0 and check_fields:
         candidate = cu_contain_set[field_i].node
 
     else:
@@ -282,7 +330,8 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts):
             return name_link_name(type_index, type_index[canon_type],
                 canon_type.rsplit('.', 1)[0],
                 {},
-                name_fields)
+                name_fields,
+                check_fields)
         else:
             return None
     

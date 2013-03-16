@@ -51,6 +51,9 @@ class Environment(Node):
 
        self.children = children
 
+       # canonical name of Compulation Unit
+       self.canon = None
+
     def __repr__(self):
         return '<Env: %s=%s Node=%s> %s' % (self.name, self.value, self.node, self.names)
 
@@ -172,14 +175,19 @@ def build_environment(abs_tree):
     pi_node.env = pi_env
 
     # add a class or interface to the package
+    type_name = ''
     cls = list(abs_tree.select(['ClassDeclaration']))
     iface = list(abs_tree.select(['InterfaceDeclaration']))
     if len(cls) > 0:
         cu.children.append(build_class_env(cls[0]))
+        type_name = cls[0].find_child('ClassName').leaf_values()[0]
     if len(iface) > 0:
         cu.children.append(build_interface_env(iface[0]))
+        type_name = iface[0].find_child('InterfaceName').leaf_values()[0]
 
     # add the CompilationUnit to the package
+    cu.canon = '%s.%s' % (pkg_name, type_name)
+
     pkg_env.children.append(cu)
 
     return pkg_env
