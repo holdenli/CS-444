@@ -118,9 +118,65 @@ class Node:
         return ret
 
     def pprint(self, tabsize=0):
+        print(self.debug())
+        
+        return
+
         print(' '*tabsize, self)
         for c in self.children:
             c.pprint(tabsize=tabsize+2)
+
+    def debug(self, level=None, verbose=True, prefix=""):
+        s = prefix
+
+        # Basic Info
+
+        if isinstance(self, Node):
+            pass
+        elif isinstance(self, ASTNode):
+            s += "#"
+        else:
+            s += "$"
+
+        s += "%s" % (self.name)
+        
+        if self.name == "Identifier":
+            if self.value == None:
+                logging.warning("Node.debug: Identifier does not have a value")
+            else:
+                s += "='%s'" % (self.value.value)
+        
+        s += ">"
+
+        # Verbose Info
+
+        if verbose and isinstance(self, ASTNode):
+            if self.typ != None:
+                s += " @typ: %s" % self.typ
+            elif self.canon != None:
+                if self.name != "Type" and self.name != "ArrayType":
+                    logging.warning("Node.debug: canon appeared in a %s node" % self.name)
+                    s += " >>>>"
+                s += " @canon: %s" % self.canon
+            elif self.decl != None:
+                s += " @decl"
+            elif self.env != None:
+                s += " @env"
+
+        # Children
+
+        if level != None:
+            level -= 1
+
+        if level == 0:
+            s += " (...)"
+            return s
+
+        for c in self.children:
+            new_prefix = prefix + ".   "
+            s += "\n" + c.debug(level, verbose, new_prefix)
+        
+        return s
 
 class ASTNode(Node):
 
@@ -182,18 +238,4 @@ def find_nodes(tree, white_list):
             ret.extend(find_nodes(c, white_list))
 
     return ret
-
-if __name__ == "__main__":
-    n = Node("OMG1",
-        children=[
-            Node("1", children=[Node("A", children=[Node("C", ("token"))])]),
-            Node("2"),
-            Node("3", children=[Node("B", ("token"))])
-            ])
-    print("BFS")
-    print(list(n.bfs_iter()))
-    print(list(n.bfs_iter(True)))
-    print("DFS")
-    print(list(n.dfs_iter()))
-    print(list(n.dfs_iter(True)))
 
