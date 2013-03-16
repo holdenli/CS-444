@@ -152,7 +152,7 @@ def joosc(targets, options):
         sys.exit(0)
 
     name_resolve.name_link(pkg_index, type_index, class_index)
-    typecheck.typecheck(type_index, class_index)
+    # typecheck.typecheck(type_index, class_index)
 
 # INTERFACE
 ##########################

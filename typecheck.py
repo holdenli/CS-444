@@ -303,16 +303,16 @@ def typecheck_method_invocation(node, c, class_env, return_type, t_i, c_i):
     if method_decl == None:
         logging.error('Invalid method invocation')
         logging.error(" ", method_decl, receiver_type, method_name, arg_canon_types)
-        #sys.exit(42)
+        sys.exit(42)
         return
         
     if 'static' in method_decl.modifiers and is_static == False:
         logging.error('Invalid static method invocation')
-        #sys.exit(42)
+        sys.exit(42)
         return
     elif 'static' not in method_decl.modifiers and is_static == True:
         logging.error('Invalid instance method invocation (of static method)')
-        #sys.exit(42)
+        sys.exit(42)
         return
 
     # Get the return type of the method.
@@ -331,12 +331,12 @@ def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
 
     expr_type = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
     if is_assignable(expr_type, node[0].canon, c_i) \
-    or is_assignable(node[0].canon, expr_type, c_i):
+        or is_assignable(node[0].canon, expr_type, c_i):
         return node[0].canon
     else:
         logging.error('Cast expression of type %s into %s' %
             (expr_type, node[0].canon))
-        #sys.exit(42)
+        sys.exit(42)
         pass
 
 def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
@@ -378,8 +378,8 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if t != "Boolean":
             logging.error("typecheck failed: NotOp expects boolean; got:",t)
-            #sys.exit(42)
-            pass
+            sys.exit(42)
+
         return t
 
     elif node[0].name == "CastExpression":
@@ -389,8 +389,7 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if not primitives.is_numeric(t):
             logging.error("typecheck failed: SubtractOp expects number; got:",t)
-            #sys.exit(42)
-            pass
+            sys.exit(42)
         return t
 
     else:
@@ -418,8 +417,7 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
             return 'Boolean'
         else:
             logging.error("typecheck failed: expected booleans; got:", t1, t2)
-            #sys.exit(42)
-            pass
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -451,8 +449,7 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
             return "Boolean"
         else:
             logging.error("typecheck failed: equality between", t1, t2)
-            #sys.exit(42)
-            pass
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -481,9 +478,7 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
             return "Boolean"
         else:
             logging.error("typecheck failed: Relational:", t1, t2)
-            node.pprint()
-            #sys.exit(42)
-            pass
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -516,8 +511,7 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
             return "Int"
         else:
             logging.error("typecheck failed: Add:", t1, t2)
-            #sys.exit(42)
-            pass
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -545,7 +539,7 @@ def typecheck_mult(node, c, class_env, return_type, t_i, c_i):
             return "Int"
         else:
             logging.error("typecheck failed: mult/div/mod not num")
-            #sys.exit(42)
+            sys.exit(42)
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -625,14 +619,13 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
     else:
         t = typecheck_expr(node.children[0], c, class_env, return_type, t_i, c_i)
     
-    if t == return_type \
-    or (primitives.is_reference(return_type) and t == "Null"):
+    if t == return_type or \
+        (primitives.is_reference(return_type) and t == "Null"):
         #logging.warning("typecheck passed", node)
         pass
     else:
         logging.error("typecheck failed: Return: expected %s but got %s" % (return_type, t))
-        #sys.exit(42)
-        pass
+        sys.exit(42)
 
     return None
 
@@ -664,7 +657,7 @@ def typecheck_while(node, c, class_env, return_type, t_i, c_i):
     return None
 
 def typecheck_for(node, c, class_env, return_type, t_i, c_i):
-    if node.name != 'WhileStatement':
+    if node.name != 'ForStatement':
         logging.error('FATAL ERROR: typecheck_while')
         sys.exit(1)
 
