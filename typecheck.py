@@ -138,6 +138,12 @@ def typecheck_expr(node, c, class_env, return_type, t_i, c_i):
         t = typecheck_literal(node, c, class_env, return_type, t_i, c_i)
     elif node.name == 'This':
         t = c.name
+    elif node.name == 'FieldAccess':
+        pass
+    elif node.name == 'MethodInvocation':
+        pass
+    elif node.name == 'ArrayAccess':
+        pass
 
     elif node.name == 'InclusiveOrExpression' \
         or   node.name == 'ExclusiveOrExpression' \
@@ -303,9 +309,10 @@ def typecheck_cast_expression(node, c, class_env, return_type, t_i, c_i):
     or is_assignable(node[0].canon, expr_type, c_i):
         return node[0].canon
     else:
-        logging.error('Cast expression of type %s into %s' %
-            (expr_type, node[0].canon))
+        #logging.error('Cast expression of type %s into %s' %
+        #    (expr_type, node[0].canon))
         #sys.exit(42)
+        pass
 
 def typecheck_literal(node, c, class_env, return_type, t_i, c_i):
     if node.name != 'Literal':
@@ -345,8 +352,9 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
     elif node[0].name == "NotOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if t != "Boolean":
-            logging.error("typecheck failed:", node)
+            #logging.error("typecheck failed:", node)
             #sys.exit(42)
+            pass
         return t
 
     elif node[0].name == "CastExpression":
@@ -355,8 +363,9 @@ def typecheck_unary(node, c, class_env, return_type, t_i, c_i):
     elif node[0].name == "SubtractOperator":
         t = typecheck_expr(node[1], c, class_env, return_type, t_i, c_i)
         if primitives.is_numeric(t):
-            logging.error("typecheck failed:", node)
+            #logging.error("typecheck failed:", node)
             #sys.exit(42)
+            pass
         return t
 
     else:
@@ -383,8 +392,9 @@ def typecheck_conditional(node, c, class_env, return_type, t_i, c_i):
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         else:
-            logging.error("typecheck failed: and/or not bool")
+            #logging.error("typecheck failed: and/or not bool")
             #sys.exit(42)
+            pass
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -415,8 +425,9 @@ def typecheck_equality(node, c, class_env, return_type, t_i, c_i):
         and  (t2 == "Null" or primitives.is_reference(t2)):
             return "Boolean"
         else:
-            logging.error("typecheck failed", expected_node)
+            #logging.error("typecheck failed", expected_node)
             #sys.exit(42)
+            pass
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -444,8 +455,9 @@ def typecheck_relational(node, c, class_env, return_type, t_i, c_i):
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         else:
-            logging.error("typecheck failed", expected_node)
+            #logging.error("typecheck failed", expected_node)
             #sys.exit(42)
+            pass
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -477,8 +489,9 @@ def typecheck_add(node, c, class_env, return_type, t_i, c_i):
         elif primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
-            logging.error("typecheck failed: add/sub not num")
+            #logging.error("typecheck failed: add/sub not num")
             #sys.exit(42)
+            pass
 
     else:
         logging.warning(expected_node, "has unexpected children", node.children) 
@@ -530,8 +543,9 @@ def typecheck_return(node, c, class_env, return_type, t_i, c_i):
         #logging.warning("typecheck passed", node)
         pass
     else:
-        logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
+        #logging.error("typecheck failed: expected %s but got %s" % (return_type, t))
         #sys.exit(42)
+        pass
 
     return None
 
@@ -576,9 +590,9 @@ def is_nonstrict_subclass(type1, type2, c_i):
             return True
         else:
             cls = c_i[typename]
-            queue.extend(list(cls.implements))
+            queue.extend([x.name for x in cls.implements])
             if cls.extends != None:
-                queue.append(cls.extends)
+                queue.append(cls.extends.name)
 
     # Did not find type1 as a superclass of type2.
     return False
