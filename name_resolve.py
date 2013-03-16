@@ -52,8 +52,10 @@ def name_link(pkg_index, type_index, cls_idx):
                     cu_env,
                     pkg_name,
                     field_decl.find_child('Initializer'),
-                    {field_name:field_decl},
-                    simple_names=field_names # simple_name
+                    field_names,
+
+                    lhs_only_vars = {field_name:field_decl},
+                    simple_names = field_names # simple_name
                 )
                 
                 field_names[field_name] = field_decl
@@ -130,12 +132,12 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
         lhs_only_vars=None,
         simple_names=None):
 
-
     if lhs_only_vars == None:
         lhs_only_vars = {}
 
     for node in find_nodes(stmt, [Node('Name'), Node('MethodInvocation'),
             Node('FieldAccess'),
+            Node('ArrayAccess'),
             Node('Assignment')]):
 
         if node == Node('MethodInvocation'):
@@ -185,6 +187,19 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                     local_vars,
                     lhs_only_vars,
                     simple_names)
+            continue
+
+        elif node == Node('ArrayAccess'):
+            # node.children = ['ArrayReceiver', 'Primary']
+            find_and_resolve_names(type_index, cu_env, pkg_name, node[0],
+                local_vars,
+                lhs_only_vars,
+                simple_names)
+
+            find_and_resolve_names(type_index, cu_env, pkg_name, node[1],
+                local_vars,
+                lhs_only_vars,
+                simple_names)
 
             continue
 
@@ -203,16 +218,22 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                 continue
 
         elif node == Node('Assignment'):
-            new_vars = dict(local_vars)
-            new_vars.update(lhs_only_vars)
+            lhs_vars = dict(local_vars)
+            lhs_vars.update(lhs_only_vars)
+
+            lhs_simple_names = simple_names
+            if simple_names != None:
+                lhs_simple_names = dict(simple_names)
+                lhs_simple_names.update(lhs_only_vars)
 
             find_and_resolve_names(type_index, cu_env, pkg_name,
                 ASTNode(children=[node[0]]),
-                new_vars,
+                lhs_vars,
                 {},
-                simple_names)
+                lhs_simple_names)
 
-            find_and_resolve_names(type_index, cu_env, pkg_name, node[1],
+            find_and_resolve_names(type_index, cu_env, pkg_name,
+                ASTNode(children=[node[1]]),
                 local_vars,
                 lhs_only_vars,
                 simple_names)
