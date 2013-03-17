@@ -1,5 +1,7 @@
+import sys
 from utils.node import Node
 from utils.node import ASTNode
+from utils import logging
 
 __typ_node = ASTNode('Type', None, [ASTNode('PrimitiveType', None,
     [ASTNode('Int')])])
@@ -31,4 +33,8 @@ def is_widening_conversion(type1, type2):
 
     elif type2 == 'Char':
         return type1 == 'Int'
+
+    else:
+        logging.error('FATAL ERROR: Invalid type for is_widening_conversion')
+        sys.exit(1)
 
