@@ -51,12 +51,14 @@ def typecheck_methods(c, env, t_i, c_i):
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
         n = method_env.node
+        m = n.obj
         exprs = get_exprs_from_node(n)
         for expr in exprs:
             t = n.find_child('Type')
             if t != None:
                 t = t.canon
-            typecheck_expr(expr, c, t, t_i, c_i)
+            is_static = 'Static' in m.mods
+            typecheck_expr(expr, c, m, t_i, c_i)
 
 #
 # Type check functions.
@@ -70,7 +72,7 @@ def typecheck_methods(c, env, t_i, c_i):
 def typecheck_name(node):
     return node.typ
 
-def typecheck_expr(node, c, ret_type, t_i, c_i):
+def typecheck_expr(node, c, method, t_i, c_i):
     # see if type for expr has already been resolved
     if hasattr(node, 'typ') and node.typ != None:
         return node.typ
@@ -79,24 +81,24 @@ def typecheck_expr(node, c, ret_type, t_i, c_i):
 
     # DO STUFF HERE...
     if node.name == 'Assignment':
-        t = typecheck_assignment(node, c, ret_type, t_i, c_i)
+        t = typecheck_assignment(node, c, method, t_i, c_i)
     elif node.name == 'MethodInvocation':
-        t = typecheck_method_invocation(node, c, ret_type, t_i, c_i)
+        t = typecheck_method_invocation(node, c, method, t_i, c_i)
     elif node.name == 'CreationExpression':
-        t = typecheck_creation(node, c, ret_type, t_i, c_i)
+        t = typecheck_creation(node, c, method, t_i, c_i)
     elif node.name == 'ConditionalOrExpression' \
     or node.name == 'ConditionalAndExpression':
-        t = typecheck_conditional(node, c, ret_type, t_i, c_i)
+        t = typecheck_conditional(node, c, method, t_i, c_i)
     elif node.name == 'EqualityExpression':
-        t = typecheck_equality(node, c, ret_type, t_i, c_i)
+        t = typecheck_equality(node, c, method, t_i, c_i)
     elif node.name == 'RelationalExpression':
-        t = typecheck_relational(node, c, ret_type, t_i, c_i)
+        t = typecheck_relational(node, c, method, t_i, c_i)
     elif node.name == 'AdditiveExpression':
-        t = typecheck_add(node, c, ret_type, t_i, c_i)
+        t = typecheck_add(node, c, method, t_i, c_i)
     elif node.name == 'MultiplicativeExpression':
-        t = typecheck_mult(node, c, ret_type, t_i, c_i)
+        t = typecheck_mult(node, c, method, t_i, c_i)
     elif node.name == 'UnaryExpression':
-        t = typecheck_unary(node, c, ret_type, t_i, c_i)
+        t = typecheck_unary(node, c, method, t_i, c_i)
     elif node.name == 'PostfixExpression':
         if len(node.children) == 0:
             logging.error("FATAL ERROR")
@@ -104,33 +106,33 @@ def typecheck_expr(node, c, ret_type, t_i, c_i):
         if node[0].name == 'Name':
             t = typecheck_name(node[0])
         else:
-            t = typecheck_expr(node[0], c, ret_type, t_i, c_i)
+            t = typecheck_expr(node[0], c, method, t_i, c_i)
     elif node.name == 'CastExpression':
-        t = typecheck_cast_expression(node, c, ret_type, t_i, c_i)
+        t = typecheck_cast_expression(node, c, method, t_i, c_i)
     elif node.name == 'InstanceofExpression':
-        t = typecheck_instanceof(node, c, ret_type, t_i, c_i)
+        t = typecheck_instanceof(node, c, method, t_i, c_i)
 
     # Statements
     elif node.name == 'ReturnStatement':
-        t = typecheck_return(node, c, ret_type, t_i, c_i)
+        t = typecheck_return(node, c, method, t_i, c_i)
     elif node.name == 'IfStatement':
-        t = typecheck_if(node, c, ret_type, t_i, c_i)
+        t = typecheck_if(node, c, method, t_i, c_i)
     elif node.name == 'WhileStatement':
-        t = typecheck_while(node, c, ret_type, t_i, c_i)
+        t = typecheck_while(node, c, method, t_i, c_i)
     elif node.name == 'ForStatement':
-        t = typecheck_for(node, c, ret_type, t_i, c_i)
+        t = typecheck_for(node, c, method, t_i, c_i)
     elif node.name == 'LocalVariableDeclaration' or node.name == 'FieldDeclaration':
-        t = typecheck_local_var_decl(node, c, ret_type, t_i, c_i)
+        t = typecheck_local_var_decl(node, c, method, t_i, c_i)
 
     # Primarys
     elif node.name == 'Literal':
-        t = typecheck_literal(node, c, ret_type, t_i, c_i)
+        t = typecheck_literal(node, c, method, t_i, c_i)
     elif node.name == 'This':
         t = c.name
     elif node.name == 'FieldAccess':
-        t = typecheck_field_access(node, c, ret_type, t_i, c_i)
+        t = typecheck_field_access(node, c, method, t_i, c_i)
     elif node.name == 'ArrayAccess':
-        t = typecheck_array_access(node, c, ret_type, t_i, c_i)
+        t = typecheck_array_access(node, c, method, t_i, c_i)
 
     elif node.name == 'InclusiveOrExpression' \
         or   node.name == 'ExclusiveOrExpression' \
@@ -151,7 +153,7 @@ def typecheck_expr(node, c, ret_type, t_i, c_i):
 
 ###############################################################################
 
-def typecheck_assignment(node, c, ret_type, t_i, c_i):
+def typecheck_assignment(node, c, method, t_i, c_i):
     lhs_type = None
     if node[0].name == 'Name':
         lhs_type = typecheck_name(node[0])
@@ -163,7 +165,7 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
 
     # Make sure that 
     elif node[0].name == 'FieldAccess':
-        lhs_type = typecheck_field_access(node[0], c, ret_type,
+        lhs_type = typecheck_field_access(node[0], c, method,
             t_i, c_i)
         """
         # Special case: Cannot assign to the "length" field of an array.
@@ -172,20 +174,20 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
         # Check if field_receiver is an array type.
         field_receiver_expr = node[0][1][0]
         field_receiver_typ = typecheck_expr(field_receiver_expr, c,
-            ret_type, t_i, c_i)
+            method, t_i, c_i)
         if is_array_type(field_receiver_typ) and field_name == length:
             logging.error('Cannot assign to length field of array')
             sys.exit(42)
         """
         
     elif node[0].name == 'ArrayAccess':
-        lhs_type = typecheck_array_access(node[0], c, ret_type,
+        lhs_type = typecheck_array_access(node[0], c, method,
             t_i, c_i)
     else:
         logging.error('FATAL ERROR: Invalid typecheck_assignment')
         sys.exit(1) # should not happen
 
-    rhs_type = typecheck_expr(node[1], c, ret_type, t_i, c_i)
+    rhs_type = typecheck_expr(node[1], c, method, t_i, c_i)
     
     if is_assignable(lhs_type, rhs_type, c_i):
         node.typ = lhs_type
@@ -197,13 +199,13 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
 
 # Note: static field accesses are always ambiguous, and are handled elsewhere.
 # (Field Accesses that can be name resolved are converted to Name nodes)
-def typecheck_field_access(node, c, ret_type, t_i, c_i):
+def typecheck_field_access(node, c, method, t_i, c_i):
     if node.name != 'FieldAccess':
         logging.error('FATAL ERROR: invalid node %s for field access' %
             node.name)
         sys.exit(1)
 
-    receiver_type = typecheck_expr(node[1][0], c, ret_type, t_i,
+    receiver_type = typecheck_expr(node[1][0], c, method, t_i,
         c_i)
     
     field_name = node[0][0].value.value
@@ -238,7 +240,7 @@ def typecheck_field_access(node, c, ret_type, t_i, c_i):
             node.typ = field_decl[1].canon
             return node.typ
 
-def typecheck_array_access(node, c, ret_type, t_i, c_i):
+def typecheck_array_access(node, c, method, t_i, c_i):
     if node.name != 'ArrayAccess':
         logging.error('FATAL ERROR: invalid node %s for array access' %
             node.name)
@@ -248,7 +250,7 @@ def typecheck_array_access(node, c, ret_type, t_i, c_i):
     if node[0][0].name == 'Name':
         receiver_type = typecheck_name(node[0][0])
     else:
-        receiver_type = typecheck_expr(node[0][0], c, ret_type,
+        receiver_type = typecheck_expr(node[0][0], c, method,
             t_i, c_i)
 
     # Must be array type.
@@ -257,7 +259,7 @@ def typecheck_array_access(node, c, ret_type, t_i, c_i):
         sys.exit(42)
 
     # Expression must be a number.
-    expr_type = typecheck_expr(node[1], c, ret_type, t_i, c_i)
+    expr_type = typecheck_expr(node[1], c, method, t_i, c_i)
     
     if not primitives.is_numeric(expr_type):
         logging.error('Array access with non-numeric type %s' % expr_type)
@@ -266,7 +268,7 @@ def typecheck_array_access(node, c, ret_type, t_i, c_i):
     node.typ = get_arraytype(receiver_type)
     return node.typ
 
-def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
+def typecheck_method_invocation(node, c, method, t_i, c_i):
     if node.name != 'MethodInvocation':
         logging.error('FATAL ERROR: invalid node %s for method invocation' %
             node.name)
@@ -286,7 +288,7 @@ def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
             receiver_type = node[1][0].canon
             is_static = True
     else: # Primary
-        receiver_type = typecheck_expr(node[1][0], c, ret_type,
+        receiver_type = typecheck_expr(node[1][0], c, method,
             t_i, c_i)
 
     if primitives.is_primitive(receiver_type):
@@ -300,7 +302,7 @@ def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
     arg_canon_types = []
     for argument_expr in node[2].children:
         arg_canon_types.append(typecheck_expr(argument_expr, c,
-            ret_type, t_i, c_i))
+            method, t_i, c_i))
 
     # Call helper to find a method with the given signature (name and args).
     method_decl = name_resolve.method_accessable(c_i, t_i,
@@ -320,6 +322,12 @@ def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
         logging.error('Invalid instance method invocation (of static method)')
         sys.exit(42)
 
+    # Check for implicit This reference in static method
+    if len(node[1].children) == 0 \
+    and 'Static' in method.mods and 'static' not in method_decl.modifiers:
+        logging.error('Nonstatic access in a static method', method.name)
+        sys.exit(42)
+
     # Get the return type of the method.
     if method_decl[1].name == 'Void':
         node.typ = 'Void'
@@ -328,13 +336,13 @@ def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
 
     return node.typ
 
-def typecheck_cast_expression(node, c, ret_type, t_i, c_i):
+def typecheck_cast_expression(node, c, method, t_i, c_i):
     if node.name != 'CastExpression':
         logging.error('FATAL: Invalid node %s for typecheck_cast_expression' %
             node.name)
         sys.exit(1)
 
-    expr_type = typecheck_expr(node[1], c, ret_type, t_i, c_i)
+    expr_type = typecheck_expr(node[1], c, method, t_i, c_i)
     if (primitives.is_numeric(expr_type) and primitives.is_numeric(node[0].canon)) \
         or is_assignable(expr_type, node[0].canon, c_i) \
         or is_assignable(node[0].canon, expr_type, c_i):
@@ -344,7 +352,7 @@ def typecheck_cast_expression(node, c, ret_type, t_i, c_i):
             (expr_type, node[0].canon))
         sys.exit(42)
 
-def typecheck_literal(node, c, ret_type, t_i, c_i):
+def typecheck_literal(node, c, method, t_i, c_i):
     if node.name != 'Literal':
         logging.error('FATAL ERROR: Invalid node %s for typecheck_literal' %
             node.name)
@@ -370,7 +378,7 @@ def typecheck_literal(node, c, ret_type, t_i, c_i):
 
 # Operators
 
-def typecheck_unary(node, c, ret_type, t_i, c_i):
+def typecheck_unary(node, c, method, t_i, c_i):
     if node.name != 'UnaryExpression':
         logging.error("FATAL ERROR: typecheck_unary") 
         sys.exit(1)
@@ -380,7 +388,7 @@ def typecheck_unary(node, c, ret_type, t_i, c_i):
         sys.exit(1) 
 
     elif node[0].name == "NotOperator":
-        t = typecheck_expr(node[1], c, ret_type, t_i, c_i)
+        t = typecheck_expr(node[1], c, method, t_i, c_i)
         if t != "Boolean":
             logging.error("typecheck failed: NotOp expects boolean; got:",t)
             sys.exit(42)
@@ -388,10 +396,10 @@ def typecheck_unary(node, c, ret_type, t_i, c_i):
         return t
 
     elif node[0].name == "CastExpression":
-        return typecheck_expr(node[0], c, ret_type, t_i, c_i)
+        return typecheck_expr(node[0], c, method, t_i, c_i)
 
     elif node[0].name == "SubtractOperator":
-        t = typecheck_expr(node[1], c, ret_type, t_i, c_i)
+        t = typecheck_expr(node[1], c, method, t_i, c_i)
         if not primitives.is_numeric(t):
             logging.error("typecheck failed: SubtractOp expects number; got:",t)
             sys.exit(42)
@@ -401,7 +409,7 @@ def typecheck_unary(node, c, ret_type, t_i, c_i):
         logging.warning("UnaryExpression", "has unexpected child", node[0].name) 
         sys.exit(1) 
 
-def typecheck_conditional(node, c, ret_type, t_i, c_i):
+def typecheck_conditional(node, c, method, t_i, c_i):
     expected_node = ['ConditionalAndExpression', 'ConditionalOrExpression']
     if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
@@ -412,12 +420,12 @@ def typecheck_conditional(node, c, ret_type, t_i, c_i):
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, ret_type, t_i, c_i)
+        return typecheck_expr(node[0], c, method, t_i, c_i)
 
     elif node[1].name == 'AndOperator' \
     or node[1].name == 'OrOperator':
-        t1 = typecheck_expr(node[0], c, ret_type, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, ret_type, t_i, c_i)
+        t1 = typecheck_expr(node[0], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
         if t1 == 'Boolean' and t2 == 'Boolean':
             return 'Boolean'
         else:
@@ -428,7 +436,7 @@ def typecheck_conditional(node, c, ret_type, t_i, c_i):
         logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
-def typecheck_equality(node, c, ret_type, t_i, c_i):
+def typecheck_equality(node, c, method, t_i, c_i):
     expected_node = ['EqualityExpression']
     if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
@@ -439,12 +447,12 @@ def typecheck_equality(node, c, ret_type, t_i, c_i):
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, ret_type, t_i, c_i)
+        return typecheck_expr(node[0], c, method, t_i, c_i)
 
     elif node[1].name == 'EqualOperator' \
     or node[1].name == 'NotEqualOperator':
-        t1 = typecheck_expr(node[0], c, ret_type, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, ret_type, t_i, c_i)
+        t1 = typecheck_expr(node[0], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         elif t1 == "Boolean" and t2 == "Boolean":
@@ -459,7 +467,7 @@ def typecheck_equality(node, c, ret_type, t_i, c_i):
         logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
-def typecheck_relational(node, c, ret_type, t_i, c_i):
+def typecheck_relational(node, c, method, t_i, c_i):
     expected_node = ['RelationalExpression']
     if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
@@ -470,14 +478,14 @@ def typecheck_relational(node, c, ret_type, t_i, c_i):
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, ret_type, t_i, c_i)
+        return typecheck_expr(node[0], c, method, t_i, c_i)
 
     elif node[1].name == 'LessThanOperator' \
     or node[1].name == 'GreaterThanOperator' \
     or node[1].name == 'LessThanEqualOperator' \
     or node[1].name == 'GreaterThanEqualOperator':
-        t1 = typecheck_expr(node[0], c, ret_type, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, ret_type, t_i, c_i)
+        t1 = typecheck_expr(node[0], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Boolean"
         else:
@@ -488,7 +496,7 @@ def typecheck_relational(node, c, ret_type, t_i, c_i):
         logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
-def typecheck_add(node, c, ret_type, t_i, c_i):
+def typecheck_add(node, c, method, t_i, c_i):
     expected_node = 'AdditiveExpression'
     if node.name != expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
@@ -499,11 +507,11 @@ def typecheck_add(node, c, ret_type, t_i, c_i):
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, ret_type, t_i, c_i)
+        return typecheck_expr(node[0], c, method, t_i, c_i)
 
     elif node[1].name == 'AddOperator' or node[1].name == 'SubtractOperator':
-        t1 = typecheck_expr(node[0], c, ret_type, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, ret_type, t_i, c_i)
+        t1 = typecheck_expr(node[0], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
         if node[1].name == 'AddOperator' \
         and (t1 == "java.lang.String" or t2 == "java.lang.String"):
             if t1 != "Void" and t2 != "Void":
@@ -521,7 +529,7 @@ def typecheck_add(node, c, ret_type, t_i, c_i):
         logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
-def typecheck_mult(node, c, ret_type, t_i, c_i):
+def typecheck_mult(node, c, method, t_i, c_i):
     expected_node = 'MultiplicativeExpression'
     if node.name != expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
@@ -532,13 +540,13 @@ def typecheck_mult(node, c, ret_type, t_i, c_i):
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, ret_type, t_i, c_i)
+        return typecheck_expr(node[0], c, method, t_i, c_i)
 
     elif node[1].name == 'MultiplyOperator' \
     or node[1].name == 'DivideOperator' \
     or node[1].name == 'ModuloOperator':
-        t1 = typecheck_expr(node[0], c, ret_type, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, ret_type, t_i, c_i)
+        t1 = typecheck_expr(node[0], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
             return "Int"
         else:
@@ -549,7 +557,7 @@ def typecheck_mult(node, c, ret_type, t_i, c_i):
         logging.warning(expected_node, "has unexpected children", node.children) 
         sys.exit(1) 
 
-def typecheck_creation(node, c, ret_type, t_i, c_i):
+def typecheck_creation(node, c, method, t_i, c_i):
     expected_node = 'CreationExpression'
     if node.name != expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
@@ -562,7 +570,7 @@ def typecheck_creation(node, c, ret_type, t_i, c_i):
             sys.exit(42)
         if len(node[1].children) == 1:
             expr_type = typecheck_expr(node[1][0], c,
-                ret_type, t_i, c_i)
+                method, t_i, c_i)
             if not primitives.is_numeric(expr_type):
                 print(expr_type)
                 logging.error('Invalid array creation argument')
@@ -580,7 +588,7 @@ def typecheck_creation(node, c, ret_type, t_i, c_i):
         
         arg_types = []
         for arg_expr in node[1].children:
-            arg_types.append(typecheck_expr(arg_expr, c, ret_type,
+            arg_types.append(typecheck_expr(arg_expr, c, method,
                 t_i, c_i))
 
         cons_decl = name_resolve.constructor_accessable(c_i, t_i,
@@ -596,13 +604,13 @@ def typecheck_creation(node, c, ret_type, t_i, c_i):
             logging.error('Invalid constructor call')
             sys.exit(42)
 
-def typecheck_instanceof(node, c, ret_type, t_i, c_i):
+def typecheck_instanceof(node, c, method, t_i, c_i):
     expected_node = 'InstanceofExpression'
     if node.name != expected_node:
         logging.error('FATAL ERROR: expected', expected_node)
         sys.exit(1)
 
-    lhs_type = typecheck_expr(node[0], c, ret_type, t_i, c_i)
+    lhs_type = typecheck_expr(node[0], c, method, t_i, c_i)
     rhs_type = node[2].canon
 
     if primitives.is_primitive(rhs_type):
@@ -619,8 +627,8 @@ def typecheck_instanceof(node, c, ret_type, t_i, c_i):
 
 # Statements
 
-def typecheck_return(node, c, ret_type, t_i, c_i):
-    if node.name != 'ReturnStatement' or ret_type == None:
+def typecheck_return(node, c, method, t_i, c_i):
+    if node.name != 'ReturnStatement' or method == None:
         logging.error("FATAL ERROR: typecheck_return") 
         sys.exit(1)
     
@@ -628,25 +636,25 @@ def typecheck_return(node, c, ret_type, t_i, c_i):
     if len(node.children) == 0:
         t = "Void"
     else:
-        t = typecheck_expr(node.children[0], c, ret_type, t_i, c_i)
+        t = typecheck_expr(node.children[0], c, method, t_i, c_i)
 
         if t == 'Void':
             logging.error("typecheck failed: Return: got Void return type")
             sys.exit(42)
 
     
-    if t != ret_type and not is_assignable(ret_type, t, c_i):
-        logging.error("typecheck failed: Return: expected %s but got %s" % (ret_type, t))
+    if t != method.type and not is_assignable(method.type, t, c_i):
+        logging.error("typecheck failed: Return: expected %s but got %s" % (method.type, t))
         sys.exit(42)
 
     return None
 
-def typecheck_if(node, c, ret_type, t_i, c_i):
+def typecheck_if(node, c, method, t_i, c_i):
     if node.name != 'IfStatement':
         logging.error('FATAL ERROR: typecheck_if')
         sys.exit(1)
 
-    expr_type = typecheck_expr(node[0], c, ret_type, t_i, c_i)
+    expr_type = typecheck_expr(node[0], c, method, t_i, c_i)
 
     if expr_type != 'Boolean':
         logging.error('Type of expression for if must be a Boolean')
@@ -654,12 +662,12 @@ def typecheck_if(node, c, ret_type, t_i, c_i):
 
     return None
 
-def typecheck_while(node, c, ret_type, t_i, c_i):
+def typecheck_while(node, c, method, t_i, c_i):
     if node.name != 'WhileStatement':
         logging.error('FATAL ERROR: typecheck_while')
         sys.exit(1)
 
-    expr_type = typecheck_expr(node[0], c, ret_type, t_i, c_i)
+    expr_type = typecheck_expr(node[0], c, method, t_i, c_i)
 
     if expr_type != 'Boolean':
         logging.error('Type of expression for \'while\' must be a Boolean')
@@ -667,7 +675,7 @@ def typecheck_while(node, c, ret_type, t_i, c_i):
     
     return None
 
-def typecheck_for(node, c, ret_type, t_i, c_i):
+def typecheck_for(node, c, method, t_i, c_i):
     if node.name != 'ForStatement':
         logging.error('FATAL ERROR: typecheck_for')
         sys.exit(1)
@@ -676,7 +684,7 @@ def typecheck_for(node, c, ret_type, t_i, c_i):
     if len(node[1].children) == 0:
         return None
     else:
-        expr_type = typecheck_expr(node[1][0], c, ret_type, t_i,
+        expr_type = typecheck_expr(node[1][0], c, method, t_i,
             c_i)
 
         if expr_type != 'Boolean':
@@ -685,7 +693,7 @@ def typecheck_for(node, c, ret_type, t_i, c_i):
         
         return None
 
-def typecheck_local_var_decl(node, c, ret_type, t_i, c_i):
+def typecheck_local_var_decl(node, c, method, t_i, c_i):
     type_node = node.find_child('Type')
     init_node = node.find_child('Initializer')
 
@@ -698,7 +706,7 @@ def typecheck_local_var_decl(node, c, ret_type, t_i, c_i):
     initializer_type = var_type
 
     if len(init_node.children) == 1:
-        initializer_type = typecheck_expr(init_node[0], c, ret_type, t_i, c_i)
+        initializer_type = typecheck_expr(init_node[0], c, method, t_i, c_i)
 
     if is_assignable(var_type, initializer_type, c_i):
         node.typ = var_type
