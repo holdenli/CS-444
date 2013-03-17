@@ -199,7 +199,7 @@ def parse_options(args=sys.argv):
         help="Stage of compiler to run \"up to\" before terminating.")
 
     parser.add_option('-i', '--include_stdlib', action='store_true',
-        default=True,
+        default=False,
         dest='include_stdlib', help="Include all stdlib files in compilation")
 
     parser.add_option('--print_stdlib', action='store_true',
