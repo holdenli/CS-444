@@ -402,7 +402,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                 and name_parts[1] == 'length':
 
                 return None
-    
+ 
     candidate = None
     canon_type = None
     is_type = False
@@ -425,6 +425,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
             return None
 
     elif check_type:
+        # we check the ambiguous name, one part at a time:
         for i, _ in enumerate(name_parts):
             type_candidate = name_parts[:i+1]
             canon_name = resolve_type_by_name(type_index, cu_env, pkg_name,
@@ -435,6 +436,7 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                     canon_type = canon_name
                     name_fields = name_parts[i+1:]
                     is_type = True
+                    break
 
                 else:
                     # this is just a type! names can't be types
@@ -480,8 +482,6 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
 
                     # switch context static_canon_type and work with the rest of
                     # the name.
-                    save_static_context = static_context_flag
-                    static_context_flag = False
 
                     if static_canon_type.endswith('[]'):
 
@@ -493,10 +493,12 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                         sys.exit(42)
 
                     elif primitives.is_primitive(static_canon_type):
+                        logging.error('Primitives do not have fields to access!')
                         return None
-                        # primitives don't have access! fail
-                        #logging.error('Primitives do not have fields to access!')
                         #sys.exit(42)
+
+                    save_static_context = static_context_flag
+                    static_context_flag = False
 
                     fa = name_link_name(type_index,
                             type_index[static_canon_type],
