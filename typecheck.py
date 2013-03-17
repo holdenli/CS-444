@@ -28,6 +28,7 @@ def get_exprs_from_node(n):
     exprs.extend(n.select(['WhileStatement']))
     exprs.extend(n.select(['ForStatement']))
     exprs.extend(n.select(['LocalVariableDeclaration']))
+    exprs.extend(n.select(['FieldDeclaration']))
     return exprs
 
 def typecheck(t_i, c_i):
@@ -118,7 +119,7 @@ def typecheck_expr(node, c, ret_type, t_i, c_i):
         t = typecheck_while(node, c, ret_type, t_i, c_i)
     elif node.name == 'ForStatement':
         t = typecheck_for(node, c, ret_type, t_i, c_i)
-    elif node.name == 'LocalVariableDeclaration':
+    elif node.name == 'LocalVariableDeclaration' or node.name == 'FieldDeclaration':
         t = typecheck_local_var_decl(node, c, ret_type, t_i, c_i)
 
     # Primarys
@@ -155,10 +156,16 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
     if node[0].name == 'Name':
         lhs_type = typecheck_name(node[0])
 
+        # Special case: Cannot assign to the "length" field of an array.
+        if node[0].decl.name == 'FakeFieldDeclaration':
+            logging.error('Cannot assign to length field of array')
+            sys.exit(42)
+
     # Make sure that 
     elif node[0].name == 'FieldAccess':
         lhs_type = typecheck_field_access(node[0], c, ret_type,
             t_i, c_i)
+        """
         # Special case: Cannot assign to the "length" field of an array.
         field_name = node[0][0][0].value.value
 
@@ -169,6 +176,7 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
         if is_array_type(field_receiver_typ) and field_name == length:
             logging.error('Cannot assign to length field of array')
             sys.exit(42)
+        """
         
     elif node[0].name == 'ArrayAccess':
         lhs_type = typecheck_array_access(node[0], c, ret_type,
@@ -326,7 +334,8 @@ def typecheck_cast_expression(node, c, ret_type, t_i, c_i):
         sys.exit(1)
 
     expr_type = typecheck_expr(node[1], c, ret_type, t_i, c_i)
-    if is_assignable(expr_type, node[0].canon, c_i) \
+    if (primitives.is_numeric(expr_type) and primitives.is_numeric(node[0].canon)) \
+        or is_assignable(expr_type, node[0].canon, c_i) \
         or is_assignable(node[0].canon, expr_type, c_i):
         return node[0].canon
     else:
@@ -439,8 +448,7 @@ def typecheck_equality(node, c, ret_type, t_i, c_i):
             return "Boolean"
         elif t1 == "Boolean" and t2 == "Boolean":
             return "Boolean"
-        elif (t1 == "Null" or primitives.is_reference(t1)) \
-        and  (t2 == "Null" or primitives.is_reference(t2)):
+        elif is_assignable(t1, t2, c_i) or is_assignable(t2, t1, c_i): 
             return "Boolean"
         else:
             logging.error("typecheck failed: equality between", t1, t2)
@@ -554,7 +562,8 @@ def typecheck_creation(node, c, ret_type, t_i, c_i):
         if len(node[1].children) == 1:
             expr_type = typecheck_expr(node[1][0], c,
                 ret_type, t_i, c_i)
-            if expr_type != 'Int':
+            if not primitives.is_numeric(expr_type):
+                print(expr_type)
                 logging.error('Invalid array creation argument')
                 sys.exit(42)
         node.typ = creation_type
@@ -616,12 +625,13 @@ def typecheck_return(node, c, ret_type, t_i, c_i):
         t = "Void"
     else:
         t = typecheck_expr(node.children[0], c, ret_type, t_i, c_i)
+
+        if t == 'Void':
+            logging.error("typecheck failed: Return: got Void return type")
+            sys.exit(42)
+
     
-    if t == ret_type or \
-        (primitives.is_reference(ret_type) and t == "Null"):
-        #logging.warning("typecheck passed", node)
-        pass
-    else:
+    if t != ret_type and not is_assignable(ret_type, t, c_i):
         logging.error("typecheck failed: Return: expected %s but got %s" % (ret_type, t))
         sys.exit(42)
 
@@ -655,7 +665,7 @@ def typecheck_while(node, c, ret_type, t_i, c_i):
 
 def typecheck_for(node, c, ret_type, t_i, c_i):
     if node.name != 'ForStatement':
-        logging.error('FATAL ERROR: typecheck_while')
+        logging.error('FATAL ERROR: typecheck_for')
         sys.exit(1)
 
     # If there's no 'ForCondition', don't need to do anything.
@@ -672,18 +682,25 @@ def typecheck_for(node, c, ret_type, t_i, c_i):
         return None
 
 def typecheck_local_var_decl(node, c, ret_type, t_i, c_i):
-    var_type = node[0].canon
-    initializer_type = node[0].canon # Extract type from Type node.
+    type_node = node.find_child('Type')
+    init_node = node.find_child('Initializer')
 
-    if len(node[2].children) > 0:
-        initializer_type = typecheck_expr(node[2][0], c,
-            ret_type, t_i, c_i)
+    if type_node == None or init_node == None:
+        logging.error('FATAL ERROR: typecheck_var_decl')
+        sys.exit(1)
+
+    # Extract type from Type node.
+    var_type = type_node.canon
+    initializer_type = var_type
+
+    if len(init_node.children) == 1:
+        initializer_type = typecheck_expr(init_node[0], c, ret_type, t_i, c_i)
 
     if is_assignable(var_type, initializer_type, c_i):
         node.typ = var_type
         return node.typ
     else:
-        logging.error('Invalid initializer for variable of type %s' % var_type)
+        logging.error('Invalid initializer for variable of type %s to %s' % (initializer_type, var_type))
         sys.exit(42)
 
 # type1 is lhs (to be assigned), type2 is rhs (value to assign)
@@ -701,7 +718,7 @@ def is_assignable(type1, type2, c_i):
     elif primitives.is_numeric(type1) and primitives.is_numeric(type2):
         return primitives.is_widening_conversion(type1, type2)
     elif primitives.is_reference(type1) and primitives.is_reference(type2):
-        return is_nonstrict_subclass(type2, type1, c_i)
+        return is_nonstrict_subclass(type1, type2, c_i)
     else:
         return False
 
@@ -726,7 +743,7 @@ def is_array_assignable(type1, type2, c_i):
         elif primitives.is_primitive(atyp1) and primitives.is_primitive(atyp2):
             return False
         else:
-            return is_nonstrict_subclass(atyp2, atyp1, c_i)
+            return is_nonstrict_subclass(atyp1, atyp2, c_i)
     else:
         return False
 
@@ -735,13 +752,17 @@ def is_nonstrict_subclass(type1, type2, c_i):
     if type1 == None or type2 == None:
         return False
 
-    # Starting at type1, do a search up class hierarchy for type2
-    queue = [type1]
+    # everything is always a subclass of Object (must be special case for interfaces)
+    if type1 == 'java.lang.Object':
+        return True
+
+    # Starting at type2, do a search up class hierarchy for type1
+    queue = [type2]
     while len(queue) > 0:
         typename = queue.pop(0)
 
-        # Found type2 as a superclass of type1.
-        if type2 == typename:
+        # Found type1 as a superclass of type1.
+        if type1 == typename:
             return True
         else:
             cls = c_i[typename]
