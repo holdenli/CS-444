@@ -41,17 +41,14 @@ def typecheck_methods(c, env, t_i, c_i):
         # TODO
         return
 
-    # print("  #", c)
     # Run typecheck on each field
     for field_node in env['ClassDeclaration'].names.values():
-        # print("    !", field_node)
         exprs = get_exprs_from_node(field_node)
         for expr in exprs:
             typecheck_expr(expr, c, None, t_i, c_i)
 
     # Run typecheck on each method
     for method_env in env['ClassDeclaration'].children:
-        # print("    @", method_env)
         n = method_env.node
         exprs = get_exprs_from_node(n)
         for expr in exprs:
@@ -186,7 +183,6 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
         node.typ = lhs_type
         return node.typ
     else:
-        node.pprint()
         logging.error('Cannot assign expression of type %s to LHS of type %s' %
             (rhs_type, lhs_type))
         sys.exit(42)
@@ -249,8 +245,6 @@ def typecheck_array_access(node, c, ret_type, t_i, c_i):
     # Must be array type.
     if not is_array_type(receiver_type):
         logging.error('Cannot index into non-array type')
-        print(receiver_type)
-        node[0][0].pprint()
         sys.exit(42)
 
     # Expression must be a number.
@@ -258,7 +252,6 @@ def typecheck_array_access(node, c, ret_type, t_i, c_i):
     
     if not primitives.is_numeric(expr_type):
         logging.error('Array access with non-numeric type %s' % expr_type)
-        node.pprint()
         sys.exit(42)
 
     node.typ = get_arraytype(receiver_type)
@@ -322,8 +315,6 @@ def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
     if method_decl[1].name == 'Void':
         node.typ = 'Void'
     else:
-        #print('method')
-        #method_decl.pprint()
         node.typ = method_decl[1].canon
 
     return node.typ
@@ -695,6 +686,7 @@ def typecheck_local_var_decl(node, c, ret_type, t_i, c_i):
         logging.error('Invalid initializer for variable of type %s' % var_type)
         sys.exit(42)
 
+# type1 is lhs (to be assigned), type2 is rhs (value to assign)
 def is_assignable(type1, type2, c_i):
     # Call other helper for anything having to do with arrays.
     if is_array_type(type1) or is_array_type(type2):
@@ -714,8 +706,11 @@ def is_assignable(type1, type2, c_i):
         return False
 
 def is_array_assignable(type1, type2, c_i):
-    if is_array_type(type1) and not is_array_type(type2):
+    if is_array_type(type1) and type2 == 'Null':
+        return True
+    elif is_array_type(type1) and not is_array_type(type2):
         return False
+
     if type1 == 'java.lang.Object' and is_array_type(type2):
         return True
     elif type1 == 'java.lang.Cloneable' and is_array_type(type2):
@@ -740,13 +735,13 @@ def is_nonstrict_subclass(type1, type2, c_i):
     if type1 == None or type2 == None:
         return False
 
-    # Do a BFS up the hierarchy.
-    queue = [type2]
+    # Starting at type1, do a search up class hierarchy for type2
+    queue = [type1]
     while len(queue) > 0:
         typename = queue.pop(0)
 
-        # Found type1 as a superclass of type2.
-        if type1 == typename:
+        # Found type2 as a superclass of type1.
+        if type2 == typename:
             return True
         else:
             cls = c_i[typename]
@@ -754,7 +749,6 @@ def is_nonstrict_subclass(type1, type2, c_i):
             if cls.extends != None:
                 queue.append(cls.extends.name)
 
-    # Did not find type1 as a superclass of type2.
     return False
 
 def is_array_type(typ):
