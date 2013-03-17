@@ -196,6 +196,7 @@ def typecheck_assignment(node, c, ret_type, t_i, c_i):
         sys.exit(42)
 
 # Note: static field accesses are always ambiguous, and are handled elsewhere.
+# (Field Accesses that can be name resolved are converted to Name nodes)
 def typecheck_field_access(node, c, ret_type, t_i, c_i):
     if node.name != 'FieldAccess':
         logging.error('FATAL ERROR: invalid node %s for field access' %
@@ -224,7 +225,7 @@ def typecheck_field_access(node, c, ret_type, t_i, c_i):
             receiver_type)
     else:
         field_decl = name_resolve.field_accessable(c_i, t_i, receiver_type,
-            field_name, c.name)
+            field_name, c.name, False)
 
         if field_decl is None:
             logging.error('Cannot access field %s of type %s from class %s' %
@@ -303,7 +304,7 @@ def typecheck_method_invocation(node, c, ret_type, t_i, c_i):
 
     # Call helper to find a method with the given signature (name and args).
     method_decl = name_resolve.method_accessable(c_i, t_i,
-        receiver_type, method_name, arg_canon_types, c.name)
+        receiver_type, method_name, arg_canon_types, c.name, not is_static)
     if method_decl == None:
         logging.error('Invalid method invocation')
         logging.error(" ", method_decl, receiver_type, method_name, arg_canon_types)
@@ -576,16 +577,19 @@ def typecheck_creation(node, c, ret_type, t_i, c_i):
         if 'Abstract' in c_i[creation_type].mods:
             logging.error('Cannot call constructor of abstract class')
             sys.exit(42)
-
+        
         arg_types = []
         for arg_expr in node[1].children:
             arg_types.append(typecheck_expr(arg_expr, c, ret_type,
                 t_i, c_i))
 
+        cons_decl = name_resolve.constructor_accessable(c_i, t_i,
+            creation_type, cons_name, arg_types, c.name, False)
+
         cons = class_hierarchy.Temp_Constructor(cons_name, arg_types)
         # TODO: Check that cons is not protected, and if it is, we have access
         # to call it.
-        if cons in c_i[creation_type].declare:
+        if cons_decl != None and cons in c_i[creation_type].declare:
             node.typ = creation_type
             return node.typ
         else:

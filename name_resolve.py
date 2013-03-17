@@ -12,7 +12,7 @@ import environment
 from typelink import resolve_type_by_name
 
 import utils.class_hierarchy 
-from utils.class_hierarchy import Temp_Field, Temp_Method
+from utils.class_hierarchy import Temp_Field, Temp_Method, Temp_Constructor
 from utils.class_hierarchy import is_nonstrict_subclass
 
 class_index = {}
@@ -327,7 +327,12 @@ def member_accessable(class_index, type_index, canon_type, member,
                 J2_6_ProtectedAccess_StaticField_Sub:
                 - OK: current type C is a subclass of the declaring type A.A
             """
-
+            
+            # member is a constructor
+            if isinstance(member, utils.class_hierarchy.Method) and member.type == None:
+               print(canon_type)
+               print(member)
+               return None 
 
             if is_nonstrict_subclass(declaring_canon_type, viewer_canon_type,
                 class_index) == False:
@@ -360,6 +365,16 @@ def method_accessable(class_index, type_index, canon_type, method_name, params,
             type_index,
             canon_type,
             Temp_Method(method_name, params),
+            viewer_canon_type,
+            check_instance)
+
+def constructor_accessable(class_index, type_index, canon_type, method_name, params,
+        viewer_canon_type, check_instance=False):
+    
+    return member_accessable(class_index,
+            type_index,
+            canon_type,
+            Temp_Constructor(method_name, params),
             viewer_canon_type,
             check_instance)
 
