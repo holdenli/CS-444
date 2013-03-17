@@ -6,6 +6,8 @@ import os
 import re
 import sys
 
+from multiprocessing import Process, Queue
+
 # OutputCapture
 # Used to suppress stdout and save it for future use
 # Warning: This is kinda dangerous because it may hide real errors
@@ -44,98 +46,68 @@ class TestRunner:
     # Run test batch
     def run(self, show_errors):
         tests_path = "%s/%s" % (self.test_folder, self.test_subfolder)
-        test_paths = list(os.listdir(tests_path))
-
-        forks = 4
-        n = len(test_paths)
-        k = int(n/forks)
-        parts = []
-        for i in range(int(n/k)):
-            if i+1 == int(n/k):
-                parts.append(test_paths[i*k:])
-            else:
-                parts.append(test_paths[i*k:(i+1)*k])
-
-        print("Running test suite: '%s' [forks=%s]" % (self._name, forks))
-        print("==================================================")
-
-        me = forks
-        rdby = forks/2
-        chldrn = []
-        while me%2 == 0 and me > 0:
-
-            r = os.fork()
-            if r == 0:
-                # new!
-                me = me + rdby
-                rdby = rdby/2
-            else:
-                me = me - rdby
-                rdby = rdby/2
-                chldrn.append(r)
-        
-        me = int((int(me) - 1)/2)
-
         test_total = 0
         test_fails = 0
 
-        newout = OutputCapture()
-        sys.stdout = newout
-        if show_errors == False: # Hide errors if specified.
-            sys.stderr = newout
+        print("Running test suite: '%s'" % self._name)
+        print("==================================================")
+
+        q = Queue()
+        p_list = []
         
         # Loop through test cases (files)
-
-        for test_name in parts[me]:
-            print(test_name)
+        for test_name in os.listdir(tests_path):
             if not test_name.startswith("J"):
                 continue
             test_path = os.path.join(tests_path, test_name)
             test_total += 1
 
             # Run joosc (i.e., run the test).
-            ret = self.run_joosc(test_path)
+            p = Process(target=self.run_joosc, args=(test_path, q, ))
+            p.start()
+            p_list.append(p)
 
+        for p in p_list:
+            ret = q.get(True, 30)
             # If we did not obtain the desired result, save it.
-            if self.is_correct_result(ret, test_name) == False:
+            if ret[0] < 0:
+                print("#\nUNEXPECTED ERROR: %s" % os.path.split(ret[1])[1])
+
+            elif self.is_correct_result(ret[0], os.path.split(ret[1])[1]) == False:
                 test_fails += 1
-                d = ''
-                if forks == 1:
-                    d = ' %s' % test_fails
+                print("#\nTEST FAIL %d: %s" % (test_fails, os.path.split(ret[1])[1]))
+                if self.verbose:
+                    print("OUTPUT:")
+                    print("==================================================")
+                    print(ret[2])
+                    print("==================================================")
 
-                newout.stdwrite("# TEST FAIL%s: %s\n" % (d, test_name))
-
-                # Capture verbose output (i.e., errors) if necessary.
-                if self.verbose == True:
-                    newout.stdwrite(sys.stdout.capture)
-                    newout.stdwrite("==================================================\n")
             else:
-                newout.stdwrite('.')
-                newout.stdout.flush()
-            newout.capture = ""
+                sys.stdout.write('.')
+                sys.stdout.flush()
 
         # Done tests
-        sys.stdout = newout.stdout
-        sys.stderr = newout.stderr
+        print("\n==================================================")
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
-        for c in chldrn:
-            try:
-                os.waitpid(c, 0)
-            except:
-                pass
-
-    def run_joosc(self, path):
+    def run_joosc(self, path, q):
+        capture = OutputCapture()
+        sys.stdout = capture
+        sys.stderr = capture
         try:
             if path.endswith(".java") or os.path.isdir(path):
                 # joosc.joosc requires the first argument to be a list.
                 joosc.joosc([path], self._joosc_options)
             else:
-                return 1
-            return 0
+                q.put([1, path, capture.capture])
+                return
+            q.put([0, path, capture.capture])
+            return
         except SystemExit as e:
-            return e.code
+            q.put([1, path, capture.capture])
+        except:
+            q.put([-1, path, ""]) 
 
     # This is given the return value of the function run and the test name and
     # determines if the return value is valid
