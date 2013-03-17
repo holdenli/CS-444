@@ -441,6 +441,13 @@ def class_hierarchy(ast_list, pkg_index, type_index):
             logging.error("%s is not abstract but contains an abstract method" % c)
             sys.exit(42)
 
+        # Implicit default constructor check
+        if c.extends != None:
+            cons_name = c.extends.name.split('.')[-1]
+            if Temp_Constructor(cons_name, []) not in contain(c.extends):
+                logging.error("%s has a superclass without a default constructor" % c.name)
+                sys.exit(42)
+
     return class_dict
 
 # Returns True if type1 and type2 refer to the same class, or type
