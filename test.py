@@ -6,7 +6,7 @@ import os
 import re
 import sys
 
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Pool, Manager
 
 # OutputCapture
 # Used to suppress stdout and save it for future use
@@ -52,9 +52,11 @@ class TestRunner:
         print("Running test suite: '%s'" % self._name)
         print("==================================================")
 
-        q = Queue()
+        q = Manager().Queue()
         p_list = []
         
+        pool = Pool(processes=48)
+
         # Loop through test cases (files)
         for test_name in os.listdir(tests_path):
             if not test_name.startswith("J"):
@@ -63,12 +65,13 @@ class TestRunner:
             test_total += 1
 
             # Run joosc (i.e., run the test).
-            p = Process(target=self.run_joosc, args=(test_path, q, ))
-            p.start()
+            p = pool.apply_async(func=run_joosc, args=(self._joosc_options, test_path, q, ))
+            #p = Process(target=self.run_joosc, args=(test_path, q, ))
+            #p.start()
             p_list.append(p)
 
         for p in p_list:
-            ret = q.get(True, 30)
+            ret = q.get(5)
             # If we did not obtain the desired result, save it.
             if ret[0] < 0:
                 print("#\nUNEXPECTED ERROR: %s" % os.path.split(ret[1])[1])
@@ -91,24 +94,7 @@ class TestRunner:
         print("Test run successful.")
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
-    def run_joosc(self, path, q):
-        capture = OutputCapture()
-        sys.stdout = capture
-        sys.stderr = capture
-        try:
-            if path.endswith(".java") or os.path.isdir(path):
-                # joosc.joosc requires the first argument to be a list.
-                joosc.joosc([path], self._joosc_options)
-            else:
-                q.put([1, path, capture.capture])
-                return
-            q.put([0, path, capture.capture])
-            return
-        except SystemExit as e:
-            q.put([1, path, capture.capture])
-        except:
-            q.put([-1, path, ""]) 
-
+    
     # This is given the return value of the function run and the test name and
     # determines if the return value is valid
     def is_correct_result(self, value, name):
@@ -127,4 +113,22 @@ def setup_and_run(test_name, show_errors, verbose, joosc_options):
     ts.test_subfolder = test_name
     ts.verbose = verbose
     ts.run(show_errors)
+
+def run_joosc(joosc_options, path, q):
+    capture = OutputCapture()
+    sys.stdout = capture
+    sys.stderr = capture
+    try:
+        if path.endswith(".java") or os.path.isdir(path):
+            # joosc.joosc requires the first argument to be a list.
+            joosc.joosc([path], joosc_options)
+        else:
+            q.put([1, path, capture.capture])
+            return
+        q.put([0, path, capture.capture])
+        return
+    except SystemExit as e:
+        q.put([1, path, capture.capture])
+    except:
+        q.put([-1, path, ""]) 
 
