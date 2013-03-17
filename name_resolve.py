@@ -282,48 +282,86 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
         node.typ = resolved_node.find_child('Type').canon
         #print('resolved %s in %s' % (name, environment.env_type_name(cu_env)))
 
-def member_accessable(class_index, type_index, canon_type, member, viewer_canon_type):
-        """
-            return ASTNode of field if canon_type.field is accessible from
-            viewer_canon_type
-        """
-        global static_context_flag
+def member_accessable(class_index, type_index, canon_type, member,
+        viewer_canon_type, check_instance=False):
 
-        # if second part is in contain set of the first(canon_type), and is not protected, RECURSE
-        contain_set = utils.class_hierarchy.contain(class_index[canon_type])
-        field_i = -1
-        try:
-            field_i = contain_set.index(member)
-        except ValueError:
-            pass
+    """
+        return ASTNode of member if canon_type.member is accessible from
+        viewer_canon_type
+    """
+    global static_context_flag
 
-        if field_i >= 0 and (pkg(viewer_canon_type) == pkg(canon_type) \
-            or 'protected' not in contain_set[field_i].node.modifiers) \
-            or is_nonstrict_subclass(canon_type, viewer_canon_type, class_index) \
-            and (static_context_flag == False \
-            or (static_context_flag and 'static' in contain_set[field_i].node.modifiers)):
+    # if second part is in contain set of the first(canon_type), and is not protected, RECURSE
+    contain_set = utils.class_hierarchy.contain(class_index[canon_type])
+    member_i = -1
+    try:
+        member_i = contain_set.index(member)
+    except ValueError:
+        pass
 
-                # name was 'a.b.c.d'
-                # we now try to link 'b.c.d' in the context of 'a'
-                return contain_set[field_i].node
+    if member_i >= 0:
+
+        r = contain_set[member_i]
+        declaring_canon_type = r.declared_in.name
+        
+        # you can see it if you're in the same package
+        if pkg(viewer_canon_type) == pkg(canon_type):
+            return r.node
+        # if it's not protected, you can see it
+        if 'protected' not in r.node.modifiers:
+            return r.node
         else:
-            return None
+            # it's protected? you can see if it its a subclass:
 
-def field_accessable(class_index, type_index, canon_type, field_name, viewer_canon_type):
+            """
+                C is class where member is declared
+                - access permitted only in subclass S
+
+                i.e., viewer_canon must be subclass of C
+                - asdf.Member, then asdf is subclass of S
+
+                J2_6_ProtectedAccess_StaticField_Super:
+                - OK: current type C is a subclass of the declaring type A.A
+
+
+                J2_6_ProtectedAccess_StaticField_Sub:
+                - OK: current type C is a subclass of the declaring type A.A
+            """
+
+
+            if is_nonstrict_subclass(declaring_canon_type, viewer_canon_type,
+                class_index) == False:
+                return None
+            
+            if check_instance and \
+                is_nonstrict_subclass(viewer_canon_type, canon_type,
+                    class_index) == False:
+                    return None
+
+            return r.node
+
+
+    return None
+
+def field_accessable(class_index, type_index, canon_type, field_name,
+        viewer_canon_type, check_instance=False):
    
     return member_accessable(class_index,
         type_index,
         canon_type,
         Temp_Field(field_name),
-        viewer_canon_type)
+        viewer_canon_type,
+        check_instance)
 
-def method_accessable(class_index, type_index, canon_type, method_name, params, viewer_canon_type):
+def method_accessable(class_index, type_index, canon_type, method_name, params,
+        viewer_canon_type, check_instance=False):
     
     return member_accessable(class_index,
             type_index,
             canon_type,
             Temp_Method(method_name, params),
-            viewer_canon_type)
+            viewer_canon_type,
+            check_instance)
 
 def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
         simple_names=None,
@@ -387,7 +425,6 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
             return None
 
     elif check_type:
-        # is it a type?
         for i, _ in enumerate(name_parts):
             type_candidate = name_parts[:i+1]
             canon_name = resolve_type_by_name(type_index, cu_env, pkg_name,
@@ -398,13 +435,14 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                     canon_type = canon_name
                     name_fields = name_parts[i+1:]
                     is_type = True
+
                 else:
                     # this is just a type! names can't be types
                     return None
             
     # ACCESS CHECK FOR THE CANDIDATE!
     # first, we get its type if we don't already have it
-    if candidate != None and len(name_fields) > 0:
+    if candidate != None and len(name_fields) >= 1:
         # can we access the second part (which is a field) from here?
         
         # get canon type of candidate
@@ -425,7 +463,8 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                 (name_parts[0], name_fields))
             return None
 
-        fa = field_accessable(class_index, type_index, canon_type, name_fields[0], cu_canon)
+        fa = field_accessable(class_index, type_index, canon_type,
+                name_fields[0], cu_canon, is_type == False)
         if fa != None:
 
             if is_type:
@@ -467,7 +506,6 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
                             check_this=False)
                     
                     static_context_flag = save_static_context
-
                 return fa
             else:
                 # not a type -- we can just recurse down
