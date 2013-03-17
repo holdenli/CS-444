@@ -66,13 +66,11 @@ class TestRunner:
 
             # Run joosc (i.e., run the test).
             p = pool.apply_async(func=run_joosc, args=(self._joosc_options, test_path, q, ))
-            #p = Process(target=self.run_joosc, args=(test_path, q, ))
-            #p.start()
             p_list.append(p)
 
         for p in p_list:
             ret = q.get(5)
-            # If we did not obtain the desired result, save it.
+            
             if ret[0] < 0:
                 print("#\nUNEXPECTED ERROR: %s" % os.path.split(ret[1])[1])
 
