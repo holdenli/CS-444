@@ -121,6 +121,8 @@ def typecheck_expr(node, c, ret_type, t_i, c_i):
         t = typecheck_while(node, c, ret_type, t_i, c_i)
     elif node.name == 'ForStatement':
         t = typecheck_for(node, c, ret_type, t_i, c_i)
+    elif node.name == 'LocalVariableDeclaration':
+        t = typecheck_local_var_decl(node, c, ret_type, t_i, c_i)
 
     # Primarys
     elif node.name == 'Literal':
@@ -686,7 +688,7 @@ def typecheck_local_var_decl(node, c, ret_type, t_i, c_i):
         initializer_type = typecheck_expr(node[2][0], c,
             ret_type, t_i, c_i)
 
-    if is_assignable(var_type, initializer_type):
+    if is_assignable(var_type, initializer_type, c_i):
         node.typ = var_type
         return node.typ
     else:
@@ -726,7 +728,7 @@ def is_array_assignable(type1, type2, c_i):
         if atyp1 == atyp2:
             return True
         # Unequal primitive types.
-        elif primitives.is_primitive(type1) and primitives.is_primitive(type2):
+        elif primitives.is_primitive(atyp1) and primitives.is_primitive(atyp2):
             return False
         else:
             return is_nonstrict_subclass(atyp2, atyp1, c_i)
