@@ -715,7 +715,7 @@ def is_array_assignable(type1, type2, c_i):
         return True
     elif type1 == 'java.lang.Cloneable' and is_array_type(type2):
         return True
-    elif type1 == 'java.lang.Serializable' and is_array_type(type2):
+    elif type1 == 'java.io.Serializable' and is_array_type(type2):
         return True
     elif is_array_type(type1) and is_array_type(type2):
         atyp1 = get_arraytype(type1)
