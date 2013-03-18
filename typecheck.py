@@ -54,9 +54,6 @@ def typecheck_methods(c, env, t_i, c_i):
         m = n.obj
         exprs = get_exprs_from_node(n)
         for expr in exprs:
-            t = n.find_child('Type')
-            if t != None:
-                t = t.canon
             is_static = 'Static' in m.mods
             typecheck_expr(expr, c, m, t_i, c_i)
 
@@ -642,9 +639,11 @@ def typecheck_return(node, c, method, t_i, c_i):
             logging.error("typecheck failed: Return: got Void return type")
             sys.exit(42)
 
-    
-    if t != method.type and not is_assignable(method.type, t, c_i):
-        logging.error("typecheck failed: Return: expected %s but got %s" % (method.type, t))
+    expected_type = method.type
+    if expected_type == None:
+        expected_type = 'Void'
+    if t != expected_type and not is_assignable(expected_type, t, c_i):
+        logging.error("typecheck failed: Return: expected %s but got %s" % (expected_type, t))
         sys.exit(42)
 
     return None
