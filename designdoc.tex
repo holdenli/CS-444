@@ -34,6 +34,7 @@ cmei
 
 \subsection{Testing}
 cmei
+remember parallelism
 
 \section{Assignment 2 design}
 
@@ -46,19 +47,80 @@ cmei
 cmei
 
 \subsection{Class hierarchy}
+This stage introduces a new representation of Classes (Interfaces),
+Methods (Constructors), and Fields and links the declaration in the AST
+with an instance of these objects. The Class object has 
+Equality has been defined for Methods as
+comparing signatures and defined for fields as name. This allows for operations
+on these objects and sets of objects to make sense in this context.
+Each declaration in the AST is linked to their respective object and vice versa
+for convenience in the future. But also a dictionary of all available Classes
+is generated with the fully qualified name as the key.
+
+The process of generating these objects, the dictionary, and checking the
+class hierarchy are all done at once. The process in creating these is tightly
+coupled with many intermediate representations of classes.
+The process happens in X stages:
+1. Scanning ASTs for classes and creating the dictionary
+    Setups the Class object with basic information.
+    Uses typelink information to figure out who to extend/implements.
+2. Use the dictionary to create hierarchy
+    Link a Class' extend/implement with the right Class object; this creates
+    an upside down tree structure for the hierarchy.
+3. Check for cycles
+    Simply going through every Class and going up the hierarchy
+    until we reach an end or a cycle.
+4. Create Method and Field objects and fill in Declare set
+    Check the declarations in the classes and fill the Declare set
+    with their object representations.
+5. Fill Inherit set
+    Simply keep trying to fill in inherit data until everything is filled in.
+    Most complicated stage due to checking for hiding/overriding.
+    No infinite loop due to cycle checking.
+6. Final checks
+    Any other checks that don't fit the other stages happen here.
+    ie. implicit default constructor.
 
 \section{Assignment 3 design}
 
 \subsection{Name disambiguation and resolution}
 
 \subsection{Type checking}
+ADD MORE DETAILS HERE CMEI!
 
+Type check with rules for each expression or primary implemented as a function.
+Also type check the boolean in if/while/for statements.
+
+A general function that can be called on any node that can be type checked.
+It then determines the right 'rule' to apply and call the appropriate function.
+The function itself might need to type check an expression and it would
+call that the general type check function (recursion). Once an expression has been
+type checked, the type is added to the AST node (allows memoization and convenience
+for the future).
+
+To make sure we type check everything, type check is run on all 'typecheckable'
+nodes found in a tree. Instead of traversing it normally. Memoization makes this
+not terribe.
 
 \section{Assignment 4 design}
 
-\subsection{Variable initialization analysis}
-
 \subsection{Reachability analysis}
+The check that all statements must be reachable and that methods must end with
+a return statement is done together.
+The analysis begins by finding every constructor or method in each class.
+Then it runs a reachability check on the block statement.
+This is a recursive check that checks any statement and determines if it is
+'reachable', 'can_complete', and 'will_end'. The former two are used for
+reachability testing and the last flag is used to determine if statements stop
+at return statements or not. The program terminates if something is deemed
+unreachable. And on completion of the check on the method body, the 'will_end'
+flag is checked to ensure that a return statement ends the block.
 
+This check relies on evaluating constant expressions which is done by scanning expression
+nodes in the AST and determining their values as the computed value or None
+(which represents 'Do Not Know'). Any literal encountered in this scan will return their
+values and anything else will return None.
+
+\subsection{Variable initialization analysis}
 
 \end{document}
