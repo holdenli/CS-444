@@ -215,6 +215,8 @@ RULES = {
         ['CreationExpression'],
         ['ConditionalOrExpression'],
         ['ConditionalAndExpression'],
+        ['InclusiveOrExpression'],
+        ['AndExpression'],
         ['EqualityExpression'],
         ['AdditiveExpression'],
         ['MultiplicativeExpression'],

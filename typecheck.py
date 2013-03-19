@@ -97,17 +97,13 @@ def typecheck_expr(node, c, method, t_i, c_i):
     elif node.name == 'UnaryExpression':
         t = typecheck_unary(node, c, method, t_i, c_i)
     elif node.name == 'PostfixExpression':
-        if len(node.children) == 0:
-            logging.error("FATAL ERROR")
-            sys.exit(1)
-        if node[0].name == 'Name':
-            t = typecheck_name(node[0])
-        else:
-            t = typecheck_expr(node[0], c, method, t_i, c_i)
+        t = typecheck_postfix(node, c, method, t_i, c_i)
     elif node.name == 'CastExpression':
         t = typecheck_cast_expression(node, c, method, t_i, c_i)
     elif node.name == 'InstanceofExpression':
         t = typecheck_instanceof(node, c, method, t_i, c_i)
+    elif node.name == 'AndExpression' or node.name == 'InclusiveOrExpression':
+        t = typecheck_eager_boolean(node, c, method, t_i, c_i)
 
     # Statements
     elif node.name == 'ReturnStatement':
@@ -131,9 +127,7 @@ def typecheck_expr(node, c, method, t_i, c_i):
     elif node.name == 'ArrayAccess':
         t = typecheck_array_access(node, c, method, t_i, c_i)
 
-    elif node.name == 'InclusiveOrExpression' \
-        or   node.name == 'ExclusiveOrExpression' \
-        or   node.name == 'AndExpression':
+    elif node.name == 'ExclusiveOrExpression':
         logging.error("SHOULD NOT SEE THESE")
         sys.exit(1)
     else:
@@ -370,6 +364,23 @@ def typecheck_literal(node, c, method, t_i, c_i):
 
     return node.typ
 
+def typecheck_postfix(node, c, method, t_i, c_i):
+    expected_node = 'PostfixExpression'
+    if node.name != expected_node:
+        logging.error("FATAL ERROR: typecheck_postfix() got", node.name)
+        sys.exit(1)
+
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR")
+        sys.exit(1)
+
+    if node[0].name == 'Name':
+        node.typ = typecheck_name(node[0])
+    else:
+        node.typ = typecheck_expr(node[0], c, method, t_i, c_i)
+
+    return node.typ
+
 # Operators
 
 def typecheck_unary(node, c, method, t_i, c_i):
@@ -530,11 +541,13 @@ def typecheck_mult(node, c, method, t_i, c_i):
         sys.exit(1)
     
     if len(node.children) == 0:
-        logging.error("FATAL ERROR: %s has no children" % expected_node) 
+        logging.error("FATAL ERROR: %s has no children in typecheck_mult()" %
+            expected_node) 
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, method, t_i, c_i)
+        logging.error('FATAL ERROR: Got only one child in binary expression')
+        sys.exit(1)
 
     elif node[1].name == 'MultiplyOperator' \
     or node[1].name == 'DivideOperator' \
@@ -617,6 +630,31 @@ def typecheck_instanceof(node, c, method, t_i, c_i):
     else:
         logging.error('Invalid %s instanceof %s' % (lhs_type, rhs_type))
         sys.exit(42)
+
+def typecheck_eager_boolean(node, c, method, t_i, c_i):
+    if node.name not in ['AndExpression', 'InclusiveOrExpression']:
+        logging.error('FATAL ERROR: Incorrect node %s passed to typecheck_eager_boolean()' %
+            node.name)
+        sys.exit(1)
+
+    if len(node.children) == 0:
+        logging.error("FATAL ERROR: %s has no children in typecheck_mult()" %
+            expected_node) 
+        sys.exit(1) 
+
+    elif len(node.children) == 1:
+        logging.error('FATAL ERROR: Got only one child in binary expression')
+        sys.exit(1)
+
+    t1 = typecheck_expr(node[0], c, method, t_i, c_i)
+    t2 = typecheck_expr(node[2], c, method, t_i, c_i)
+
+    if t1 != 'Boolean' or t2 != 'Boolean':
+        logging.error('Operators & and | only valid on boolean operands')
+        sys.exit(1)
+    else:
+        node.typ = 'Boolean'
+        return node.typ
 
 # Statements
 
