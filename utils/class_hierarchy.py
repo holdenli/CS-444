@@ -6,6 +6,7 @@ import ast
 import typelink
 
 from utils import logging
+from utils import node
 
 class Field:
     def __init__(self, node, c=None):
@@ -408,6 +409,8 @@ def class_hierarchy(ast_list, pkg_index, type_index):
                 m.type = t
                 m.name = n
                 m.params = []
+                m.node = node.ASTNode('MethodDeclaration')
+                m.node.obj = m
                 if (n == "equals"):
                     m.params.append("java.lang.Object")
                 elif (n == "getClass"):

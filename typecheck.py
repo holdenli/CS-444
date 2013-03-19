@@ -230,7 +230,7 @@ def typecheck_field_access(node, c, method, t_i, c_i):
             logging.error('Cannot access field %s of type %s from class %s' %
                 (field_name, receiver_type, c.name))
             sys.exit(42)
-        elif 'static' in field_decl.modifiers:
+        elif 'Static' in field_decl.obj.mods:
             logging.error('Instance field method on non-static field')
             sys.exit(42)
         else:
@@ -312,24 +312,21 @@ def typecheck_method_invocation(node, c, method, t_i, c_i):
         logging.error('Did not find method declaration')
         sys.exit(42)
         
-    if 'static' in method_decl.modifiers and is_static == False:
+    if 'Static' in method_decl.obj.mods and is_static == False:
         logging.error('Invalid static method invocation')
         sys.exit(42)
-    elif 'static' not in method_decl.modifiers and is_static == True:
+    elif 'Static' not in method_decl.obj.mods and is_static == True:
         logging.error('Invalid instance method invocation (of static method)')
         sys.exit(42)
 
     # Check for implicit This reference in static method
     if len(node[1].children) == 0 \
-    and 'Static' in method.mods and 'static' not in method_decl.modifiers:
+    and 'Static' in method.mods and 'Static' not in method_decl.obj.mods:
         logging.error('Nonstatic access in a static method', method.name)
         sys.exit(42)
 
     # Get the return type of the method.
-    if method_decl[1].name == 'Void':
-        node.typ = 'Void'
-    else:
-        node.typ = method_decl[1].canon
+    node.typ = method_decl.obj.type
 
     return node.typ
 

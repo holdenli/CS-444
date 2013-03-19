@@ -285,7 +285,7 @@ def member_accessable(class_index, type_index, canon_type, member,
         if pkg(viewer_canon_type) == pkg(canon_type):
             return r.node
         # if it's not protected, you can see it
-        if 'protected' not in r.node.modifiers:
+        if 'Protected' not in r.mods:
             return r.node
         else:
             # it's protected? you can see if it its a subclass:
