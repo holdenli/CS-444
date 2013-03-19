@@ -55,18 +55,15 @@ def name_link(pkg_index, type_index, cls_idx):
             all_fields = typedecl_env.node.select(['Fields', 'FieldDeclaration'])
             all_fields = [f.find_child('Identifier').value.value for f in all_fields]
 
+            disallowed = set(f for f in all_fields)
             fields_so_far = {}
             for i, field_name in enumerate(all_fields):
                 field_decl = typedecl_env.fields[field_name]
 
                 local_vars = {}
-                lhs_only_vars = {f:typedecl_env.fields[f] for f in all_fields[i:]}
-                simple_names = fields_so_far
 
                 if 'static' in field_decl.modifiers:
                     local_vars = {}
-                    lhs_only_vars = {}
-                    simple_names = {}
 
                     static_context_flag = True
                     
@@ -76,14 +73,14 @@ def name_link(pkg_index, type_index, cls_idx):
                     pkg_name,
                     field_decl.find_child('Initializer'),
                     local_vars,
-                    lhs_only_vars = lhs_only_vars,
-                    simple_names = simple_names
+                    disallowed_simple_names = disallowed
                 )
 
                 if static_context_flag:
                     static_context_flag = False
 
                 fields_so_far[field_name] = field_decl
+                disallowed.remove(field_name)
 
 def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
     if local_vars == None:
@@ -145,8 +142,7 @@ def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
             var_name = var_name[0].value.value
 
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
-                local_vars,
-                lhs_only_vars={var_name:stmt})
+                local_vars)
 
             local_vars[var_name] = stmt
 
@@ -154,11 +150,7 @@ def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
         find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars)
 
 def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
-        lhs_only_vars=None,
-        simple_names=None):
-
-    if lhs_only_vars == None:
-        lhs_only_vars = {}
+        disallowed_simple_names=None):
 
     for node in find_nodes(stmt, [Node('Name'), Node('MethodInvocation'),
             Node('FieldAccess'),
@@ -177,7 +169,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                     resolved_node = name_link_name(type_index, cu_env,
                         pkg_name, local_vars,
                         meth_recv_name.split('.'),
-                        simple_names)
+                        disallowed_simple_names)
 
                     canon_type = resolve_type_by_name(type_index,
                         cu_env,
@@ -203,28 +195,24 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                     find_and_resolve_names(type_index, cu_env, pkg_name,
                         meth_recv,
                         local_vars,
-                        lhs_only_vars,
-                        simple_names)
+                        disallowed_simple_names)
                 
             # if it has arguments, name resolve those
             if len(node.children) == 3:
                 find_and_resolve_names(type_index, cu_env, pkg_name, node[2],
                     local_vars,
-                    lhs_only_vars,
-                    simple_names)
+                    disallowed_simple_names)
             continue
 
         elif node == Node('ArrayAccess'):
             # node.children = ['ArrayReceiver', 'Primary']
             find_and_resolve_names(type_index, cu_env, pkg_name, node[0],
                 local_vars,
-                lhs_only_vars,
-                simple_names)
+                {})
 
             find_and_resolve_names(type_index, cu_env, pkg_name, node[1],
                 local_vars,
-                lhs_only_vars,
-                simple_names)
+                disallowed_simple_names)
 
             continue
 
@@ -237,31 +225,20 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                 find_and_resolve_names(type_index, cu_env, pkg_name,
                     node[1],
                     local_vars,
-                    lhs_only_vars,
-                    simple_names)
+                    disallowed_simple_names)
 
                 continue
 
         elif node == Node('Assignment'):
-            lhs_vars = dict(local_vars)
-            lhs_vars.update(lhs_only_vars)
-
-            lhs_simple_names = simple_names
-            if simple_names != None:
-                lhs_simple_names = dict(simple_names)
-                lhs_simple_names.update(lhs_only_vars)
 
             find_and_resolve_names(type_index, cu_env, pkg_name,
                 ASTNode(children=[node[0]]),
-                lhs_vars,
-                {},
-                lhs_simple_names)
+                local_vars)
 
             find_and_resolve_names(type_index, cu_env, pkg_name,
                 ASTNode(children=[node[1]]),
                 local_vars,
-                lhs_only_vars,
-                simple_names)
+                disallowed_simple_names)
 
             continue
 
@@ -271,7 +248,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
         resolved_node = name_link_name(type_index, cu_env, pkg_name,
             local_vars,
             name,
-            simple_names)
+            disallowed_simple_names)
 
         if resolved_node == None:
             logging.error('Could not resolve name %s in %s.%s with %s' % (name, pkg_name,
@@ -330,8 +307,6 @@ def member_accessable(class_index, type_index, canon_type, member,
             
             # member is a constructor
             if isinstance(member, utils.class_hierarchy.Method) and member.type == None:
-               print(canon_type)
-               print(member)
                return None 
 
             if is_nonstrict_subclass(declaring_canon_type, viewer_canon_type,
@@ -379,7 +354,7 @@ def constructor_accessable(class_index, type_index, canon_type, method_name, par
             check_instance)
 
 def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
-        simple_names=None,
+        disallowed_simple_names=None,
 
         check_locals=True,
         check_contains=True,
@@ -405,17 +380,21 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
         field_i = -1
 
     # simple names should be enforced if they exist
-    if simple_names != None:
-        if len(name_parts) == 1 and name_parts[0] not in simple_names:
+    if disallowed_simple_names != None:
+
+        if len(name_parts) == 1 and name_parts[0] in disallowed_simple_names:
+            logging.error('Illegal forward declaration reference to %s', name_parts[0])
+            sys.exit(42)
             return None
 
         # special case for array.length
         if len(name_parts) == 2 \
-                and name_parts[0] not in simple_names \
+                and name_parts[0] in disallowed_simple_names \
                 and field_i != -1 \
                 and cu_contain_set[field_i].node.find_child('Type').canon.endswith('[]') \
                 and name_parts[1] == 'length':
-
+                logging.error('Illegal forward declaration reference to %s', name_parts[0])
+                sys.exit(42)
                 return None
  
     candidate = None

@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import subprocess
+import time
 
 from multiprocessing import Pool, Manager
 
@@ -67,6 +68,7 @@ class TestRunner:
         
         pool = Pool(processes=num_cores())
 
+        start_time = time.time()
         # Loop through test cases (files)
         for test_name in os.listdir(tests_path):
             if not test_name.startswith("J"):
@@ -99,7 +101,7 @@ class TestRunner:
 
         # Done tests
         print("\n==================================================")
-        print("Test run successful.")
+        print("Test run successful.  %s seconds" % (time.time() - start_time))
         print("{} test(s) ran. {} test(s) failed.".format(test_total, test_fails))
 
     
