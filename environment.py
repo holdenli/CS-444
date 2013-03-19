@@ -86,9 +86,9 @@ def env_type_name(env):
     iface = env['InterfaceDeclaration']
 
     if cls:
-        name = cls.node.select_leaf_values(['ClassName', 'Identifier'])[0]
+        name = cls.node.find_child('ClassName').leaf_values()[0]
     elif iface:
-        name = iface.node.select_leaf_values(['InterfaceName', 'Identifier'])[0]
+        name = iface.node.find_child('InterfaceName').leaf_values()[0]
     else:
         return None
 
