@@ -5,8 +5,17 @@ import logging
 import os
 import re
 import sys
+import subprocess
 
-from multiprocessing import Process, Queue, Pool, Manager
+from multiprocessing import Pool, Manager
+
+def num_cores():
+    """ number of cores available on this machine """
+    try:
+        return int(subprocess.check_output("nproc").strip())
+    except:
+        logging.warn("Could not determine the number of cores.  Using 4.")
+        return 4
 
 # OutputCapture
 # Used to suppress stdout and save it for future use
@@ -24,6 +33,7 @@ class OutputCapture:
 
     def write(self, msg):
         self.capture += msg
+
 
 # TestRunner
 # This class runs a given function on a batch of test inputs
@@ -55,7 +65,7 @@ class TestRunner:
         q = Manager().Queue()
         p_list = []
         
-        pool = Pool(processes=48)
+        pool = Pool(processes=num_cores())
 
         # Loop through test cases (files)
         for test_name in os.listdir(tests_path):
