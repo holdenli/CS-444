@@ -167,6 +167,10 @@ def joosc(targets, options):
                 ast_list[i].pprint()
         sys.exit(0)
 
+    import reachability
+    for i in ast_list:
+        reachability.reachability(i)
+
 # INTERFACE
 ##########################
 

@@ -233,6 +233,11 @@ class ASTNode(Node):
         # variable) node. Only valid for certain types of expressions.
         self.decl = decl
 
+        # Static analysis info
+        self.reachable = None
+        self.can_complete = None
+        self.will_end = None
+
         # DEPRECATED/MISC
 
         # set of modifier values for MethodDecl, ConstructorDecl, FieldDecl

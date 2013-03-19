@@ -3,6 +3,30 @@
 import logging
 from utils.node import *
 
+statement_nodes = [
+        'LocalVariableDeclaration',
+        'Block',
+        'EmptyStatement',
+        'ExpressionStatement',
+        'ReturnStatement',
+        'IfStatement',
+        'WhileStatement',
+        'ForStatement']
+expr_nodes = [
+        'Assignment',
+        'MethodInvocation',
+        'CreationExpression',
+        'ConditionalOrExpression',
+        'ConditionalAndExpression',
+        'EqualityExpression',
+        'AdditiveExpression',
+        'MultiplicativeExpression',
+        'RelationalExpression',
+        'InstanceofExpression',
+        'UnaryExpression',
+        'PostfixExpression',
+        'CastExpression']
+
 def get_class(n):
     z = list(n.select(["ClassDeclaration"])) + list(n.select(["InterfaceDeclaration"]))
     if len(z) != 1:
@@ -30,7 +54,7 @@ def get_methods(n):
     if get_class(n) == None:
         return None
 
-    z = list(n.select("MethodDeclaration"))
+    z = list(n.select(["MethodDeclaration"]))
     
     return z
 
@@ -56,4 +80,11 @@ def get_exprs(n):
 
     return exprs
 
+def get_statement_children(n):
+    s = []
+    for child in n.children:
+        if child.name in statement_nodes:
+            s.append(child)
+
+    return s
 
