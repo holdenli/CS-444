@@ -566,7 +566,6 @@ def typecheck_creation(node, c, method, t_i, c_i):
             expr_type = typecheck_expr(node[1][0], c,
                 method, t_i, c_i)
             if not primitives.is_numeric(expr_type):
-                print(expr_type)
                 logging.error('Invalid array creation argument')
                 sys.exit(42)
         node.typ = creation_type

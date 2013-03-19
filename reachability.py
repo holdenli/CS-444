@@ -90,16 +90,19 @@ def statement_reachability(statement, return_expected):
         if expr != False:
             s.reachable = True
             statement_reachability(statement[1], return_expected)
-        else:
-            logging.error("WhileStatement not reachable")
-            sys.exit(42)
 
         if expr == True:
             statement.can_complete = False
+            if s.will_end == True:
+                statement.will_end = True
+            else:
+                statement.will_end = None
+        elif expr == False:
+            logging.error("WhileStatement not reachable")
+            sys.exit(42)
         else:
             statement.can_complete = True
-        
-        statement.will_end = s.will_end
+            statement.will_end = False
 
     elif statement.name == 'ForStatement':
         expr = None
@@ -112,16 +115,19 @@ def statement_reachability(statement, return_expected):
         if expr != False:
             s.reachable = True 
             statement_reachability(s, return_expected)
-        else:
-            logging.error("ForStatement not reachable")
-            sys.exit(42)
+            if s.will_end == True:
+                statement.will_end = True
+            else:
+                statement.will_end = None
 
         if expr == True:
             statement.can_complete = False
+        elif expr == False:
+            logging.error("ForStatement not reachable")
+            sys.exit(42)
         else:
             statement.can_complete = True
-
-        statement.will_end = s.will_end
+            statement.will_end = False
 
     else:
         logging.error("FATAL ERROR: statement_reachability")
@@ -140,18 +146,14 @@ def try_eval_expr(node):
     elif node.name == 'ConditionalOrExpression':
         expr1 = try_eval_expr(node[0])
         expr2 = try_eval_expr(node[2])
-        ret = expr1 == True and expr2 == True
-        if ret == True and (expr1 == None or expr2 == None):
-            return None
-        else:
+        if expr1 != None and expr2 != None:
+            ret = expr1 == True or expr2 == True
             return ret
     elif node.name == 'ConditionalAndExpression':
         expr1 = try_eval_expr(node[0])
         expr2 = try_eval_expr(node[2])
-        ret = expr1 == True and expr2 == True
-        if ret == False and (expr1 == None or expr2 == None):
-            return None
-        else:
+        if expr1 != None and expr2 != None:
+            ret = expr1 == True and expr2 == True
             return ret
     elif node.name == 'EqualityExpression':
         expr1 = None
