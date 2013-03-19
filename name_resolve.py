@@ -97,23 +97,24 @@ def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
             # stmt.children = [ForInit, ForCondition, ForUpdate, ForBody]
             for_vars = list(stmt.select(['ForStatement', 'ForInit',
                 'LocalVariableDeclaration']))
-
+            
             if len(for_vars) != 0:
                 var_name = for_vars[0][1].value.value
+                local_vars[var_name] = for_vars[0]
 
                 find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
                     local_vars,
-                    {var_name:for_vars[0]})
-
-                local_vars[var_name] = for_vars[0]
-
+                    disallowed_simple_names=set([var_name]))
+            
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
                 local_vars)
+
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[1],
                 local_vars)
+
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
                 local_vars)
-            
+          
             name_link_block(type_index, cu_env, pkg_name, stmt[3],
                 local_vars)
 
@@ -123,28 +124,42 @@ def name_link_block(type_index, cu_env, pkg_name, stmts, local_vars):
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
                 local_vars)
 
-            name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars)
+            if stmt[1] == Node('Block'):
+                name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars)
+            else:
+                name_link_block(type_index, cu_env, pkg_name,
+                    Node(children=[stmt[1]]), local_vars)
+
             continue
 
         elif stmt == Node('IfStatement'):
+            # stmt.children = [CONDITION, BODY]
 
             find_and_resolve_names(type_index, cu_env, pkg_name, stmt[0],
                 local_vars)
 
-            name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars)
+            if stmt[1] == Node('Block'):
+                name_link_block(type_index, cu_env, pkg_name, stmt[1], local_vars)
+            else:
+                name_link_block(type_index, cu_env, pkg_name, Node(children=[stmt[1]]), local_vars)
+
             if len(stmt.children) == 3:
-                name_link_block(type_index, cu_env, pkg_name, stmt[2],
-                    local_vars)
+                if stmt[2] == Node('Block'):
+                    name_link_block(type_index, cu_env, pkg_name, stmt[2],
+                        local_vars)
+                else:
+                    name_link_block(type_index, cu_env, pkg_name, Node(children=[stmt[2]]),
+                        local_vars)
             continue
 
         if stmt == Node('LocalVariableDeclaration'):
             var_name = list(stmt.select(['LocalVariableDeclaration', 'Identifier']))
             var_name = var_name[0].value.value
-
-            find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
-                local_vars)
-
             local_vars[var_name] = stmt
+            find_and_resolve_names(type_index, cu_env, pkg_name, stmt[2],
+                local_vars, disallowed_simple_names=set([var_name]))
+
+            continue
 
         # find name references
         find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars)
