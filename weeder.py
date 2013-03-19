@@ -76,8 +76,8 @@ def weed(parse_tree, filename):
     # WEEDING RELATED TO CLASSES:
     classes = list(parse_tree.select(['ClassDeclaration']))
     if len(classes) != 0:
-        node = classes[0]
-        classname = node.find_child('Identifier').value.value
+        classdecl_node = classes[0]
+        classname = classdecl_node.find_child('Identifier').value.value
 
         # A class/interface must be declared in a .java file with the same base name
         # as the class/interface.
@@ -86,9 +86,9 @@ def weed(parse_tree, filename):
             sys.exit(42)
 
         # A class cannot be both abstract and final.
-        if Node('Modifiers') in node.children:
+        if Node('Modifiers') in classdecl_node.children:
 
-            modifiers = node.find_child('Modifiers').leafs()
+            modifiers = classdecl_node.find_child('Modifiers').leafs()
 
             if Node('Abstract') in modifiers and Node('Final') in modifiers:
                 logging.error("A class cannot be both abstract and final.",
@@ -99,13 +99,17 @@ def weed(parse_tree, filename):
         # An abstract method cannot be static or final.
         # A static method cannot be final.
         # A native method must be static.
-        methods = node.select(['ClassMemberDeclaration', 'MethodDeclaration'])
-        for method in methods:
-            modifiers = list(method.select(['MethodHeader','Modifiers']))
-            if len(modifiers) == 0:
+        methods = classdecl_node.select(['ClassMemberDeclaration', 'MethodDeclaration'])
+        for method_decl in methods:
+            modifiers = method_decl.find_child('MethodHeader')
+            if modifiers == None:
                 continue
 
-            modifiers = modifiers[0].leafs()
+            modifiers = modifiers.find_child('Modifiers')
+            if modifiers == None:
+                continue
+
+            modifiers = modifiers.leafs()
             is_abstract = Node('Abstract') in modifiers
             is_native = Node('Native') in modifiers
             is_static = Node('Static') in modifiers
@@ -114,7 +118,7 @@ def weed(parse_tree, filename):
             is_protected = Node('Protected') in modifiers
 
             abs_or_nat = is_abstract or is_native
-            has_def = len(list(method.select(['MethodBody', 'Block']))) == 1
+            has_def = len(list(method_decl.select(['MethodBody', 'Block']))) == 1
 
             if (has_def and abs_or_nat) or (not abs_or_nat and not has_def):
                 logging.error("A method has a body if and only if it is neither abstract nor native.",
@@ -141,14 +145,10 @@ def weed(parse_tree, filename):
                     "pos=%s, line=%s" % (modifiers[0].value.pos, modifiers[0].value.line))
                 sys.exit(42)
 
-        for constructor in node.select(['ConstructorDeclaration']):
-
+        for constructor in parse_tree.select(['ConstructorDeclaration']):
             # Every class must contain at least one explicit constructor.
-            constructor_names = [method.value.value for method in node.select([
-                'ConstructorDeclarator',
-                'SimpleName',
-                'Identifier'
-            ])]
+            constructor_names = [method.find_child('SimpleName').leaf_values()[0]
+                for method in constructor.select(['ConstructorDeclarator'])]
 
             if not constructor_names or \
                 [classname]*len(constructor_names) != constructor_names:
@@ -173,8 +173,7 @@ def weed(parse_tree, filename):
 
 
         # No field can be final.
-        fields = node.select(['FieldDeclaration', 'Modifiers'])
-        for field in fields:
+        for field in classdecl_node.select(['FieldDeclaration', 'Modifiers']):
             modifiers = field.leafs()
             if Node('Final') in modifiers:
                 logging.error("No field can be final.",
@@ -184,7 +183,6 @@ def weed(parse_tree, filename):
     # WEEDING RELATED TO INTERFACES:
     # An interface method cannot be static, final, or native.
     elif len(list(parse_tree.select(['InterfaceDeclaration']))) != 0:
-
         interfacename = list(parse_tree.select(['InterfaceDeclaration',
             'Identifier']))[0].value.value
 

@@ -28,9 +28,9 @@ def typelink(asts, pkg_index):
         for cu_env in pkg_index[pkg_name]:
 
             # first, we resolve the type imports
-            imports = list(cu_env.select(['CompilationUnit', 'TypeImport']))
+            imports = cu_env['TypeImport']
             if imports:
-                imports = set(imports[0].names)
+                imports = set(imports.names)
             else:
                 imports = set()
 
@@ -104,9 +104,9 @@ def resolve_type_by_name(type_index, cu_env, pkg_name, type_name):
         return type_name
    
     # build a list of imports in this CU
-    imports = list(cu_env.select(['CompilationUnit', 'TypeImport']))
+    imports = cu_env['TypeImport']
     if imports:
-        imports = set(imports[0].names)
+        imports = set(imports.names)
     else:
         imports = set()
 

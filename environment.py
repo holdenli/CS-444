@@ -70,13 +70,12 @@ class Environment(Node):
         return (self.__class__ == o.__class__) and (self.name == o.name)
 
 def env_type_node(env):
-    cls = list(env.select(['ClassDeclaration']))
-    iface = list(env.select(['InterfaceDeclaration']))
-
+    cls = env['ClassDeclaration']
+    iface = env['InterfaceDeclaration']
     if cls:
-        return cls[0].node
+        return cls.node
     elif iface:
-        return iface[0].node
+        return iface.node
     else:
         return None
 
@@ -86,13 +85,11 @@ def env_type_name(env):
     iface = env['InterfaceDeclaration']
 
     if cls:
-        name = cls.node.find_child('ClassName').leaf_values()[0]
+        return cls.node.find_child('ClassName').leaf_values()[0]
     elif iface:
-        name = iface.node.find_child('InterfaceName').leaf_values()[0]
+        return iface.node.find_child('InterfaceName').leaf_values()[0]
     else:
         return None
-
-    return name
 
 def build_environments(ast_list):
     # index of packages;  package -> list of compilation units
@@ -111,7 +108,7 @@ def build_environments(ast_list):
 
     return pkg_index
 
-def build_environment(abs_tree):
+def build_environment(root_ast):
     """
         environment stack:
 
@@ -120,6 +117,8 @@ def build_environment(abs_tree):
             - TypeImports
             - PackageImports
     """
+
+    abs_tree = root_ast.find_child('CompilationUnit')
 
     pkg = list(abs_tree.select(['PackageDeclaration']))
     pkg_name = ''
@@ -176,14 +175,14 @@ def build_environment(abs_tree):
 
     # add a class or interface to the package
     type_name = ''
-    cls = list(abs_tree.select(['ClassDeclaration']))
-    iface = list(abs_tree.select(['InterfaceDeclaration']))
-    if len(cls) > 0:
-        cu.children.append(build_class_env(cls[0]))
-        type_name = cls[0].find_child('ClassName').leaf_values()[0]
-    if len(iface) > 0:
-        cu.children.append(build_interface_env(iface[0]))
-        type_name = iface[0].find_child('InterfaceName').leaf_values()[0]
+    cls = abs_tree.find_child('ClassDeclaration')
+    iface = abs_tree.find_child('InterfaceDeclaration')
+    if cls != None:
+        cu.children.append(build_class_env(cls))
+        type_name = cls.find_child('ClassName').leaf_values()[0]
+    if iface != None:
+        cu.children.append(build_interface_env(iface))
+        type_name = iface.find_child('InterfaceName').leaf_values()[0]
 
     # add the CompilationUnit to the package
     cu.canon = '%s.%s' % (pkg_name, type_name)
