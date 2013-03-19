@@ -105,14 +105,29 @@ not terribe.
 \section{Assignment 4 design}
 
 \subsection{Reachability analysis}
+Three flags are added to statement nodes:
+
+reachable - "this statement >>is<< reachable" -
+    True if statement is reachable. None if it hasn't been determined.
+    It cannot be False because compiler will exit by then.
+
+can complete - "this statement >>can<< complete" -
+    True if the statement can complete. False otherwise.
+
+will end - "this statement >>will<< end with return statement" -
+    This is True when it is a return statement
+    or a statement that contains return statements in all possible
+    executions.
+    And it is False if the statement does not end method execution.
+    It is None if the statement is infinite.
+
 The check that all statements must be reachable and that methods must end with
 a return statement is done together.
 The analysis begins by finding every constructor or method in each class.
 Then it runs a reachability check on the block statement.
 This is a recursive check that checks any statement and determines if it is
-'reachable', 'can_complete', and 'will_end'. The former two are used for
-reachability testing and the last flag is used to determine if statements stop
-at return statements or not. The program terminates if something is deemed
+'reachable', 'can_complete', and 'will_end'.
+The program terminates if something is deemed
 unreachable. And on completion of the check on the method body, the 'will_end'
 flag is checked to ensure that a return statement ends the block.
 
