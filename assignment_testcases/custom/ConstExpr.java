@@ -9,5 +9,6 @@ public class ConstExpr {
         while((int)1 % (short)1 != (char)50) {}
         while(!true == false) {}
         while("WHAT" == (String)"WHAT") {}
+        if(false) {}
     }
 }
