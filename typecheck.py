@@ -319,6 +319,9 @@ def typecheck_method_invocation(node, c, method, t_i, c_i):
         logging.error('Nonstatic access in a static method', method.name)
         sys.exit(42)
 
+    # Link the invocation of the method with its declaration
+    node.decl = method_decl
+
     # Get the return type of the method.
     node.typ = method_decl.obj.type
 

@@ -184,6 +184,8 @@ class Node:
                 s += " @obj"
             if self.decl != None:
                 s += " @decl"
+            if self.decl_order != None:
+                s += " @ord="+self.decl_order
         else:
             s += ">"
 
@@ -205,12 +207,18 @@ class Node:
 class ASTNode(Node):
 
     def __init__(self, name=None, value=None, children=None,
-                env=None, decl=None, canon=None, modifiers=None):
+                env=None, decl=None, canon=None, modifiers=None,
+                decl_order=None):
 
         super().__init__(name, value, children)
 
         if modifiers == None:
             modifiers = set()
+
+        # used for FieldDeclaration, ConstructorDeclaration, MethodDeclaration
+        # nodes, specifies the order in which they were declared (0 means declared
+        # first)
+        self.decl_order = decl_order
 
         # TYPE INFO
 
@@ -265,7 +273,11 @@ class ASTNode(Node):
         if self.typ:
             t = " [typ=%s]" % self.typ
 
-        return "<ASTNode: %s%s%s%s%s%s>" % (self.name, v, d, e, c, t)
+        o = ""
+        if self.decl_order != None:
+            o = " [order=%s]" % self.decl_order
+
+        return "<ASTNode: %s%s%s%s%s%s%s>" % (self.name, v, d, e, c, t, o)
 
 def find_nodes(tree, white_list):
     # we traverse through block_tree looking for LocalVariableDeclaration

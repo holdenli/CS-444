@@ -132,6 +132,10 @@ def build_fields(node):
     fields = ASTNode('Fields')
     for field_decl in node.children:
         field = ASTNode('FieldDeclaration')
+        if hasattr(field_decl, 'decl_order'):
+            field.decl_order = field_decl.decl_order
+        else:
+            field.decl_order = -1
 
         # Extract modifiers.
         field.add(flatten_leaves(field_decl[0], 'Modifiers'))
@@ -158,6 +162,10 @@ def build_constructors(node):
     constructors = ASTNode('Constructors')
     for cons_decl in node.children:
         cons = ASTNode('ConstructorDeclaration')
+        if hasattr(cons_decl, 'decl_order'):
+            cons.decl_order = cons_decl.decl_order
+        else:
+            cons.decl_order = -1
 
         # Extract modifiers.
         cons.add(flatten_leaves(cons_decl[0], 'Modifiers'))
@@ -186,6 +194,10 @@ def build_methods(node):
     methods = ASTNode('Methods')
     for method_decl in node.children:
         method = ASTNode('MethodDeclaration')
+        if hasattr(method_decl, 'decl_order'):
+            method.decl_order = method_decl.decl_order
+        else:
+            method.decl_order = -1
 
         # Extract modifiers.
         method.add(flatten_leaves(method_decl[0][0], 'Modifiers'))

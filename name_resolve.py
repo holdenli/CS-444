@@ -76,8 +76,7 @@ def name_link(pkg_index, type_index, cls_idx):
                     disallowed_simple_names = disallowed
                 )
 
-                if static_context_flag:
-                    static_context_flag = False
+                static_context_flag = False
 
                 fields_so_far[field_name] = field_decl
                 disallowed.remove(field_name)
@@ -539,3 +538,36 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
 
 def pkg(canon_type):
     return canon_type.rsplit('.', 1)[0]
+
+def check_method_forwardreference(pkg_index, type_index, cls_idx):
+    """ check forward referencing of methods in field initializers """
+
+    for pkg_name in pkg_index:
+        for cu_env in pkg_index[pkg_name]:
+            if cu_env['ClassDeclaration'] == None:
+                continue
+
+            typedecl_env = cu_env['ClassDeclaration']
+
+            for field_decl in typedecl_env.node.select(['Fields',
+                'FieldDeclaration']):
+
+                # get all methods declared after this field:
+                methods_obj_blacklist = []
+                for m in typedecl_env.methods:
+                    for method_decl in typedecl_env.methods[m]:
+                        if method_decl.decl_order > field_decl.decl_order:
+                            methods_obj_blacklist.append(method_decl.obj)
+        
+                # for each field initializer, find method invocations
+                for mi_node in \
+                    field_decl.find_child('Initializer').select(['MethodInvocation']):
+
+                    # for each method invocation, ensure it's not declared after
+                    # this field
+                    if mi_node.decl.obj.declared_in.name == cu_env.canon \
+                        and mi_node.decl.obj in methods_obj_blacklist:
+                        
+                        logging.error("Illegal Forward reference to method %s before its declaration" \
+                            % (mi_node.decl.obj))
+                        sys.exit(42)

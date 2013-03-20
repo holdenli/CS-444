@@ -125,7 +125,13 @@ def joosc(targets, options):
         sys.exit(0)
 
     ast_list = []
+    from utils.node import find_nodes, Node
     for i, parse_tree in enumerate(parse_trees):
+
+        for o, n in enumerate(find_nodes(parse_tree, [Node('FieldDeclaration'),
+                Node('ConstructorDeclaration'), Node('MethodDeclaration')])):
+            n.decl_order = o
+
         ast_list.append(get_ast(parse_tree, target_files[i], options))
     if options.stage == 'ast':
         sys.exit(0)
@@ -166,6 +172,9 @@ def joosc(targets, options):
                     options.print_stdlib == True:
                 ast_list[i].pprint()
         sys.exit(0)
+
+    name_resolve.check_method_forwardreference(pkg_index, type_index,
+        class_index)
 
     import reachability
     for i in ast_list:
