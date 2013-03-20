@@ -138,7 +138,10 @@ def run_joosc(joosc_options, path, q):
         q.put([0, path, capture.capture])
         return
     except SystemExit as e:
-        q.put([1, path, capture.capture])
+        if e.code == 42:
+            q.put([1, path, capture.capture])
+        else:
+            q.put([-1, path, ""]) 
     except:
         q.put([-1, path, ""]) 
 
