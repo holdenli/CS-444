@@ -655,7 +655,7 @@ def typecheck_eager_boolean(node, c, method, t_i, c_i):
 
     if t1 != 'Boolean' or t2 != 'Boolean':
         logging.error('Operators & and | only valid on boolean operands')
-        sys.exit(1)
+        sys.exit(42)
     else:
         node.typ = 'Boolean'
         return node.typ

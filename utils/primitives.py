@@ -34,7 +34,10 @@ def is_widening_conversion(type1, type2):
     elif type2 == 'Char':
         return type1 == 'Int'
 
+    elif type2 == 'Int':
+        return type1 == 'Int'
+
     else:
-        logging.error('FATAL ERROR: Invalid type for is_widening_conversion')
+        logging.error('FATAL ERROR: Invalid type (%s) for is_widening_conversion' % type2)
         sys.exit(1)
 
