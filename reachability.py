@@ -55,8 +55,13 @@ def statement_reachability(statement, return_expected):
             statement.can_complete = True
         statement.will_end = last_will_end
 
-    elif statement.name == 'LocalVariableDeclaration' \
-    or statement.name == 'EmptyStatement' \
+    elif statement.name == 'LocalVariableDeclaration':
+        # Also check definite assignment.
+        verify_definite_assignment(statement)
+        statement.can_complete = True
+        statement.will_end = False
+
+    elif statement.name == 'EmptyStatement' \
     or statement.name == 'ExpressionStatement':
         statement.can_complete = True
         statement.will_end = False 
@@ -105,6 +110,11 @@ def statement_reachability(statement, return_expected):
             statement.will_end = False
 
     elif statement.name == 'ForStatement':
+        # Check definite assignment in ForInit.
+        if len(statement[0].children) == 1 and \
+            statement[0][0].name == 'LocalVariableDeclaration':
+            verify_definite_assignment(statement[0][0])
+
         expr = None
         s = statement[3][0]
         if len(statement[1].children) == 0:
@@ -224,4 +234,18 @@ def try_eval_expr(node):
         return try_eval_expr(node[0])
 
     return None
+
+def verify_definite_assignment(node):
+    if node.name != 'LocalVariableDeclaration':
+        logging.error('FATAL ERROR: verify_definite_assignment()')
+
+    if len(node[2].children) == 0:
+        logging.error('Local variable declaration must have initializer.')
+        sys.exit(42)
+
+    # See if it references itself in its initializer.
+    for name_node in node[2][0].select(['Name']):
+        if name_node.decl != None and name_node.decl is node:
+            logging.error('Local variable initialization cannot self-reference.')
+            sys.exit(42)
 
