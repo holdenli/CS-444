@@ -315,7 +315,8 @@ def typecheck_method_invocation(node, c, method, t_i, c_i):
 
     # Check for implicit This reference in static method
     if len(node[1].children) == 0 \
-    and 'Static' in method.mods and 'Static' not in method_decl.obj.mods:
+    and method != None and 'Static' in method.mods \
+    and 'Static' not in method_decl.obj.mods:
         logging.error('Nonstatic access in a static method', method.name)
         sys.exit(42)
 

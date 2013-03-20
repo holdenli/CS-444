@@ -185,7 +185,7 @@ class Node:
             if self.decl != None:
                 s += " @decl"
             if self.decl_order != None:
-                s += " @ord="+self.decl_order
+                s += " @ord=%d" % self.decl_order
         else:
             s += ">"
 
