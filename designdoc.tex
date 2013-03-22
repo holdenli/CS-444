@@ -43,19 +43,20 @@ cmei
 
 \subsection{Environment building}
 In this stage, the ASTs are fed in and an environment tree is built for each
-one.  An environment tree provides scoping information for each declared typed,
-where each environment node contains the symbols (variables, fields or methods)
+one.  An environment tree provides scoping information for each type
+(class/interface), where each node in the tree contains the
+symbols (variables, fields or methods)
 declared in that scope.
 
-We named each environment node after the AST node that it describes.  The root
-environment node is the CompilationUnit;  it's children are TypeImports,
+Each environment node is named after the AST node that it describes.  The root
+environment node is the CompilationUnit;  its children are TypeImports,
 PackageDeclaration, and ClassDeclaration.  The TypeImports and
-PackageDeclaration aren't really a scope, but they were put there for
+PackageDeclaration are a not scope, but they were included for
 convinience when determining the canonical name of the type.
 
 The ClassDeclaration environment contains all the fields and methods that are
-declared in it, mapping each of them to their AST declaration node.  The
-children of the ClassDeclaration environment are the MethodDeclaration or
+declared in it.
+The children of the ClassDeclaration environment are the MethodDeclaration or
 ConstructorDeclaration environment nodes.  These declaration nodes contain
 parameters declared in the method or constructor.  The declaration environment
 nodes have children that are Block environments (and their children as well,
@@ -87,47 +88,53 @@ resolve the canonical name for that type after trying these 3 possibilities,
 then the type does not exist.
 
 The above procedure does not apply to primitive types.  The Type nodes for these
-are labelled as their primitive equivalent and special cased later on whenever we
-deal with types.  For array types, we simply append a '[]' to the canonical type
+are labelled as their primitive equivalent and are handled differently from
+reference types.
+For array types, we simply append a '[]' to the canonical type
 we resolve it to.
 
-At this point, all Type nodes have been anotated with their fully qualified
+At this point, all Type nodes have been annotated with their fully qualified
 canonical names.
 
 \subsection{Class hierarchy}
-This stage introduces a new representation of Classes (Interfaces),
-Methods (Constructors), and Fields and links the declaration in the AST
-with an instance of these objects. The Class object has 
+This stage introduces a new representation of Classes/Interfaces,
+Methods/Constructors, and Fields and links the declaration of each in the AST
+with an instance of these objects. The object representation of contain
+any useful information on these objects in an easy to access way (ie.
+the Class object has a declare set and inherit set)
+
 Equality has been defined for Methods as
 comparing signatures and defined for fields as name. This allows for operations
 on these objects and sets of objects to make sense in this context.
+
 Each declaration in the AST is linked to their respective object and vice versa
-for convenience in the future. But also a dictionary of all available Classes
+for convenience in the future. But also an index (dictionary) of all available Classes
 is generated with the fully qualified name as the key.
 
-The process of generating these objects, the dictionary, and checking the
-class hierarchy are all done at once. The process in creating these is tightly
-coupled with many intermediate representations of classes.
-The process happens in X stages:
+The process of generating these objects, the index, and checking the
+class hierarchy are all done together. 
+The process happens in 6 stages:
+
 1. Scanning ASTs for classes and creating the dictionary
-    Setups the Class object with basic information.
-    Uses typelink information to figure out who to extend/implements.
+    - Setups the Class object with basic information.
+    - Uses type link information to figure out who to extend/implement.
 2. Use the dictionary to create hierarchy
-    Link a Class' extend/implement with the right Class object; this creates
+    - Link a Class' extend/implement with the right Class object; this creates
     an upside down tree structure for the hierarchy.
 3. Check for cycles
-    Simply going through every Class and going up the hierarchy
+    - Simply going through every Class and going up the hierarchy
     until we reach an end or a cycle.
 4. Create Method and Field objects and fill in Declare set
-    Check the declarations in the classes and fill the Declare set
+    - Check the declarations in the classes and fill the Declare set
     with their object representations.
+    - Add special delcarations (ie. interface's implicit methods from Object)
 5. Fill Inherit set
-    Simply keep trying to fill in inherit data until everything is filled in.
-    Most complicated stage due to checking for hiding/overriding.
-    No infinite loop due to cycle checking.
+    - Simply keep trying to fill in inherit data until everything is filled in.
+    - Most complicated stage due to checking for hiding/overriding.
+    - No infinite loop due to cycle checking.
 6. Final checks
-    Any other checks that don't fit the other stages happen here.
-    ie. implicit default constructor.
+    - Any other checks that don't fit the other stages happen here.
+    - ie. implicit default constructor.
 
 \section{Assignment 3 design}
 
@@ -136,7 +143,7 @@ The process happens in X stages:
 In this stage, we find all 'Name' nodes from our AST, and resolve them to a
 local variable or field declaration they refer to -- names are not resolved to method
 declarations until after type checking, as the parameters themselves are expressions
-that need to be resolved to a type.  After these Name nodes have been
+that need to be resolved to a type. After these Name nodes have been
 disambiguated, they are linked to the declaration node they refer to. This part
 of the compiler uses utility functions created in the Class Heirarchy phase,
 notably the function that returns the contain set (of methods and fields) given
@@ -154,9 +161,9 @@ There are two functions that contain the logic for disambiguation and name
 resolution:  one iterates through expressions finding Name nodes,
 and the other is for disambiguating a name and linking it to its declaration.  The first
 function looks for Name, MethodInvocation, FieldAccess and ArrayAccess and
-Assignment nodes.  Names are disambiguated using the second function.  Only the
+Assignment nodes.  Only the
 method receiver and arguments are recursively name-resolved (i.e, we recurse
-into them).  The method invocation itself needs to be type checked before we can
+into them).  The method invocations need to be type checked before we can
 determine which method it is.  Further, we name resolve the FieldReceiver node
 recursively, but the FieldAccess itself is not resolved until it is fully
 typechecked.
@@ -167,22 +174,22 @@ names that are not allowed to be resolved.  This is used to implement forward
 referencing in fields initializers.
 
 The second function involves disambiguating a name.  This function takes the
-type that we are disambiguate from (so that we can use this type's contain set) name,
-a blacklist of simple names that can't be reference, and a flag indicating
-if we are disambiguating a name in a static context.  First, simple names are
-checked if they are in the blacklist.  A corner case we had to hardcode was if
+type that we are disambiguate from (so that we can use this type's contain set),
+the name, a blacklist of simple names that can't be reference, and
+a flag indicating if the name is in a static context.  First, simple names are
+checked if they are in the blacklist.  A corner case is if
 the name could be resolved to a array length expression;  in which case, this is
 not technically a simple name, but should still be checked in the blacklist.
 
 It then checks if the left most part of the name is a local variable, or if it
-is the contain set.  If true, then we find the type that this first part
+is in the contain set.  If true, then we find the type that this first part
 resolves to, and recurse into the rest of the name under this type's context;
-we do not pass on the black list or local variables, though.
+we do not pass on the black list or local variables.
 
 Before we recurse, we must also check that we can recurse into the second part
 of the name, if it exists; this involves access checking.  If the second part of
 the name might resolve to a protected field that we don't have access to, we
-must abort.  Additionally, we do not recursive if the first part resolves to an
+must abort.  Additionally, we do not recurse if the first part resolves to an
 array -- in which case, the rest of the name, if it exists, must be '.length'.
 
 \subsection{Type checking}
