@@ -42,9 +42,57 @@ remember parallelism
 cmei
 
 \subsection{Environment building}
+In this stage, the ASTs are fed in and an environment tree is built for each
+one.  An environment tree provides scoping information for each declared typed,
+where each environment node contains the symbols (variables, fields or methods)
+declared in that scope.
+
+We named each environment node after the AST node that it describes.  The root
+environment node is the CompilationUnit;  it's children are TypeImports,
+PackageDeclaration, and ClassDeclaration.  The TypeImports and
+PackageDeclaration aren't really a scope, but they were put there for
+convinience when determining the canonical name of the type.
+
+The ClassDeclaration environment contains all the fields and methods that are
+declared in it, mapping each of them to their AST declaration node.  The
+children of the ClassDeclaration environment are the MethodDeclaration or
+ConstructorDeclaration environment nodes.  These declaration nodes contain
+parameters declared in the method or constructor.  The declaration environment
+nodes have children that are Block environments (and their children as well,
+which are recursively explored) contains all the local variables declared under
+that AST block node.
+
+These block nodes are built by exploring each statement in the body in-order, one at a
+time, as opposed to just search for LocalVariableDeclaration AST nodes.  This
+was necessary so that variables are only made available at the time of their
+declaration in that block, so earlier statements cannot reference them.
 
 \subsection{Type linking}
-cmei
+This stage does two things:  First, it builds an index of canonical type names
+mapping to their CompilationUnit environment.  Then, it finds Type nodes in the
+AST, and annotates them with the canonical type name it refers to.
+
+In order to build the index, we simply go through each AST, figure out the
+package name (located in the PackageDeclaration node, but defaults to package
+'MAIN_PKG' if one does not exist), its type name (The name from the
+ClassDeclaration or InterfaceDeclaration node).  Putting the two together gives
+us the canonical type name.
+
+In order to annotate all the Type nodes, the context in which it is used is not
+required;  we simply look for Type nodes in each AST and try to derive the
+canonical type for it.  We try possible canonical names for the type in a
+particular order:  Is it a type in the same package?  Is it one of the imported
+types in the compilation unit, or Is it an ondemand package?  If we fail to
+resolve the canonical name for that type after trying these 3 possibilities,
+then the type does not exist.
+
+The above procedure does not apply to primitive types.  The Type nodes for these
+are labelled as their primitive equivalent and special cased later on whenever we
+deal with types.  For array types, we simply append a '[]' to the canonical type
+we resolve it to.
+
+At this point, all Type nodes have been anotated with their fully qualified
+canonical names.
 
 \subsection{Class hierarchy}
 This stage introduces a new representation of Classes (Interfaces),
@@ -84,6 +132,58 @@ The process happens in X stages:
 \section{Assignment 3 design}
 
 \subsection{Name disambiguation and resolution}
+
+In this stage, we find all 'Name' nodes from our AST, and resolve them to a
+local variable or field declaration they refer to -- names are not resolved to method
+declarations until after type checking, as the parameters themselves are expressions
+that need to be resolved to a type.  After these Name nodes have been
+disambiguated, they are linked to the declaration node they refer to. This part
+of the compiler uses utility functions created in the Class Heirarchy phase,
+notably the function that returns the contain set (of methods and fields) given
+a fully canonical type.
+
+First, the field initializers are resolved;  In order to deal with forward
+referencing, we pass around a 'blacklist' of simple names that, when resolved to,
+should throw out a Illegal Forward Reference error. Then, we go through each
+method's body, statement by statement, picking up variables as they are declared
+and recursing into Block nodes (which are also seen during if/else, while, and
+for statements).  For each statement, we try to find, disambiguate and resolve
+all Name nodes seen in the statements.
+
+There are two functions that contain the logic for disambiguation and name
+resolution:  one iterates through expressions finding Name nodes,
+and the other is for disambiguating a name and linking it to its declaration.  The first
+function looks for Name, MethodInvocation, FieldAccess and ArrayAccess and
+Assignment nodes.  Names are disambiguated using the second function.  Only the
+method receiver and arguments are recursively name-resolved (i.e, we recurse
+into them).  The method invocation itself needs to be type checked before we can
+determine which method it is.  Further, we name resolve the FieldReceiver node
+recursively, but the FieldAccess itself is not resolved until it is fully
+typechecked.
+
+Assignment expressions also recursively resolved on both the left and
+right-hand-side, but the right-hand-side is passed in a 'blacklist' of simple
+names that are not allowed to be resolved.  This is used to implement forward
+referencing in fields initializers.
+
+The second function involves disambiguating a name.  This function takes the
+type that we are disambiguate from (so that we can use this type's contain set) name,
+a blacklist of simple names that can't be reference, and a flag indicating
+if we are disambiguating a name in a static context.  First, simple names are
+checked if they are in the blacklist.  A corner case we had to hardcode was if
+the name could be resolved to a array length expression;  in which case, this is
+not technically a simple name, but should still be checked in the blacklist.
+
+It then checks if the left most part of the name is a local variable, or if it
+is the contain set.  If true, then we find the type that this first part
+resolves to, and recurse into the rest of the name under this type's context;
+we do not pass on the black list or local variables, though.
+
+Before we recurse, we must also check that we can recurse into the second part
+of the name, if it exists; this involves access checking.  If the second part of
+the name might resolve to a protected field that we don't have access to, we
+must abort.  Additionally, we do not recursive if the first part resolves to an
+array -- in which case, the rest of the name, if it exists, must be '.length'.
 
 \subsection{Type checking}
 ADD MORE DETAILS HERE CMEI!
