@@ -19,6 +19,7 @@ from environment import build_environments
 import typelink
 import typecheck
 import name_resolve
+import reachability
 
 # Globals
 ##########################
@@ -176,7 +177,6 @@ def joosc(targets, options):
     name_resolve.check_method_forwardreference(pkg_index, type_index,
         class_index)
 
-    import reachability
     for i in ast_list:
         reachability.reachability(i)
 
@@ -205,6 +205,8 @@ def parse_options(args=sys.argv):
         'hierarchy',
         'name',
         'typecheck',
+        'codegen',
+        'asm',
         'end'
     ]
     parser.add_option('-s', '--stage', action='store', dest='stage',
