@@ -4,25 +4,97 @@ class CodegenInfo:
         self.class_index = class_index
         self.type_index = type_index
 
+        # var_name -> (index, node_decl)
+        self.local_vars = {}
 
-def gen_block(node, info):
+
+def lookup_by_decl(vars_dict, item):
+    for (var_name, (i, var_decl)) in node.env.names.items():
+        if item.obj == var_decl.obj and item.obj != None:
+            return var_name
+
+def gen_block(info, node):
+
+    # generate local variables for this block
+    for i, (var_name, var_decl) in enumerate(node.env.names.items()):
+        info.local_vars[var_name] = (i, var_decl)
+
     for stmt in node.children:
         if stmt.name == 'LocalVariableDeclaration':
-            gen_local_variable(node, 
+            pass
         elif stmt.name == 'Block':
-            gen_block(stmt)
+            gen_block(info, stmt)
+        elif stmt.name == 'ExpressionStatement':
+            gen_expr_stmt(info, stmt)
 
-def gen_method(node, info):
+def gen_expr_stmt(info, stmt):
+
+    output = []
+
+    if n[0].name == 'Assignment':
+        output.extend(gen_assignment_expr(info, n[0]))
+
+    elif n[0].name == 'MethodInvocation':
+        output.extend(gen_method_invocation(info, n[0]))
+        pass
+
+    elif n[0].name == 'ClassInstanceCreationExpression':
+        pass
+
+    return output
+
+def gen_assignment_expr(info, node):
+    output = []
+
+    # Assignment = [Name, lots of expression choices .. ]
+    if node[1].name == 'PostfixExpression':
+        output.extend(gen_postfix_expr(info, node[1]))
+
+    return output
+
+def gen_postfix_expr(info, node):
+   
+    # literal, this, fieldaccess, methodinvoc, arrayaccess, etc..
+
+    output = []
+    if node[0].name == 'Literal':
+        output.extend(gen_literal_expr(info, node[0]))
+
+    return output
+
+def gen_literal_expr(info, node):
+    output = []
+    if node[0].name == 'DecimalIntegerLiteral':
+        output.append("dd %s" % node[0].value)
+
+    elif node[0].name == 'BooleanLiteral':
+        output.append("dd %s" % node[0].value == 'true')
+
+    elif node[0].name == 'CharacterLiteral':
+        output.append("dd %s" % node[0].value) # .value = "'c'"
+
+    elif node[0].name == 'StringLiteral':
+        # make a string object
+        pass
+    
+    elif node[0].name == 'NullLiteral':
+        # how to handle this?
+        pass
+
+    return output
+
+def gen_method_invocation(info, node):
+    pass 
+
+def gen_method(info, node):
     assert node.name in ['MethodDeclaration', 'ConstructorDeclaration']
 
     # Preamble for method.
     code = get_method_label(node)
-    
-    
 
     body = node[4]
     if len(body.children) != 0:
-        code += gen_block(body[0], info, 0)
+        code += gen_block(info, body[0], 0)
 
 def get_method_label(node):
     assert node.name in ['MethodDeclaration', 'ConstructorDeclaration']
