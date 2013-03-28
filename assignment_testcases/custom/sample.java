@@ -1,10 +1,13 @@
 // TEST
 
-import mypkg.second;
-public class sample extends hey {
+public class sample {
     public sample() {}
     public void main(int args) {
-       sample s;
+       int i;
+       {
+           int j = 1;
+            i = (1 + 2) + 3;
+       }
     }
 }
 

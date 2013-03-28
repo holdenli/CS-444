@@ -246,6 +246,10 @@ class ASTNode(Node):
         self.can_complete = None
         self.will_end = None
 
+
+        # For code generation.
+        self.label = None # For methods.
+
         # DEPRECATED/MISC
 
         # set of modifier values for MethodDecl, ConstructorDecl, FieldDecl
