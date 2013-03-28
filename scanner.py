@@ -42,21 +42,22 @@ SINGLELINE_PATTERNS = {
         r'('+DIGITS+'(?:[eE][+-]?'+DIGITS+'+)?[dDfF])',
     ],
     
-    'BooleanLiteral': [r'(true|false)'],
-    
     # this one was a bit confusing to write:
     #   (?!\\|\') rejects ' and \ and new lines,
     #   while [\x00-\x7F] matches all other ascii
     'CharacterLiteral': [r'(\'(?:(?!\\|\'|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')\')'],
     
     'StringLiteral': [r'("(?:(?!\\|\"|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')*")'],
-    
-    'NullLiteral': [r'(null)'],
 }
 
 # this is a token string -> token label mapping
 # Commented lines are specific to Java, but not in Joos.
 STRINGS = {
+
+    # literals
+    'true': 'BooleanLiteral',
+    'false': 'BooleanLiteral',
+    'null': 'NullLiteral',
     
     # assignment operators
     '%=': 'ModuloAssignmentOperator',
