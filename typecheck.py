@@ -83,18 +83,19 @@ def typecheck_expr(node, c, method, t_i, c_i):
         t = typecheck_method_invocation(node, c, method, t_i, c_i)
     elif node.name == 'CreationExpression':
         t = typecheck_creation(node, c, method, t_i, c_i)
-    elif node.name == 'ConditionalOrExpression' \
-    or node.name == 'ConditionalAndExpression':
+    elif node.name in ['AndExpression', 'OrExpression']:
         t = typecheck_conditional(node, c, method, t_i, c_i)
-    elif node.name == 'EqualityExpression':
+    elif node.name in ['EqualExpression', 'NotEqualExpression']:
         t = typecheck_equality(node, c, method, t_i, c_i)
-    elif node.name == 'RelationalExpression':
+    elif node.name in ['LessThanExpression', 'LessThanEqualExpression',
+        'GreaterThanExpression', 'GreaterThanEqualExpression']:
         t = typecheck_relational(node, c, method, t_i, c_i)
-    elif node.name == 'AdditiveExpression':
+    elif node.name in ['AddExpression', 'SubtractExpression']:
         t = typecheck_add(node, c, method, t_i, c_i)
-    elif node.name == 'MultiplicativeExpression':
+    elif node.name in ['MultiplyExpression', 'DivideExpression',
+        'ModuloExpression']:
         t = typecheck_mult(node, c, method, t_i, c_i)
-    elif node.name == 'UnaryExpression':
+    elif node.name in ['NotExpression', 'NegateExpression']:
         t = typecheck_unary(node, c, method, t_i, c_i)
     elif node.name == 'PostfixExpression':
         t = typecheck_postfix(node, c, method, t_i, c_i)
@@ -102,7 +103,7 @@ def typecheck_expr(node, c, method, t_i, c_i):
         t = typecheck_cast_expression(node, c, method, t_i, c_i)
     elif node.name == 'InstanceofExpression':
         t = typecheck_instanceof(node, c, method, t_i, c_i)
-    elif node.name == 'AndExpression' or node.name == 'InclusiveOrExpression':
+    elif node.name in ['BinaryAndExpression', 'BinaryOrExpression']:
         t = typecheck_eager_boolean(node, c, method, t_i, c_i)
 
     # Statements
@@ -388,38 +389,32 @@ def typecheck_postfix(node, c, method, t_i, c_i):
 # Operators
 
 def typecheck_unary(node, c, method, t_i, c_i):
-    if node.name != 'UnaryExpression':
-        logging.error("FATAL ERROR: typecheck_unary") 
+    if node.name not in ['NotExpression', 'NegateExpression']:
+        logging.error("FATAL ERROR: typecheck_unary()") 
         sys.exit(1)
     
     if len(node.children) == 0:
         logging.error("FATAL ERROR: UnaryExpression has no children") 
         sys.exit(1) 
 
-    elif node[0].name == "NotOperator":
-        t = typecheck_expr(node[1], c, method, t_i, c_i)
+    if node.name == 'NotExpression':
+        t = typecheck_expr(node[0], c, method, t_i, c_i)
         if t != "Boolean":
             logging.error("typecheck failed: NotOp expects boolean; got:",t)
             sys.exit(42)
-
+        node.typ = t
         return t
 
-    elif node[0].name == "CastExpression":
-        return typecheck_expr(node[0], c, method, t_i, c_i)
-
-    elif node[0].name == "SubtractOperator":
-        t = typecheck_expr(node[1], c, method, t_i, c_i)
+    elif node.name == 'NegateExpression':
+        t = typecheck_expr(node[0], c, method, t_i, c_i)
         if not primitives.is_numeric(t):
             logging.error("typecheck failed: SubtractOp expects number; got:",t)
             sys.exit(42)
+        node.typ = t
         return t
 
-    else:
-        logging.warning("UnaryExpression", "has unexpected child", node[0].name) 
-        sys.exit(1) 
-
 def typecheck_conditional(node, c, method, t_i, c_i):
-    expected_node = ['ConditionalAndExpression', 'ConditionalOrExpression']
+    expected_node = ['AndExpression', 'OrExpression']
     if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
         sys.exit(1)
@@ -428,25 +423,23 @@ def typecheck_conditional(node, c, method, t_i, c_i):
         logging.error("FATAL ERROR: has no children", expected_node) 
         sys.exit(1) 
 
-    elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, method, t_i, c_i)
+    elif len(node.children) != 2:
+        logging.error('FATAL ERROR: typecheck_conditional on %d children' %
+            len(node.children))
+        sys.exit(1)
 
-    elif node[1].name == 'AndOperator' \
-    or node[1].name == 'OrOperator':
+    else:
         t1 = typecheck_expr(node[0], c, method, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[1], c, method, t_i, c_i)
         if t1 == 'Boolean' and t2 == 'Boolean':
-            return 'Boolean'
+            node.typ = 'Boolean'
+            return node.typ
         else:
             logging.error("typecheck failed: expected booleans; got:", t1, t2)
             sys.exit(42)
 
-    else:
-        logging.warning(expected_node, "has unexpected children", node.children) 
-        sys.exit(1) 
-
 def typecheck_equality(node, c, method, t_i, c_i):
-    expected_node = ['EqualityExpression']
+    expected_node = ['EqualExpression', 'NotEqualExpression']
     if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
         sys.exit(1)
@@ -455,59 +448,56 @@ def typecheck_equality(node, c, method, t_i, c_i):
         logging.error("FATAL ERROR: has no children", expected_node) 
         sys.exit(1) 
 
-    elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, method, t_i, c_i)
+    elif len(node.children) != 2:
+        logging.error('FATAL ERROR: typecheck_equality on %d children' %
+            len(node.children))
+        sys.exit(1)
 
-    elif node[1].name == 'EqualOperator' \
-    or node[1].name == 'NotEqualOperator':
+    else:
         t1 = typecheck_expr(node[0], c, method, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[1], c, method, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Boolean"
+            node.typ = "Boolean"
+            return node.typ
         elif t1 == "Boolean" and t2 == "Boolean":
-            return "Boolean"
+            node.typ = "Boolean"
+            return node.typ
         elif is_assignable(t1, t2, c_i) or is_assignable(t2, t1, c_i): 
-            return "Boolean"
+            node.typ = "Boolean"
+            return node.typ
         else:
             logging.error("typecheck failed: equality between", t1, t2)
             sys.exit(42)
 
-    else:
-        logging.warning(expected_node, "has unexpected children", node.children) 
-        sys.exit(1) 
-
 def typecheck_relational(node, c, method, t_i, c_i):
-    expected_node = ['RelationalExpression']
+    expected_node = ['LessThanExpression', 'LessThanEqualExpression',
+        'GreaterThanExpression', 'GreaterThanEqualExpression']
     if node.name not in expected_node:
-        logging.error("FATAL ERROR: expected", expected_node) 
+        logging.error("FATAL ERROR: typecheck_relational() expected", expected_node) 
         sys.exit(1)
     
     if len(node.children) == 0:
         logging.error("FATAL ERROR: has no children", expected_node) 
         sys.exit(1) 
 
-    elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, method, t_i, c_i)
+    elif len(node.children) != 2:
+        logging.error('FATAL ERROR: typecheck_relational() on expression %s with %d children' %
+            (node.name, len(node.children)))
+        sys.exit(1)
 
-    elif node[1].name == 'LessThanOperator' \
-    or node[1].name == 'GreaterThanOperator' \
-    or node[1].name == 'LessThanEqualOperator' \
-    or node[1].name == 'GreaterThanEqualOperator':
+    else:
         t1 = typecheck_expr(node[0], c, method, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[1], c, method, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Boolean"
+            node.typ = 'Boolean'
+            return node.typ
         else:
             logging.error("typecheck failed: Relational:", t1, t2)
             sys.exit(42)
 
-    else:
-        logging.warning(expected_node, "has unexpected children", node.children) 
-        sys.exit(1) 
-
 def typecheck_add(node, c, method, t_i, c_i):
-    expected_node = 'AdditiveExpression'
-    if node.name != expected_node:
+    expected_node = ['AddExpression', 'SubtractExpression']
+    if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
         sys.exit(1)
     
@@ -515,32 +505,32 @@ def typecheck_add(node, c, method, t_i, c_i):
         logging.error("FATAL ERROR: %s has no children" % expected_node) 
         sys.exit(1) 
 
-    elif len(node.children) == 1:
-        return typecheck_expr(node[0], c, method, t_i, c_i)
+    elif len(node.children) != 2:
+        logging.error('FATAL ERROR: typecheck_add() on expression %s with %d children' %
+            (node.name, len(node.children)))
+        sys.exit(1)
 
-    elif node[1].name == 'AddOperator' or node[1].name == 'SubtractOperator':
+    else:
         t1 = typecheck_expr(node[0], c, method, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
-        if node[1].name == 'AddOperator' \
-        and (t1 == "java.lang.String" or t2 == "java.lang.String"):
+        t2 = typecheck_expr(node[1], c, method, t_i, c_i)
+        if node.name == 'AddExpression' and \
+            (t1 == "java.lang.String" or t2 == "java.lang.String"):
             if t1 != "Void" and t2 != "Void":
-                return "java.lang.String"
+                node.typ = 'java.lang.String'
+                return node.typ
             else:
                 logging.error("typecheck failed: string add void")
                 sys.exit(42)
         elif primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Int"
+            node.typ = 'Int'
+            return node.typ
         else:
             logging.error("typecheck failed: Add:", t1, t2)
             sys.exit(42)
 
-    else:
-        logging.warning(expected_node, "has unexpected children", node.children) 
-        sys.exit(1) 
-
 def typecheck_mult(node, c, method, t_i, c_i):
-    expected_node = 'MultiplicativeExpression'
-    if node.name != expected_node:
+    expected_node = ['MultiplyExpression', 'DivideExpression', 'ModuloExpression']
+    if node.name not in expected_node:
         logging.error("FATAL ERROR: expected", expected_node) 
         sys.exit(1)
     
@@ -549,24 +539,20 @@ def typecheck_mult(node, c, method, t_i, c_i):
             expected_node) 
         sys.exit(1) 
 
-    elif len(node.children) == 1:
-        logging.error('FATAL ERROR: Got only one child in binary expression')
+    elif len(node.children) != 2:
+        logging.error('FATAL ERROR: typecheck_mult got %s node with %d children' %
+            (node.name, len(node.children)))
         sys.exit(1)
 
-    elif node[1].name == 'MultiplyOperator' \
-    or node[1].name == 'DivideOperator' \
-    or node[1].name == 'ModuloOperator':
+    else:
         t1 = typecheck_expr(node[0], c, method, t_i, c_i)
-        t2 = typecheck_expr(node[2], c, method, t_i, c_i)
+        t2 = typecheck_expr(node[1], c, method, t_i, c_i)
         if primitives.is_numeric(t1) and primitives.is_numeric(t2):
-            return "Int"
+            node.typ = 'Int'
+            return node.typ
         else:
             logging.error("typecheck failed: mult/div/mod not num")
             sys.exit(42)
-
-    else:
-        logging.warning(expected_node, "has unexpected children", node.children) 
-        sys.exit(1) 
 
 def typecheck_creation(node, c, method, t_i, c_i):
     expected_node = 'CreationExpression'
@@ -621,7 +607,7 @@ def typecheck_instanceof(node, c, method, t_i, c_i):
         sys.exit(1)
 
     lhs_type = typecheck_expr(node[0], c, method, t_i, c_i)
-    rhs_type = node[2].canon
+    rhs_type = node[1].canon
 
     if primitives.is_primitive(rhs_type):
         logging.error('Invalid Instanceof type %s' % rhs_type)
@@ -636,22 +622,22 @@ def typecheck_instanceof(node, c, method, t_i, c_i):
         sys.exit(42)
 
 def typecheck_eager_boolean(node, c, method, t_i, c_i):
-    if node.name not in ['AndExpression', 'InclusiveOrExpression']:
+    if node.name not in ['BinaryAndExpression', 'BinaryOrExpression']:
         logging.error('FATAL ERROR: Incorrect node %s passed to typecheck_eager_boolean()' %
             node.name)
         sys.exit(1)
 
     if len(node.children) == 0:
-        logging.error("FATAL ERROR: %s has no children in typecheck_mult()" %
+        logging.error("FATAL ERROR: %s has no children in typecheck_eager_boolean()" %
             expected_node) 
         sys.exit(1) 
 
     elif len(node.children) == 1:
-        logging.error('FATAL ERROR: Got only one child in binary expression')
+        logging.error('FATAL ERROR: Got only one child in binary eager boolean expression')
         sys.exit(1)
 
     t1 = typecheck_expr(node[0], c, method, t_i, c_i)
-    t2 = typecheck_expr(node[2], c, method, t_i, c_i)
+    t2 = typecheck_expr(node[1], c, method, t_i, c_i)
 
     if t1 != 'Boolean' or t2 != 'Boolean':
         logging.error('Operators & and | only valid on boolean operands')

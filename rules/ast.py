@@ -213,18 +213,32 @@ RULES = {
         ['Assignment'],
         ['MethodInvocation'],
         ['CreationExpression'],
-        ['ConditionalOrExpression'],
-        ['ConditionalAndExpression'],
-        ['InclusiveOrExpression'],
-        ['AndExpression'],
-        ['EqualityExpression'],
-        ['AdditiveExpression'],
-        ['MultiplicativeExpression'],
-        ['RelationalExpression'],
         ['InstanceofExpression'],
-        ['UnaryExpression'],
         ['PostfixExpression'],
         ['CastExpression'],
+
+        # Binary expressions.
+
+        ['EqualExpression'],
+        ['NotEqualExpression'],
+        ['AndExpression'],
+        ['OrExpression'],
+        ['LessThanExpression'],
+        ['LessThanEqualExpression'],
+        ['GreaterThanExpression'],
+        ['GreaterThanEqualExpression'],
+        ['BinaryAndExpression'],
+        ['BinaryOrExpression'],
+        ['AddExpression'],
+        ['SubtractExpression'],
+        ['MultiplyExpression'],
+        ['DivideExpression'],
+        ['ModuloExpression'],
+
+        # Unary expressions.
+
+        ['NegateExpression'],
+        ['NotExpression'],
     ],
 
     # Like Expression, there isn't a Primary node. It directly resolevs to one
@@ -311,5 +325,68 @@ RULES = {
         ['Primary'],
         # ['Super'],
     ],
+
+    # Binary expressions.
+
+    'EqualExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'NotEqualExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'OrExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'AndExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'LessThanExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'LessThanEqualExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'GreaterThanExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'GreaterThanEqualExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'BinaryAndExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'BinaryOrExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'AddExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'SubtractExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'MultiplyExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'DivideExpression': [
+        ['Expression', 'Expression'],
+    ],
+
+    'ModuloExpression': [
+        ['Expression', 'Expression'],
+    ],
+
 }
 

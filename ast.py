@@ -181,10 +181,6 @@ def build_constructors(node):
 
         # Extract body.
         cons.add(build_block(cons_decl[2]))
-        # if cons_decl[2][1].name == 'BlockStatements':
-        #     cons.add(build_block(cons_decl[2][1]))
-        # else:
-        #     cons.add(ASTNode('Block'))
 
         constructors.add(cons)
 
@@ -413,27 +409,24 @@ def build_expr(node):
     elif node.name in binary_expressions:
         if len(node.children) == 1: # recurse
             return build_expr(node[0])
-        else: # Expression => Expression Operation Expression
-            return ASTNode(node.name, None,
-                [build_expr(node[0]), node[1], build_expr(node[2])])
+        else:
+            return build_binary_expression(node)
 
     elif node.name == 'RelationalExpression':
         if len(node.children) == 1: # recurse
             return build_expr(node[0])
         elif node[1].name == 'Instanceof':
-            return ASTNode('InstanceofExpression', None,
-                [build_expr(node[0]), node[1],
-                    build_type(ASTNode('Type', None, [node[2]]))])
+            return build_instanceof_expression(node)
         else:
-            return ASTNode(node.name, None,
-                [build_expr(node[0]), node[1], build_expr(node[2])])
+            return build_binary_expression(node)
 
     elif node.name in ['UnaryExpression', 'UnaryExpressionNotPlusMinus']:
         if len(node.children) == 1:
             return build_expr(node[0])
-        else:
-            return ASTNode('UnaryExpression', None, # Don't care about NotPlusMinus.
-                [node[0], build_expr(node[1])])
+        elif node[0].name == 'SubtractOperator':
+            return ASTNode('NegateExpression', None, [build_expr(node[1])])
+        elif node[0].name == 'NotOperator':
+            return ASTNode('NotExpression', None, [build_expr(node[1])])
 
     elif node.name == 'PostfixExpression':
         if node[0].name == 'Primary':
@@ -513,6 +506,52 @@ def build_creation_expression(node):
     creation.add(args)
     
     return creation
+
+def build_instanceof_expression(node):
+    expr = build_expr(node[0]) # Left hand side.
+
+    # Hack in a type node for use with build_type().
+    typ = build_type(ASTNode('Type', None, [node[2]]))
+
+    return ASTNode('InstanceofExpression', None, [expr, typ])
+
+# Builds an expression node, given an input node of the form
+# [expression, operator, expression].
+def build_binary_expression(node):
+    if len(node.children) != 3:
+        logging.error('FATAL ERROR: build_binary_expression()')
+        sys.exit(1)
+
+    valid_operators = {
+        'EqualOperator',
+        'NotEqualOperator',
+        'AndOperator',
+        'OrOperator',
+        'LessThanOperator',
+        'LessThanEqualOperator',
+        'GreaterThanOperator',
+        'GreaterThanEqualOperator',
+        'BinaryAndOperator',
+        'BinaryOrOperator',
+        'AddOperator',
+        'SubtractOperator',
+        'MultiplyOperator',
+        'DivideOperator',
+        'ModuloOperator',
+    }
+
+    lhs = build_expr(node[0])
+    rhs = build_expr(node[2])
+
+    # Check that the operator is valid, and convert it to a corresponding
+    # expression node (done by stripping "Operator" and replacing it with
+    # "Expression").
+    if node[1].name in valid_operators:
+        node_name = node[1].name[:-len('Operator')] + 'Expression'
+        return ASTNode(node_name, None, [lhs, rhs])
+    else:
+        logging.error('FATAL ERROR: Invalid operator %s encountered in build_binary_expression()' % node[1].name)
+        sys.exit(1)
 
 def build_method_invocation(node):
     method_invo = ASTNode('MethodInvocation')

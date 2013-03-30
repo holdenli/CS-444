@@ -153,26 +153,26 @@ def try_eval_expr(node):
             return int(node[0].value.value)
         else:
             pass # TODO STRINGS AND SHIT FUCK
-    elif node.name == 'ConditionalOrExpression':
+    elif node.name == 'OrExpression':
         expr1 = try_eval_expr(node[0])
-        expr2 = try_eval_expr(node[2])
+        expr2 = try_eval_expr(node[1])
         if expr1 != None and expr2 != None:
             ret = expr1 == True or expr2 == True
             return ret
-    elif node.name == 'ConditionalAndExpression':
+    elif node.name == 'AndExpression':
         expr1 = try_eval_expr(node[0])
-        expr2 = try_eval_expr(node[2])
+        expr2 = try_eval_expr(node[1])
         if expr1 != None and expr2 != None:
             ret = expr1 == True and expr2 == True
             return ret
-    elif node.name == 'EqualityExpression':
+    elif node.name in ['EqualExpression', 'NotEqualExpression']:
         expr1 = None
         expr2 = None
         if node[0].typ == 'Boolean' or primitives.is_numeric(node[0].typ):
             expr1 = try_eval_expr(node[0])
-            expr2 = try_eval_expr(node[2])
+            expr2 = try_eval_expr(node[1])
             if expr1 != None and expr2 != None:
-                if node[1].name == 'EqualOperator':
+                if node.name == 'EqualExpression':
                     return expr1 == expr2
                 else:
                     return expr1 != expr2
@@ -180,52 +180,54 @@ def try_eval_expr(node):
                 return None
         else:
             return None
-    elif node.name == 'RelationalExpression':
+    elif node.name in ['LessThanExpression', 'LessThanEqualExpression',
+        'GreaterThanExpression', 'GreaterThanEqualExpression']:
         expr1 = None
         expr2 = None
         if primitives.is_numeric(node[0].typ):
             expr1 = try_eval_expr(node[0])
-            expr2 = try_eval_expr(node[2])
+            expr2 = try_eval_expr(node[1])
             if expr1 != None and expr2 != None:
-                if node[1].name == 'LessThanOperator':
+                if node.name == 'LessThanExpression':
                     return expr1 < expr2
-                elif node[1].name == 'GreaterThanOperator':
+                elif node.name == 'GreaterThanExpression':
                     return expr1 > expr2
-                elif node[1].name == 'LessThanEqualOperator':
+                elif node.name == 'LessThanEqualExpression':
                     return expr1 <= expr2
-                elif node[1].name == 'GreaterThanEqualOperator':
+                elif node.name == 'GreaterThanEqualExpression':
                     return expr1 >= expr2
             else:
                 return None
-    elif node.name == 'AdditiveExpression':
+    elif node.name in ['AddExpression', 'SubtractExpression']:
         expr1 = None
         expr2 = None
         if primitives.is_numeric(node[0].typ):
             expr1 = try_eval_expr(node[0])
-            expr2 = try_eval_expr(node[2])
+            expr2 = try_eval_expr(node[1])
             if expr1 != None and expr2 != None:
-                if node[1].name == 'AddOperator':
+                if node.name == 'AddExpression':
                     return expr1 + expr2
-                elif node[1].name == 'SubtractOperator':
+                elif node.name == 'SubtractExpression':
                     return expr1 - expr2
             else:
                 return None
-    elif node.name == 'MultiplicativeExpression':
+    elif node.name in ['MultiplyExpression', 'DivideExpression',
+        'ModuloExpression']:
         expr1 = None
         expr2 = None
         if primitives.is_numeric(node[0].typ):
             expr1 = try_eval_expr(node[0])
-            expr2 = try_eval_expr(node[2])
+            expr2 = try_eval_expr(node[1])
             if expr1 != None and expr2 != None:
-                if node[1].name == 'MultiplyOperator':
+                if node.name == 'MultiplyExpression':
                     return expr1 * expr2
-                elif node[1].name == 'DivideOperator':
+                elif node.name == 'DivideExpression':
                     return expr1 / expr2
-                elif node[1].name == 'ModuloOperator':
+                elif node.name == 'ModuloExpression':
                     return None # TODO WHAT MODULO TOO HARD I GIVE UP - Holden
             else:
                 return None
-    elif node.name == 'UnaryExpression':
+    elif node.name in ['NegateExpression', 'NotExpression']:
         # TODO FUUUUUUUUUUUUUUUUU
         pass
     elif node.name == 'CastExpression':
