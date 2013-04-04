@@ -1,3 +1,4 @@
+import typecheck
 
 class CodegenInfo:
     def __init__(self, class_index, type_index):
@@ -66,6 +67,10 @@ def get_method_label(node):
     if 'native' in node.modifiers: 
         label = 'NATIVE%s.%s' % (class_name, method_name)
     else:
-        label = 'METHOD%s.%~@%s:' % (class_name, method_name, param_types)
+        is_static = ''
+        if 'static' in node.modifiers:
+            is_static = 'STATIC_'
+
+        label = '%sMETHOD%s.%s~@%s:' % (is_static, class_name, method_name, param_types)
     return label
 

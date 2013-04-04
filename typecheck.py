@@ -6,6 +6,8 @@ from utils import primitives
 from utils import class_hierarchy
 import utils.ast
 
+from codegen.codegen import get_method_label
+
 # Note: I'm going to call some statements expressions cause why not?
 # ie. ReturnStatement
 
@@ -326,6 +328,9 @@ def typecheck_method_invocation(node, c, method, t_i, c_i):
 
     # Get the return type of the method.
     node.typ = method_decl.obj.type
+
+    # set the label
+    node.label = get_method_label(node.decl)
 
     return node.typ
 

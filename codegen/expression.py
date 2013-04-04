@@ -29,7 +29,7 @@ def gen_literal_expr(info, node):
         output.append("dd %s" % node[0].value)
 
     elif node[0].name == 'BooleanLiteral':
-        output.append("dd %s" % node[0].value == 'true')
+        output.append("dd %s" % int(node[0].value == 'true'))
 
     elif node[0].name == 'CharacterLiteral':
         output.append("dd %s" % node[0].value) # .value = "'c'"
