@@ -184,14 +184,10 @@ def joosc(targets, options):
             if options.include_stdlib == False or target_files[i] not in opts.stdlib_files or \
                     options.print_stdlib == True:
                 ast_list[i].pprint()
+                logging.error(ast_list[i].name)
         sys.exit(0)
 
-    # all_exports = codegen.build_exports(ast_list)
-    # for i, ast in enumerate(ast_list):
-    #     if i == 0:
-    #         codegen.gen_asm(node, class_index, type_index, True)
-    #     else:
-    #         codegen.gen_asm(node, class_index, type_index, False)
+    codegen.gen(ast_list, class_index, type_index)
 
 # INTERFACE
 ##########################

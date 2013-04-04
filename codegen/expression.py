@@ -133,6 +133,32 @@ def gen_and_expr(info, node):
     
     return output
 
+# Given an ambiguous name node, generate the code for it.
+def gen_ambiguous_name(info, node):
+    output = []
+
+    first_significant_identifer = -1
+    first_significant_node = None
+    for i, identifier_node in enumerate(node.children)
+        if identifier_node.decl != None:
+            first_significant_identifer = i
+            first_significant_node = identifier_node
+            break
+
+    assert first_significant_identifer != -1
+
+    # TODO:
+    # Depending on the type, follow the correct chain and generate code.
+    if first_significant_node.decl.name == 'TypeDeclaration':
+        pass
+
+    return output
+
+def gen_this(info, node):
+    output = []
+    # TODO
+    return output
+
 #
 # Code generation helpers.
 #

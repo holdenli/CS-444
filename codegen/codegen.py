@@ -1,4 +1,5 @@
 import typecheck
+from codegen import statement
 
 class CodegenInfo:
     def __init__(self, class_index, type_index):
@@ -23,8 +24,19 @@ class FileLayout:
         self.statics = []
         self.methods = []
 
-def build_exports_list(ast_list):
-    pass
+def gen(ast_list, class_index, type_index):
+    # Preprocessing: generate a list of imports/exports for each file.
+    exports_list = build_exports_list(ast_list, class_index)
+
+# This returns a dictionary of 'canonical type' => exports representing the
+# labels exported by the canonical type.
+def build_exports_list(ast_list, class_index):
+    exports_by_canonical_type = {}
+    for i, ast in enumerate(ast_list):
+        # TODO: get_class() is bad, use a different way to get canonical type
+        canonical_type = get_class(ast).obj.name
+        class_obj = class_index[canonical_type]
+    
 
 # Generates the .s file for the given AST corresponding to a class.
 # has_test is True if this was the first file given on the command line.
@@ -37,27 +49,6 @@ def lookup_by_decl(vars_dict, item):
         if item.obj == var_decl.obj and item.obj != None:
             return var_name
 
-def gen_block(info, node):
-
-    # generate local variables for this block
-    for i, (var_name, var_decl) in enumerate(node.env.names.items()):
-        info.local_vars[var_name] = (i, var_decl)
-
-    for stmt in node.children:
-        if stmt.name == 'LocalVariableDeclaration':
-            pass
-        elif stmt.name == 'Block':
-            gen_block(info, stmt)
-        elif stmt.name == 'ExpressionStatement':
-            gen_expr_stmt(info, stmt)
-
-def gen_expr_stmt(info, stmt):
-
-    output = []
-
-    output.extend(gen_expr(info, n[0]))
-
-    return output
 
 def gen_method(info, node):
     assert node.name in ['MethodDeclaration', 'ConstructorDeclaration']
@@ -111,23 +102,50 @@ def get_method_label(node):
     # argument of type int, and must return a value of type int" should be
     # checked.
 
-    label = ''
     class_name = node.obj.declared_in.name
     method_name = node.obj.name
     parameters = node[3]
     param_types = []
     for param in parameters:
         if typecheck.is_array_type(param[0].canon) == True:
-            param_types.append(param[0].canon[:-2] + '@') # chop off the []
+            # '[]'s replaced with '@', so that it can be accepted.
+            param_types.append(param[0].canon[:-2] + '@')
         else:
             param_types.append(param[0].canon)
+
+    label = ''
+
+    # Natives methods are of the form:
+    # NATIVE<canonical_type>.<method_name>
     if 'native' in node.modifiers: 
         label = 'NATIVE%s.%s' % (class_name, method_name)
-    else:
-        is_static = ''
-        if 'static' in node.modifiers:
-            is_static = 'STATIC_'
 
-        label = '%sMETHOD%s.%s~@%s' % (is_static, class_name, method_name, param_types)
+    # Static methods are of the form:
+    # STATICMETHOD~<canonical_type>.<method_name>~<param1>~<param2>...
+    elif 'static' in node.modifiers:
+        label = 'STATICMETHOD~%s.%s~%s' % (class_name, method_name, '~'.join(param_types))
+
+    # Constructors are of the form:
+    # CONSTRUCTOR~<canonical_type>.<method_name>~<param1>~<param2>...
+    elif node.name == 'ConstructorDeclaration':
+        label = 'CONSTRUCTOR~%s.%s~%s' % (class_name, method_name, '~'.join(param_types))
+
+    # Instance methods are of the form:
+    # METHOD~<canonical_type>.<method_name>~<param1>~<param2>...
+    else:
+        label = 'METHOD~%s.%s~%s' % (class_name, method_name, '~'.join(param_types))
+
+    return label
+
+def get_static_field_label(node):
+    assert node.name == 'FieldDeclaration' and 'static' in node.modifiers
+
+    class_name = node.obj.declared_in.name
+    field_name = node.obj.name
+
+    # Static fields are of the form:
+    # STATICFIELD~<canonical_type>.<field_name>
+    label = 'STATICFIELD~%s.%s' % (class_name, field_name)
+
     return label
 
