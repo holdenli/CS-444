@@ -23,15 +23,14 @@ class FileLayout:
         self.statics = []
         self.methods = []
 
-
 def build_exports_list(ast_list):
+    pass
 
 # Generates the .s file for the given AST corresponding to a class.
 # has_test is True if this was the first file given on the command line.
 # This also corresponds to the file that is given the _start symbol.
 def gen_asm(node, c_i, t_i, has_test):
     exports = []
-    
 
 def lookup_by_decl(vars_dict, item):
     for (var_name, (i, var_decl)) in node.env.names.items():
@@ -63,12 +62,46 @@ def gen_expr_stmt(info, stmt):
 def gen_method(info, node):
     assert node.name in ['MethodDeclaration', 'ConstructorDeclaration']
 
-    # Preamble for method.
-    code = get_method_label(node)
+    output = []
 
-    body = node[4]
+    # Preamble for method.
+    label = get_method_label(node)
+    output.append("%s:" % label)
+
+    # save ebp & esp
+    output.extend([
+        "push ebp",
+        "mov ebp, esp",
+    ])
+
+    # assign frame offsets to each parameter and
+    # local variable declaration nodes
+    start_index = len(node.find_child('Parameters').children) + 1
+    for decl in node.find_child('Parameters'):
+        decl.frame_offset = start_index
+        start_index -= 1
+
+    start_index = -1
+    num_vars = 0
+    for decl in find_nodes(Node('LocalVariableDeclaration')):
+        decl.frame_offset = start_index
+        start_index -= 1
+        num_vars += 1
+
+    # make room for local vars in the stack
+    output.append("add esp, %d"  (num_vars*4))
+
+    body = node[4] # methodbody or constructorbody
     if len(body.children) != 0:
-        code += gen_block(info, body[0], 0)
+        output.extend(gen_block(info, body[0], 0))
+
+    # restore ebp & esp
+    output.extend([
+        "mov esp, ebp",
+        "pop ebp"
+    ])
+
+    return output
 
 def get_method_label(node):
     assert node.name in ['MethodDeclaration', 'ConstructorDeclaration']

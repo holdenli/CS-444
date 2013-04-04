@@ -47,20 +47,28 @@ def gen_literal_expr(info, node):
 
 def gen_method_invocation(info, node):
     output = []
-    
-
-    # Get the label.
-    node.label = get_method_label(node.decl)
 
     # TODO:
     # Get the label corresponding to the method, using the SIT.
+    label = get_method_label(node.decl)
+
+    # save the args:
+    args = list(node.find_child("Arguments").children)
+    args.reverse()
+    num_args = 0
+    for arg in args:
+        output.extend(gen_expr(arg))
+        num_args += 1
+
+    output.append("call %s" % label)
+    if num_args:
+        output.append("add esp %s" % (num_args*4))
 
     return output
 
 def gen_field_access(info, node):
     output = []
     return output
-
 
 def gen_array_access(info, node):
     pass

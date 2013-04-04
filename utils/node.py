@@ -246,9 +246,9 @@ class ASTNode(Node):
         self.can_complete = None
         self.will_end = None
 
-
         # For code generation.
         self.label = None # For methods.
+        self.frame_offset = None # for variable declaration/parameter nodes
 
         # DEPRECATED/MISC
 
@@ -284,7 +284,7 @@ class ASTNode(Node):
         return "<ASTNode: %s%s%s%s%s%s%s>" % (self.name, v, d, e, c, t, o)
 
 def find_nodes(tree, white_list):
-    # we traverse through block_tree looking for LocalVariableDeclaration
+    # we traverse through block_tree looking for any node in the white_list
     # we don't go past another Block, though
     ret = []
     for c in tree.children:
