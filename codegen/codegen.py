@@ -8,6 +8,30 @@ class CodegenInfo:
         # var_name -> (index, node_decl)
         self.local_vars = {}
 
+        # Counter for local jumps (not exported).
+        self.jump_counter = 0
+
+    def get_jump_label(self):
+        label = '__jump' + self.jump_counter + ':'
+        self.jump_counter += 1
+        return label
+
+class FileLayout:
+    def __init__(self):
+        self.imports = []
+        self.exports = []
+        self.statics = []
+        self.methods = []
+
+
+def build_exports_list(ast_list):
+
+# Generates the .s file for the given AST corresponding to a class.
+# has_test is True if this was the first file given on the command line.
+# This also corresponds to the file that is given the _start symbol.
+def gen_asm(node, c_i, t_i, has_test):
+    exports = []
+    
 
 def lookup_by_decl(vars_dict, item):
     for (var_name, (i, var_decl)) in node.env.names.items():
@@ -71,6 +95,6 @@ def get_method_label(node):
         if 'static' in node.modifiers:
             is_static = 'STATIC_'
 
-        label = '%sMETHOD%s.%s~@%s:' % (is_static, class_name, method_name, param_types)
+        label = '%sMETHOD%s.%s~@%s' % (is_static, class_name, method_name, param_types)
     return label
 

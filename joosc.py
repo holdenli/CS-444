@@ -179,6 +179,19 @@ def joosc(targets, options):
 
     for i in ast_list:
         reachability.reachability(i)
+    if options.stage == 'reachability':
+        for i, _ in enumerate(ast_list): 
+            if options.include_stdlib == False or target_files[i] not in opts.stdlib_files or \
+                    options.print_stdlib == True:
+                ast_list[i].pprint()
+        sys.exit(0)
+
+    # all_exports = codegen.build_exports(ast_list)
+    # for i, ast in enumerate(ast_list):
+    #     if i == 0:
+    #         codegen.gen_asm(node, class_index, type_index, True)
+    #     else:
+    #         codegen.gen_asm(node, class_index, type_index, False)
 
 # INTERFACE
 ##########################
@@ -205,6 +218,7 @@ def parse_options(args=sys.argv):
         'hierarchy',
         'name',
         'typecheck',
+        'reachability',
         'codegen',
         'asm',
         'end'

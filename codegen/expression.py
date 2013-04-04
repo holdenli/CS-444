@@ -1,4 +1,4 @@
-# Code generation for expresssions.
+# Code generation for expressions.
 
 def gen_expr(info, node):
     if node.name == 'Assignment':
@@ -46,6 +46,26 @@ def gen_literal_expr(info, node):
     return output
 
 def gen_method_invocation(info, node):
+    output = []
+    
+
+    # Get the label.
+    node.label = get_method_label(node.decl)
+
+    # TODO:
+    # Get the label corresponding to the method, using the SIT.
+
+    return output
+
+def gen_field_access(info, node):
+    output = []
+    return output
+
+
+def gen_array_access(info, node):
+    pass
+
+def gen_creation_expr(info, node):
     pass
 
 def gen_add_expr(info, node):
@@ -78,6 +98,33 @@ def gen_multiply_expr(info, node):
 
     return output
 
+def gen_divide_expr(info, node):
+    output = gen_binary_expr_common(info, node)
+
+    # We want eax = ebx / eax = expr1 / expr2
+    
+
+    output.append()
+    return output 
+
+def gen_modulo_expr(info, node):
+    output = gen_binary_expr_common(info, node)
+
+    # We want eax = ebx % eax = expr1 % expr2
+
+    output.append()
+    return output
+
+def gen_greater_than_expr(info, node):
+    pass
+
+# Short circuits on E1, don't use gen_binary_expr_common().
+def gen_and_expr(info, node):
+    output = []
+    label = info.get_jump_label()
+    
+    return output
+
 #
 # Code generation helpers.
 #
@@ -105,5 +152,14 @@ def gen_binary_expr_common(info, node):
     # LHS is in ebx.
     output.append('pop ebx')
 
+    return output
+
+def gen_iffalse(info, node, label):
+    output = []
+    
+    # Evaluate the expression.
+    
+    
+    output.append(label)
     return output
 
