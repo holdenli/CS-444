@@ -68,6 +68,15 @@ def gen_method_invocation(info, node):
 
 def gen_field_access(info, node):
     output = []
+
+    util.gen_expr(info, node.find_child("FieldReceiver"))
+    
+    util.null_check()
+
+    field_name = node.find_child("FieldName").find_child("Identifier").value.value
+    offset = info.field_index.index(field_name) * 4
+    output.append("add eax, %i" % (4 + offset))
+
     return output
 
 def gen_array_access(info, node):

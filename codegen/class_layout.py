@@ -102,15 +102,17 @@ def get_all_fields(c):
 
     return ret 
 
+# A dictionary where key is class name and
+# value is list of field names in that class
 def build_field_index(class_index):
     field_index = {}
     for c in class_index.values():
-        #print(c)
+#        print(c)
         field_index[c.name] = []
         for m in get_all_fields(c):
             if isinstance(m, class_hierarchy.Field):
-                field_index[c.name].append(m)
-                #print(" ",field_index[c.name].index(m), m)
+                field_index[c.name].append(m.name)
+#                print(" ",field_index[c.name].index(m.name), field_index[c.name])
             else:
                 logging.error("build_field_index")
                 sys.exit(1)
