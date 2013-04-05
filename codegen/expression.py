@@ -188,12 +188,3 @@ def gen_binary_expr_common(info, node):
 
     return output
 
-def gen_iffalse(info, node, label):
-    output = []
-    
-    # Evaluate the expression.
-    
-    
-    output.append(label)
-    return output
-
