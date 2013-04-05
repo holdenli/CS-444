@@ -45,24 +45,36 @@ def gen_literal_expr(info, node):
 
     return output
 
+# call method
 def gen_method_invocation(info, node):
-    output = []
+    output = ["; gen_method_invocation"]
 
-    # TODO:
-    # Get the label corresponding to the method, using the SIT.
-    label = get_method_label(node.decl)
+    # get addr of method receiver
+    obj_output = gen_expr(info, node.find_child("MethodReceiver"))
+    output.extend(obj_output)
+    util.null_check()
+    output.append("push eax")
 
-    # save the args:
+    # calculate args, push args; which direction is param passing?!
     args = list(node.find_child("Arguments").children)
     args.reverse()
     num_args = 0
     for arg in args:
         output.extend(gen_expr(arg))
+        output.append("push eax")
         num_args += 1
 
-    output.append("call %s" % label)
-    if num_args:
-        output.append("add esp %s" % (num_args*4))
+    # TODO:
+    # Get the label corresponding to the method, using the SIT.
+    offset = info.get_method_offset(node)
+    output.append("mov eax, [esp + %i] ; addr of receiver" % (num_args*4))
+    output.append("mov eax, [eax] ; SIT")
+    output.append("mov eax, [eax + %i] ; addr of method" % (4 + offset))
+
+    output.append("call eax")
+    
+    # pop obj addr and args
+    output.append("add esp %i" % 4+(num_args*4))
 
     return output
 
@@ -75,8 +87,7 @@ def gen_field_access(info, node):
     
     util.null_check()
 
-    field_name = node.find_child("FieldName").find_child("Identifier").value.value
-    offset = info.field_index.index(field_name) * 4
+    offset = info.get_field_offset(node)
     output.append("add eax, %i" % (4 + offset))
 
     return output
