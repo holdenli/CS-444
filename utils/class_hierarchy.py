@@ -168,7 +168,7 @@ def cycle_detection(c, seen_so_far):
 # methods for resolving declare/inherit/replace
 
 def contain(c):
-    return c.declare + c.inherit
+    return c.inherit+ c.declare
 
 # m1 is replacing m2; do some checks
 def replace(m1, list_of_m):

@@ -20,6 +20,7 @@ import typelink
 import typecheck
 import name_resolve
 import reachability
+from codegen import class_layout
 
 # Globals
 ##########################
@@ -187,7 +188,12 @@ def joosc(targets, options):
                 logging.error(ast_list[i].name)
         sys.exit(0)
 
-    codegen.gen(ast_list, class_index, type_index)
+    class_list = class_layout.build_class_list(class_index)
+    method_index = class_layout.build_method_index(class_index)
+    field_index = class_layout.build_field_index(class_index)
+    sbm = class_layout.gen_sbm(class_list, class_list[0])
+
+    #codegen.gen(ast_list, class_index, type_index)
 
 # INTERFACE
 ##########################
@@ -250,6 +256,9 @@ def parse_options(args=sys.argv):
     return parser.parse_args()
 
 def main(argv=sys.argv):
+    # LOL FIXING SUM BUGS YO.
+    sys.setrecursionlimit(10000)
+
     (opts, args) = parse_options(argv)
 
     logging.setLogLevel(level=opts.loglevel)

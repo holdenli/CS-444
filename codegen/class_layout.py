@@ -1,0 +1,119 @@
+#!/usr/bin/python3
+
+import sys
+
+import ast
+
+from utils import logging
+from utils import node
+from utils import class_hierarchy
+
+#from codegen import codegen
+
+# METHOD TABLE
+###############################################################################
+
+def build_method_index(class_index):
+    method_index = []
+    for c in class_index.values():
+        for m in c.declare:
+            if isinstance(m, class_hierarchy.Method) \
+                and m.type != None \
+                and 'Static' not in m.mods:
+                if m not in method_index:
+                    method_index.append(m)
+
+    return method_index
+
+def is_supertype(supertype, c):
+    if supertype == None or c == None:
+        return False
+
+    if supertype == c:
+        return True
+
+    if (is_supertype(supertype, c.extends)):
+        return True
+
+    for i in c.implements:
+        if (is_supertype(supertype, i)):
+            return True
+
+    return False
+
+def gen_sit(method_index, c):
+    output = []
+    
+    output.append("SIT~%s:" % c.name)
+    output.append("dd SBM~%s" % c.name)
+    for m in method_index:
+        if m in class_hierarchy.contain(c):
+            output.append("dd %s" % codegen.get_method_label(m.node))
+        else:
+            output.append("dd 0")
+
+    return output
+
+# SUPERCLASS MATRIX
+###############################################################################
+
+def build_class_list(class_index):
+    return list(class_index.values())
+
+def gen_sbm(class_list, c):
+    #print(c)
+    matrix_list = []
+    digit = 0
+    chunk = 0
+    for cc in class_list:
+        if digit >= 16:
+            matrix_list.append(chunk)
+            digit = 0
+            chunk = 0
+        if is_supertype(cc, c):
+            #print(cc)
+            chunk = chunk | (1 << (15 - digit))
+        digit = digit + 1 
+    matrix_list.append(chunk)
+    #print(matrix_list)
+
+    output = []
+    output.append("SBM~%s:" % c.name)
+    for i in matrix_list:
+        output.append("dd %i" % i)
+
+# FIELDS
+###############################################################################
+
+# Get fields in the order they are declared in the hierarchy
+def get_all_fields(c):
+    fields = []
+
+    if c.extends == None:
+        fields = c.declare
+    else:
+        fields = get_all_fields(c.extends)
+        fields.extend(c.declare)
+
+    ret = []
+    for f in [x for x in fields if isinstance(x, class_hierarchy.Field)]:
+        if f not in ret:
+            ret.append(f)
+
+    return ret 
+
+def build_field_index(class_index):
+    field_index = {}
+    for c in class_index.values():
+        #print(c)
+        field_index[c.name] = []
+        for m in get_all_fields(c):
+            if isinstance(m, class_hierarchy.Field):
+                field_index[c.name].append(m)
+                #print(" ",field_index[c.name].index(m), m)
+            else:
+                logging.error("build_field_index")
+                sys.exit(1)
+
+    return field_index
+
