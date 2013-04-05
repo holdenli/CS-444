@@ -8,7 +8,7 @@ from utils import logging
 from utils import node
 from utils import class_hierarchy
 
-#from codegen import codegen
+from codegen import codegen
 
 # METHOD TABLE
 ###############################################################################

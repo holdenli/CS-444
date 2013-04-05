@@ -139,7 +139,7 @@ def gen_ambiguous_name(info, node):
 
     first_significant_identifer = -1
     first_significant_node = None
-    for i, identifier_node in enumerate(node.children)
+    for i, identifier_node in enumerate(node.children):
         if identifier_node.decl != None:
             first_significant_identifer = i
             first_significant_node = identifier_node
