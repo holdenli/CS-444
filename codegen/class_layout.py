@@ -111,8 +111,8 @@ def build_field_index(class_index):
         field_index[c.name] = []
         for m in get_all_fields(c):
             if isinstance(m, class_hierarchy.Field):
-                field_index[c.name].append(m.name)
-#                print(" ",field_index[c.name].index(m.name), field_index[c.name])
+                field_index[c.name].append(m)
+#                print(" ",field_index[c.name].index(m), field_index[c.name])
             else:
                 logging.error("build_field_index")
                 sys.exit(1)
