@@ -8,10 +8,18 @@ from utils import logging
 from utils import node
 from utils import class_hierarchy
 
-from codegen import codegen
-
 # METHOD TABLE
 ###############################################################################
+
+def build_constructor_index(class_index):
+    method_index = []
+    for c in class_index.values():
+        for m in c.declare:
+            if isinstance(m, class_hierarchy.Method) and m.type == None:
+                if m not in method_index:
+                    method_index.append(m)
+
+    return method_index
 
 def build_method_index(class_index):
     method_index = []
@@ -24,6 +32,27 @@ def build_method_index(class_index):
                     method_index.append(m)
 
     return method_index
+
+# Generates assembly for the selector index table. We generate one of these per
+# class/file.
+def gen_sit(method_index, c):
+    contain = class_hierarchy.contain(c)
+    output = []
+    
+    output.append("SIT~%s:" % c.name)
+    output.append("dd SBM~%s" % c.name)
+    for m in method_index:
+        if m in contain:
+            i = contain.index(m)
+            actual_m = contain[i]
+            output.append("dd %s ; %s | %s" % (actual_m.node.label, c.name, actual_m.name))
+        else:
+            output.append("dd 0")
+
+    return output
+
+# SUPERCLASS MATRIX
+###############################################################################
 
 def is_supertype(supertype, c):
     if supertype == None or c == None:
@@ -40,22 +69,6 @@ def is_supertype(supertype, c):
             return True
 
     return False
-
-def gen_sit(method_index, c):
-    output = []
-    
-    output.append("SIT~%s:" % c.name)
-    output.append("dd SBM~%s" % c.name)
-    for m in method_index:
-        if m in class_hierarchy.contain(c):
-            output.append("dd %s" % codegen.get_method_label(m.node))
-        else:
-            output.append("dd 0")
-
-    return output
-
-# SUPERCLASS MATRIX
-###############################################################################
 
 def build_class_list(class_index):
     return list(class_index.values())
@@ -81,6 +94,8 @@ def gen_sbm(class_list, c):
     output.append("SBM~%s:" % c.name)
     for i in matrix_list:
         output.append("dd %i" % i)
+
+    return output
 
 # FIELDS
 ###############################################################################

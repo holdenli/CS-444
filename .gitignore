@@ -5,3 +5,4 @@ joosc
 *.swp
 tags
 jlalr/
+output*/
