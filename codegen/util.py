@@ -1,5 +1,15 @@
 from codegen import expression
 
+# Check if eax is null(0)
+# If so, throw exception
+def null_check():
+    output = []
+
+    output.append("cmp eax, 0")
+    output.append("je __exception")
+
+    return output
+
 # Evaluate node, jump to label if it's False
 def gen_iffalse(info, node, label):
     output = []

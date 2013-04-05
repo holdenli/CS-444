@@ -66,10 +66,12 @@ def gen_method_invocation(info, node):
 
     return output
 
+# Return addr of field access
 def gen_field_access(info, node):
-    output = []
+    output = ["; gen_field_access"]
 
-    util.gen_expr(info, node.find_child("FieldReceiver"))
+    obj_output = gen_expr(info, node.find_child("FieldReceiver"))
+    output.extend(obj_output)
     
     util.null_check()
 
