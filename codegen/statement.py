@@ -49,3 +49,14 @@ def gen_return_stmt(info, node):
     output = []
     return output
 
+def gen_static_field_decl(info, node):
+    assert node.name == 'FieldDeclaration'
+    output = []
+
+    # If there's no initializer, nothing needs to be done. Otherwise, generate
+    # the expression code and set it.
+    initializer = node[3]
+    if len(initializer.children) == 1:
+        output.extend(expression.
+
+    return output

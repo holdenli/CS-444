@@ -63,10 +63,10 @@ RULES = {
     ],
 
     'Fields': [
-        ['Field'], # Zero or more
+        ['FieldDeclaration'], # Zero or more
     ],
 
-    'Field': [
+    'FieldDeclaration': [
         ['Modifiers', 'Type', 'Identifier', 'Initializer'],
     ],
 
@@ -99,10 +99,10 @@ RULES = {
     ],
 
     'Constructors': [
-        ['Constructors'], # One or more
+        ['ConstructorDeclaration'], # One or more
     ],
 
-    'Constructor': [
+    'ConstructorDeclaration': [
         ['Modifier', 'Identifier', 'Parameters', 'Block'],
     ],
 
@@ -115,10 +115,10 @@ RULES = {
     ],
 
     'Methods': [
-        ['Method'], # Zero or more
+        ['MethodDeclaration'], # Zero or more
     ],
 
-    'Method': [
+    'MethodDeclaration': [
         ['Modifiers', 'Type', 'Identifier', 'Parameters', 'MethodBody'],
         ['Modifiers', 'Void', 'Identifier', 'Parameters', 'MethodBody'],
     ],

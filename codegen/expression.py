@@ -99,7 +99,7 @@ def gen_creation_expr(info, node):
     pass
 
 def gen_add_expr(info, node):
-    output = gen_binary_common(info, node)
+    output = gen_binary_expr_common(info, node)
 
     # If they are objects, have to use String.valueOf().
     if primitives.is_numeric(node[0].typ):
@@ -132,17 +132,17 @@ def gen_divide_expr(info, node):
     output = gen_binary_expr_common(info, node)
 
     # We want eax = ebx / eax = expr1 / expr2
-    
+    # Sign extend eax into edx:eax.
+    output.append('cdq') 
 
-    output.append()
     return output 
 
 def gen_modulo_expr(info, node):
     output = gen_binary_expr_common(info, node)
 
     # We want eax = ebx % eax = expr1 % expr2
+    output.append('cdq')
 
-    output.append()
     return output
 
 def gen_greater_than_expr(info, node):

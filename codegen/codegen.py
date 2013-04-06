@@ -1,10 +1,12 @@
 import os # File IO
 import sys
+import shutil # rmtree
 
 import typecheck
 import utils
 from utils import class_hierarchy
 from utils import logging
+from utils.options import JooscOptions
 
 from codegen import statement
 from codegen import class_layout
@@ -29,11 +31,33 @@ class FileLayout:
         # List of methods' AST nodes.
         self.methods = []
 
+        # List of other types.
+        self.other_types = []
+
         # AST node for the static int test() method. This is set if and only
         # if this is the first file.
         self.test = None
 
-def gen(ast_list, class_index, type_index):
+# Convenience wrapper for file. Access member f for the file if needed.
+class FileHelper:
+    def __init__(self, f):
+        self.f = f
+
+    def comment(self, cmt):
+        self.f.write('; %s\n' % cmt)
+
+    def write(self, txt):
+        self.f.write(txt + '\n')
+
+    def newline(self):
+        self.f.write('\n')
+
+    def writelines(self, lines):
+        for line in lines:
+            self.f.write(line + '\n')
+
+# Main code generation function called by Joosc.
+def gen(options, ast_list, class_index, type_index):
     # Preprocessing: generate a list of imports/exports for each file.
     file_layouts = build_file_layouts(ast_list, class_index)
 
@@ -42,6 +66,7 @@ def gen(ast_list, class_index, type_index):
         for j, layout in enumerate(file_layouts):
             if i != j:
                 current_layout.imports.extend(layout.exports)
+                current_layout.other_types.append(layout.canonical_type)
 
     # "global" items.
     class_list = class_layout.build_class_list(class_index)
@@ -52,11 +77,13 @@ def gen(ast_list, class_index, type_index):
     # Create output directory if it does not exist. If folder is not empty,
     # error.
     output_dir = 'output'
+    if options.clean_output == True: # Nuke the directory if specified.
+        shutil.rmtree(output_dir)
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir) 
+        os.makedirs(output_dir)
     if os.listdir(output_dir) != []:
-        # logging.error('FATAL ERROR: Output directory not empty')
-        # sys.exit(2) # Not a programming error or a compiler error... use 2?
+        logging.error('FATAL ERROR: Output directory not empty')
+        sys.exit(2) # Not a programming error or a compiler error... use 2?
         pass
 
     # Generate the code for the files.
@@ -109,7 +136,7 @@ def build_file_layouts(ast_list, class_index):
 
                     # Check if it's static int test().
                     if i == 0 and member.name == 'test' and len(member.params) == 0:
-                        file_layout.test = member.node
+                        file_layout.test = member
 
         # If we didn't find static int test() in the first file, bail.
         if i == 0 and file_layout.test == None:
@@ -121,46 +148,84 @@ def build_file_layouts(ast_list, class_index):
     return layouts
 
 # Generates the .s file for the given file layout.
+# Convention: This is the only file that deals with writing to files.
 def gen_asm(f, file_layout, ast_list, info):
+    h = FileHelper(f)
     canon_type = file_layout.canonical_type # Convenience.
 
-    f.write('; %s\n' % file_layout.canonical_type)
+    h.comment(file_layout.canonical_type)
+
+    h.newline()
+
+    # If this is the first file, export __start.
+    if file_layout.test != None:
+        h.write('global _start')
 
     # List of labels for items we import.
-    f.write('; Imports\n')
+    h.comment('Imports')
     for label in file_layout.imports:
-        f.write('extern %s\n' % label)
+        h.write('extern %s' % label)
 
     # List of labels for items we export.
-    f.write('; Exports\n')
+    h.comment('Exports')
     for label in file_layout.exports:
-        f.write('global %s\n' % label)
-    f.write('\n')
+        h.write('global %s' % label)
 
-    # List of SITs to import.
-    f.write('; Selector index tables\n')
+    h.newline()
+
+    # List of SITs to import. Also export the SIT of this class.
+    h.comment('Selector index tables')
     for class_obj in info.class_list:
         if class_obj.name != canon_type:
-            f.write('extern SIT~%s\n' % class_obj.name)
-    f.write('global SIT~%s\n' % canon_type)
-    f.write('\n')
-    
+            h.write('extern SIT~%s' % class_obj.name)
+    h.write('global SIT~%s' % canon_type)
 
-    # List of SBMs to import.
-    f.write('; Superclass binary matrix columns\n')
+    h.newline()
+
+    # List of SBMs to import. Also export the SBM of this class.
+    h.write('Superclass binary matrix columns')
     for class_obj in info.class_list:
         if class_obj.name != canon_type:
-            f.write('extern SBM~%s\n' % class_obj.name)
-    f.write('global SIT~%s\n' % canon_type)
-    f.write('\n')
+            h.write('extern SBM~%s' % class_obj.name)
+    h.write('global SIT~%s' % canon_type)
 
-    
-    sit = class_layout.gen_sit(info.method_index, info.class_obj)
-    for line in sit:
-        f.write(line + '\n')
-    sbm = class_layout.gen_sbm(info.class_list, info.class_obj)
-    for line in sbm:
-        f.write(line + '\n')
+    h.newline()
+
+    # Assembly code for the selector index table.
+    sit_code = class_layout.gen_sit(info.method_index, info.class_obj)
+    h.writelines(sit_code)
+
+    h.newline()
+
+    # Assembly code for the superclass binary matrix.
+    sbm_code = class_layout.gen_sbm(info.class_list, info.class_obj)
+    h.writelines(sbm_code)
+
+    h.newline()
+
+    # Generate static fields.
+    for static_field_obj in file_layout.static_fields:
+        h.write(static_field_obj.node.label + ':')
+        h.write('dd 0')
+
+    # Generate methods.
+    for method_obj in file_layout.methods:
+        method_code = gen_method(info, method_obj)
+        h.writelines(method_code)
+
+    # Generate constructors.
+    for constructor_obj in file_layout.constructors:
+        constructor_code = gen_constructor(info, constructor_obj)
+        h.writelines(constructor_code)
+
+    # Generate static initialization.
+    static_init_code = gen_static_init(info, file_layout)
+    h.writelines(static_init_code)
+
+    # Generate _start stuff if necessary.
+    if file_layout.test != None:
+        start_code = gen_start(info)
+        h.writelines(start_code)
 
 def lookup_by_decl(vars_dict, item):
     for (var_name, (i, var_decl)) in node.env.names.items():
@@ -169,13 +234,14 @@ def lookup_by_decl(vars_dict, item):
 
 # Separating constructor stuff since we have to do other crap like initializing
 # instance fields.
-def gen_constructor(info, node):
+def gen_constructor(info, constructor_obj):
+    node = constructor_obj.node
     assert node.name == 'ConstructorDeclaration'
+
     output = []
 
-    # Preamble for method.
-    label = get_method_label(node)
-    output.append("%s:" % label)
+    # Preamble for constructor.
+    output.append(constructor_obj.node.label + ':')
 
     # save ebp & esp
     output.extend([
@@ -185,14 +251,14 @@ def gen_constructor(info, node):
 
     return output
 
-def gen_method(info, node):
+def gen_method(info, method_obj):
+    node = method_obj.node
     assert node.name in 'MethodDeclaration'
 
     output = []
 
     # Preamble for method.
-    label = get_method_label(node)
-    output.append("%s:" % label)
+    output.append(method_obj.node.label + ':')
 
     # save ebp & esp
     output.extend([
@@ -228,6 +294,55 @@ def gen_method(info, node):
     ])
 
     return output
+
+# Generates the code for static initialization in this file.
+def gen_static_init(info, file_layout):
+    output = []
+
+    output.append(get_static_init_label(file_layout.canonical_type) + ':')
+
+    # Do stuff.
+    for static_field_obj in file_layout.static_fields:
+        node = static_field_obj.node
+        output.extend(statement.gen_static_field_decl(info, node))
+
+    # Return to caller.
+    output.append('ret')
+
+    return output
+
+# Generates the code for the _start label.
+# This basically does static field initialization for each class, and calls the
+# static int test() method.
+def gen_start(info, file_layout):
+    output = []
+
+    # Import all the static initialization labels of the other types.
+    for other_type in file_layout.other_types:
+        output.append('extern %s' % get_static_init_label(other_type))
+
+    output.append('global _start')
+    output.append('_start:')
+
+    # Call call the static initialization labels.
+    output.append('call %s' % get_static_init_label(file_layout.canonical_type))
+    for other_type in file_layout.other_types:
+        output.append('call %s' % get_static_init_label(other_type))
+
+    # Call static int test().
+    # The return value of test() is in eax.
+    output.append('call %s' % file_layout.test.node.label)
+
+    # Exit. Return code goes into ebx, 1 goes into eax.
+    output.append('mov ebx, eax')
+    output.append('mov eax, 0x1')
+    output.append('int 0x80')
+
+    return output
+
+#
+# Helpers for generating labels.
+#
 
 def get_method_label(node):
     assert node.name in ['MethodDeclaration', 'ConstructorDeclaration']
@@ -283,4 +398,10 @@ def get_static_field_label(node):
     label = 'STATICFIELD~%s.%s' % (class_name, field_name)
 
     return label
+
+
+def get_static_init_label(canonical_type):
+    # Static initiation labels are of the form:
+    # STATICINIT~<canonical_type>
+    return 'STATICINIT~%s' % canonical_type
 

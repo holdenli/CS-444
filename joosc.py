@@ -185,10 +185,9 @@ def joosc(targets, options):
             if options.include_stdlib == False or target_files[i] not in opts.stdlib_files or \
                     options.print_stdlib == True:
                 ast_list[i].pprint()
-                logging.error(ast_list[i].name)
         sys.exit(0)
 
-    codegen.gen(ast_list, class_index, type_index)
+    codegen.gen(options, ast_list, class_index, type_index)
 
 # INTERFACE
 ##########################
@@ -237,6 +236,10 @@ def parse_options(args=sys.argv):
         dest='directory_crawl', default=True,
         help="Recursively crawl directories for compilation units")
 
+    parser.add_option('-c', '--clean_output', action='store_true',
+        dest='clean_output', default=False,
+        help="Clean the output directory before codegen.")
+
     #
     # Options for testing.
     #
@@ -259,7 +262,8 @@ def main(argv=sys.argv):
     logging.setLogLevel(level=opts.loglevel)
 
     joosc_opts = JooscOptions(opts.stage, opts.include_stdlib == True,
-        opts.print_stdlib == True, opts.directory_crawl == True)
+        opts.print_stdlib == True, opts.directory_crawl == True,
+        opts.clean_output == True)
     
     if opts.test:
         logging.info("TESTING %s" % (opts.test))
