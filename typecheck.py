@@ -159,7 +159,6 @@ def typecheck_assignment(node, c, method, t_i, c_i):
     elif node[0].name == 'FieldAccess':
         lhs_type = typecheck_field_access(node[0], c, method,
             t_i, c_i)
-        """
         # Special case: Cannot assign to the "length" field of an array.
         field_name = node[0][0][0].value.value
 
@@ -167,10 +166,9 @@ def typecheck_assignment(node, c, method, t_i, c_i):
         field_receiver_expr = node[0][1][0]
         field_receiver_typ = typecheck_expr(field_receiver_expr, c,
             method, t_i, c_i)
-        if is_array_type(field_receiver_typ) and field_name == length:
+        if is_array_type(field_receiver_typ) and field_name == 'length':
             logging.error('Cannot assign to length field of array')
             sys.exit(42)
-        """
         
     elif node[0].name == 'ArrayAccess':
         lhs_type = typecheck_array_access(node[0], c, method,
