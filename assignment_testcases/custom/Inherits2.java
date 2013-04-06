@@ -9,6 +9,12 @@ public class Inherits2 extends Inherits {
     public int i;
     public int zzz;
 
-    public Inherits2() {}
+    public int test(int a) {
+        return 0;
+    }
+
+    public Inherits2() {
+        test(this.z);
+    }
 
 }

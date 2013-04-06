@@ -1,3 +1,5 @@
+from utils import logging
+
 #
 # One of these created for each file to assist with passing info around in
 # code generation methods.
@@ -27,4 +29,31 @@ class CodegenInfo:
         label = '__jump' + self.jump_counter
         self.jump_counter += 1
         return label
+
+    def get_field_offset(self, node):
+        if node.name != "FieldAccess":
+            logging.error("get_field_offset")
+            sys.exit(1)
+
+        field_name = node.find_child("FieldName")[0].value.value
+
+        field = Temp_Field(field_name)
+
+        offset = self.field_index[self.class_obj].index(field) * 4
+        return offset
+
+    def get_method_offset(self, node):
+        if node.name != "MethodInvocation":
+            logging.error("get_method_offset")
+            sys.exit(1)
+
+        method_name = node.find_child("MethodName")[0].value.value
+        params = []
+        for child in node.find_child("Arguments").children:
+            params.append(child.typ)
+        
+        method = Temp_Method(method_name, params)
+
+        offest = self.method_index.index(method) * 4
+        return offset
 
