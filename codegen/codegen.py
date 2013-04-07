@@ -205,7 +205,7 @@ def gen_asm(f, file_layout, ast_list, info):
     h.newline()
 
     # List of SBMs to import. Also export the SBM of this class.
-    h.write('Superclass binary matrix columns')
+    h.write('; Superclass binary matrix columns')
     for class_obj in info.class_list:
         if class_obj.name != canon_type:
             h.write('extern SBM~%s' % class_obj.name)
