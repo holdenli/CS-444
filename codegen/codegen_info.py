@@ -30,8 +30,14 @@ class CodegenInfo:
         self.jump_counter += 1
         return label
 
-    def get_size(self):
-        return 4 + len(field_index[self.class_obj])*4
+    # get the size of an instance of a type in bytes
+    def get_size(self, canon_type):
+        if canon_type in ["Boolean", "Byte", "Char", "Int", "Short"]:
+            return 4
+        
+        object_overhead_bytes = 3*4 # SIT, SBM, Array flag
+        c = self.class_index[canon_type]
+        return object_overhead_bytes + len(field_index[c])*4
 
     def get_field_offset(self, node):
         if node.name != "FieldAccess":

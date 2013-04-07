@@ -1,3 +1,5 @@
+from utils import logging
+
 # Code generation for expressions.
 
 def gen_expr(info, node):
@@ -5,6 +7,10 @@ def gen_expr(info, node):
         return gen_assignment(info, node)
     elif node.name == 'PostfixExpression':
         return gen_postfix_expr(info, node)
+
+    else:
+        loggin.warning("gen_expr failed for %s" % node)
+        return []
 
 def gen_assignment(info, node):
     output = []
@@ -69,10 +75,13 @@ def gen_literal_expr(info, node):
 
 # call method
 def gen_method_invocation(info, node):
+    receiver = node.find_child("MethodReceiver")
+    assert receiver.typ != None
+
     output = ["; gen_method_invocation for %s" % node.decl.label]
 
     # get addr of method receiver
-    obj_output = gen_expr(info, node.find_child("MethodReceiver"))
+    obj_output = gen_expr(info, receiver)
     output.extend(obj_output)
     util.null_check()
     output.append("push eax")
@@ -84,7 +93,6 @@ def gen_method_invocation(info, node):
         output.extend(gen_expr(arg))
         output.append("push eax")
 
-    # TODO:
     # Get the label corresponding to the method, using the SIT.
     offset = info.get_method_offset(node)
     output.append("mov eax, [esp + %i] ; addr of receiver" % (num_args*4))
@@ -95,6 +103,25 @@ def gen_method_invocation(info, node):
     
     # pop obj addr and args
     output.append("add esp %i" % 4+(num_args*4))
+
+    return output
+
+def gen_static_method_invocation(info, node):
+    receiver = node.find_child("MethodReceiver")
+    assert receiver.canon != None
+
+    output = ["; gen_static_method_invocation for %s" % node.decl.label]
+
+    # calculate args, push args; left-to-right
+    args = list(node.find_child("Arguments").children)
+    num_args = len(args)
+    for arg in args:
+        output.extend(gen_expr(arg))
+        output.append("push eax")
+
+    output.append("call %s" % node.decl.label)
+
+    output.append("add esp %i" % (num_args*4))
 
     return output
 
@@ -123,9 +150,12 @@ def gen_array_access(info, node):
     return output
 
 def gen_creation_expr(info, node):
+    canon = node.find_child("Type").canon
+    assert not canon.endswith('[]')
+    
     output = ["; gen_creation_expr"]
 
-    output.append("mov eax, %i" % info.get_size())    
+    output.append("mov eax, %i" % info.get_size(canon))
     output.append("push ebx")
     output.append("call __malloc")
     output.append("pop ebx")
@@ -141,13 +171,22 @@ def gen_creation_expr(info, node):
         output.extend(gen_expr(arg))
         output.append("push eax")
 
-    output.append("call %s" % node.label)
+    output.append("call %s" % node.decl.label)
 
     # pop args
     output.append("add esp %i" % (num_args*4))
 
     # put "this" on eax
     output.append("pop eax")
+
+    return output
+
+def gen_creation_expr_array(info, node):
+    canon = node.find_child("Type").canon
+    assert not canon.endswith('[]')
+    canon = canon[:-2]
+
+    output = ["; gen_creation_expr_array"]
 
     return output
 

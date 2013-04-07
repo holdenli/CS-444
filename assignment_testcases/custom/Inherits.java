@@ -8,8 +8,11 @@ public class Inherits {
     public Inherits() {}
 
     public int foo(int a) { return 1; }
+
     public static int test() {
         Inherits i = new Inherits();
+        i.foo(1);
+        Inherits.test();
         return 1;
     }
 
