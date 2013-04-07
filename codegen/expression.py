@@ -27,6 +27,7 @@ def gen_assignment(info, node):
     # TODO: Type check if ebx (L-value) is array element.
     if node[0].name == 'ArrayAccess':
         # output.extend(typecheck_array_assign)
+        pass
 
     output.append('mov [ebx], eax')
 
@@ -71,13 +72,10 @@ def gen_method_invocation(info, node):
     output = ["; gen_method_invocation for %s" % node.decl.label]
 
     # get addr of method receiver
-    if 'static' in node.decl.modifiers:
-        
-    else:
-        obj_output = gen_expr(info, node.find_child("MethodReceiver"))
-        output.extend(obj_output)
-        util.null_check()
-        output.append("push eax")
+    obj_output = gen_expr(info, node.find_child("MethodReceiver"))
+    output.extend(obj_output)
+    util.null_check()
+    output.append("push eax")
 
     # calculate args, push args; left-to-right
     args = list(node.find_child("Arguments").children)
@@ -119,7 +117,7 @@ def gen_array_access(info, node):
     output = []
     
     # Get the address of the item we want, dereference into eax.
-    output.extend(gen_array_access_addr(info, node)
+    output.extend(gen_array_access_addr(info, node))
     output.append('mov eax, [eax]')
 
     return output
@@ -179,6 +177,7 @@ def gen_add_expr(info, node):
     # If they are objects, have to use String.valueOf().
     else:
         # TODO
+        pass
 
     return output
 

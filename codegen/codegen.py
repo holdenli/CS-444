@@ -98,7 +98,7 @@ def gen(options, ast_list, class_index, type_index):
             gen_asm(f, layout, ast_list, info)
 
     # Copy the stdlib runtime.s file.
-    shutil.copyfile('%s/runtime.s' % output_dir, 'lib/stdlib/runtime.s')
+    shutil.copyfile('lib/stdlib/5.1/runtime.s', '%s/runtime.s' % output_dir)
 
 # This returns a list of file layouts for each AST (i.e., one FileLayout for
 # each .java file).
@@ -122,14 +122,14 @@ def build_file_layouts(ast_list, class_index):
                 'Static' in member.mods:
                 member.node.label = get_static_field_label(member.node)
                 file_layout.exports.append(member.node.label)
-                file_layout.statics.append(member.node)
+                file_layout.statics.append(member)
 
             elif isinstance(member, class_hierarchy.Method):
                 # Constructor.
                 if member.type == None:
                     member.node.label = get_method_label(member.node)
                     file_layout.exports.append(member.node.label)
-                    file_layout.constructors.append(member.node)
+                    file_layout.constructors.append(member)
 
                 # Method, must not be abstract.
                 elif member.type != None and 'Abstract' not in member.mods:
@@ -139,7 +139,7 @@ def build_file_layouts(ast_list, class_index):
                     # export.
                     if 'Native' not in member.mods:
                         file_layout.exports.append(member.node.label)
-                        file_layout.methods.append(member.node)
+                        file_layout.methods.append(member)
 
                     # Check if it's static int test().
                     if i == 0 and member.name == 'test' and len(member.params) == 0:
@@ -218,14 +218,15 @@ def gen_asm(f, file_layout, ast_list, info):
     h.newline()
 
     # Generate static fields.
-    for static_field_obj in file_layout.static_fields:
+    for static_field_obj in file_layout.statics:
         h.write(static_field_obj.node.label + ':')
         h.write('dd 0')
 
     # Generate methods.
     for method_obj in file_layout.methods:
-        method_code = gen_method(info, method_obj)
-        h.writelines(method_code)
+        #method_code = gen_method(info, method_obj)
+        #h.writelines(method_code)
+        pass
 
     # Generate constructors.
     for constructor_obj in file_layout.constructors:
@@ -238,7 +239,7 @@ def gen_asm(f, file_layout, ast_list, info):
 
     # Generate _start stuff if necessary.
     if file_layout.test != None:
-        start_code = gen_start(info)
+        start_code = gen_start(info, file_layout)
         h.writelines(start_code)
 
 def lookup_by_decl(vars_dict, item):
@@ -289,13 +290,13 @@ def gen_method(info, method_obj):
 
     start_index = -1
     num_vars = 0
-    for decl in find_nodes(Node('LocalVariableDeclaration')):
+    for decl in utils.node.find_nodes(node, utils.node.Node('LocalVariableDeclaration')):
         decl.frame_offset = start_index
         start_index -= 1
         num_vars += 1
 
     # make room for local vars in the stack
-    output.append("add esp, %d"  (num_vars*4))
+    output.append("add esp, %d" %  (num_vars*4))
 
     body = node[4] # methodbody or constructorbody
     if len(body.children) != 0:
@@ -316,7 +317,7 @@ def gen_static_init(info, file_layout):
     output.append(get_static_init_label(file_layout.canonical_type) + ':')
 
     # Do stuff.
-    for static_field_obj in file_layout.static_fields:
+    for static_field_obj in file_layout.statics:
         node = static_field_obj.node
         output.extend(statement.gen_static_field_decl(info, node))
 

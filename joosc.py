@@ -20,7 +20,7 @@ import typelink
 import typecheck
 import name_resolve
 import reachability
-# from codegen import codegen
+from codegen import codegen
 
 # Globals
 ##########################
@@ -187,7 +187,7 @@ def joosc(targets, options):
                 ast_list[i].pprint()
         sys.exit(0)
 
-    # codegen.gen(options, ast_list, class_index, type_index)
+    codegen.gen(options, ast_list, class_index, type_index)
 
 # INTERFACE
 ##########################
