@@ -1,4 +1,5 @@
 from utils import logging
+from utils import primitives
 
 from codegen import util
 
@@ -151,7 +152,8 @@ def gen_array_access(info, node):
 
 def gen_creation_expr(info, node):
     canon = node.find_child("Type").canon
-    assert not canon.endswith('[]')
+    if canon.endswith('[]'):
+        return gen_creation_expr_array(info, node)
     
     output = ["; gen_creation_expr"]
 
@@ -159,8 +161,8 @@ def gen_creation_expr(info, node):
     output.append("push ebx")
     output.append("call __malloc")
     output.append("pop ebx")
-    output.append("mov [eax], SIT~%s" % info.class_obj.name)
-    output.append("mov [eax+4], SBM~%s" % info.class_obj.name)
+    output.append("mov [eax], SIT~%s" % canon)
+    output.append("mov [eax+4], SBM~%s" % canon)
     output.append("mov [eax+8], 0")
     output.append("push eax ; this pointer")
 
@@ -193,8 +195,33 @@ def gen_creation_expr_array(info, node):
     canon = node.find_child("Type").canon
     assert not canon.endswith('[]')
     canon = canon[:-2]
+    if canon in primitives.primitive_types:
+        canon = "@" + canon # add @ infront of primitives for SBM
 
     output = ["; gen_creation_expr_array"]
+
+    # put length of array in eax
+    args = node.find_child("Arguments").children
+    num_args = len(args)
+    if num_args == 1:
+        output.extend(gen_expr(args[0]))
+    else:
+        assert num_args == 0
+        output.append("mov eax 0")
+
+    output.append("push ebx") # whats convention for ebx?
+    
+    output.append("mov ebx, eax") # array length in ebx 
+    output.append("mov eax, [eax*4 + 16]") # object overhead bytes
+    output.append("push ebx")
+    output.append("call __malloc")
+    output.append("pop ebx")
+    output.append("mov [eax], SIT~%s" % util.object_class_name) # java.lang.object
+    output.append("mov [eax+4], SBM~%s" % canon)
+    output.append("mov [eax+8], 1")
+    output.append("mov [eax+12], ebx")
+
+    output.append("pop ebx") # whats convention for ebx?
 
     return output
 
