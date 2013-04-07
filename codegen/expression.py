@@ -265,7 +265,7 @@ def gen_creation_expr_array(info, node):
     output.append("push ebx")
     output.append("call __malloc")
     output.append("pop ebx")
-    output.append("mov [eax], SIT~%s" % util.object_class_name) # java.lang.object
+    output.append("mov [eax], SIT~%s" % "java.lang.Object")
     output.append("mov [eax+4], SBM~%s" % canon)
     output.append("mov [eax+8], 1")
     output.append("mov [eax+12], ebx")
