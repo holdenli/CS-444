@@ -217,9 +217,14 @@ def gen_creation_expr(info, node):
     output = ["; gen_creation_expr"]
 
     output.append("mov eax, %i" % info.get_size(canon))
-    output.append("push ebx")
+    output.append("push ebx") # Safety
     output.append("call __malloc")
-    output.append("pop ebx")
+    output.append("pop ebx") # Safety
+
+    # Zero out fields.
+    output.append('mov eax, %i')
+    output.extend(gen_zero_out(info.get_size(canon)))
+
     output.append("mov [eax], SIT~%s" % canon)
     output.append("mov [eax+4], SBM~%s" % canon)
     output.append("mov [eax+8], 0")
@@ -263,24 +268,31 @@ def gen_creation_expr_array(info, node):
     args = node.find_child("Arguments").children
     num_args = len(args)
     if num_args == 1:
-        output.extend(gen_expr(args[0]))
+        output.extend(gen_expr(args[0])) # Array length in eax.
     else:
         assert num_args == 0
         output.append("mov eax 0")
 
-    output.append("push ebx") # whats convention for ebx?
-    
-    output.append("mov ebx, eax") # array length in ebx 
-    output.append("mov eax, [eax*4 + 16]") # object overhead bytes
-    output.append("push ebx")
-    output.append("call __malloc")
-    output.append("pop ebx")
-    output.append("mov [eax], SIT~%s" % "java.lang.Object")
+    # Calculate number of bytes we need for the array.
+    output.append('push eax') # Save array length.
+    outout.append('add eax, 4')
+    output.append('push eax') # Save num words.
+    output.append('shl eax, 2') # Multiply index (offset) by 4.
+
+    # Allocate. eax has addr. 
+    output.append('call __malloc')
+
+    # Zero out array.
+    output.append('pop ebx') # Num words.
+    output.extend(utils.gen_zero_out(info, node)) # eax = ptr, ebx = num words
+
+    output.append('pop ebx') # Restore array length.
+
+    # Object metadata.
+    output.append("mov [eax], SIT~%s" % util.object_class_name) # java.lang.object
     output.append("mov [eax+4], SBM~%s" % canon)
     output.append("mov [eax+8], 1")
-    output.append("mov [eax+12], ebx")
-
-    output.append("pop ebx") # whats convention for ebx?
+    output.append("mov [eax+12], ebx") # Length
 
     return output
 
@@ -303,7 +315,7 @@ def gen_add_expr(info, node):
     output = []
 
     # Numbers, just add.
-    if primitives.is_numeric(node[0].typ):
+    if primitives.is_numeric(node[0].typ) and primitives.is_numeric(node[1].typ):
         output.extend(binary_expr_common(info, node))
         output.append('add eax, ebx')
     
@@ -312,13 +324,38 @@ def gen_add_expr(info, node):
     # 2. Create a new empty string.
     # 3. concat both strings into the new string, using 
     else:
-        output.extend(gen_expr(info, node[0]))
-        # Perform a method call.
-        if primitives.is_numeric(node[0].typ) or node[0].typ == 'Boolean':
-           pass
-           #output.append( 
 
-    return output
+        # Convert LHS to a string.
+        output.extend(gen_string_valueof(info, node[0]))
+        output.append('push eax')
+
+        # Convert RHS to a string.
+        output.extend(gen_string_valueof(info, node[1]))
+        output.append('push eax')
+
+        # LHS is at esp+8, RHS is at esp+4. We need to make a new empty string
+        # to concat both onto.
+
+# Evaluates the node, then calls the correct java.lang.String.valueOf function
+# based on the type of the node (assumed to be in eax).
+def gen_string_valueof(info, node):
+    output = []
+
+    # Evaluate node. Result is in eax.
+    output.extend(gen_expr(info, node))
+    
+    # Based on the type, call the correct method. Primitives have their own
+    # version, objects all use the java.lang.Object version.
+    valueof_method_lbl = ''
+    if primitives.is_numeric(node.typ) or node.typ == 'Boolean':
+        valueof_method_lbl = 'STATICMETHOD~java.lang.String.valueOf~%s' % node[0].typ
+    else:
+        valueof_method_lbl = 'STATICMETHOD~java.lang.String.valueOf~java.lang.Object'
+    output.append('push eax')
+    output.append('call %s' % valueof_method_lbl)
+
+    return output # result is in eax
+
 
 def gen_subtract_expr(info, node):
     output = gen_binary_expr_common(info, node)
@@ -340,17 +377,31 @@ def gen_multiply_expr(info, node):
 def gen_divide_expr(info, node):
     output = gen_binary_expr_common(info, node)
 
-    # We want eax = ebx / eax = expr1 / expr2
-    # Sign extend eax into edx:eax.
-    output.append('cdq') 
+    # E1 is in ebx, E2 is in eax
+    # We want eax = E1 / E2
+    output.append('mov ecx, eax') # ecx = E2
+    output.append('mov eax, ebx') # eax = E1
+    output.append('mov ebx, ecx') # ebx = E2
+
+    # Sign extend eax into edx:eax, then divide.
+    output.append('cdq')
+    output.append('idiv ebx') # result in eax
 
     return output 
 
 def gen_modulo_expr(info, node):
     output = gen_binary_expr_common(info, node)
 
-    # We want eax = ebx % eax = expr1 % expr2
+    # E1 is in ebx, E2 is in eax
+    # We want eax = E1 % E2
+    output.append('mov ecx, eax') # ecx = E2
+    output.append('mov eax, ebx') # eax = E1
+    output.append('mov ebx, ecx') # ebx = E2
+
+    # Sign extend eax into edx:eax, then divide.
     output.append('cdq')
+    output.append('idiv ebx')
+    output.append('mov eax, edx')
 
     return output
 
