@@ -425,7 +425,7 @@ def gen_array_access_addr(info, node):
     output = []
     
     # Generate receiver code.
-    output.extend(gen_expr(node[0]))
+    output.extend(gen_expr(info, node[0][0]))
 
     # Make sure the array we're indexing into is not null.
     output.extend(util.gen_null_check())
@@ -433,7 +433,7 @@ def gen_array_access_addr(info, node):
     output.append('push eax')
 
     # Generate index code.
-    output.extend(gen_expr(node[1]))
+    output.extend(gen_expr(info, node[1]))
 
     output.append('pop ebx')
 
@@ -441,7 +441,7 @@ def gen_array_access_addr(info, node):
 
     # Skip SIT pointer and length field.
     # Note: java.lang.Object has no fields.
-    outout.append('add eax, 4')
+    output.append('add eax, 4')
     output.append('shl eax, 2') # Multiply index (offset) by 4.
 
     output.append('add eax, ebx') # Address is at array addr + offset.

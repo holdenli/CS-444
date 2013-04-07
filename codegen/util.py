@@ -37,6 +37,11 @@ def gen_null_check():
 
     return output
 
+def gen_array_bounds_check():
+    output = ["; array bounds check"]
+
+    return output
+
 # Evaluate node, jump to label if it's False
 def gen_iffalse(info, node, label):
     output = []
