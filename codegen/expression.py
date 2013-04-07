@@ -340,7 +340,7 @@ def gen_add_expr(info, node, method_obj):
 
 # Evaluates the node, then calls the correct java.lang.String.valueOf function
 # based on the type of the node (assumed to be in eax).
-def gen_string_valueof(info, node):
+def gen_string_valueof(info, node, method_obj):
     output = []
 
     # Evaluate node. Result is in eax.
@@ -359,7 +359,7 @@ def gen_string_valueof(info, node):
     return output # result is in eax
 
 
-def gen_subtract_expr(info, node):
+def gen_subtract_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
 
     # Subtract.
@@ -368,7 +368,7 @@ def gen_subtract_expr(info, node):
 
     return output
 
-def gen_multiply_expr(info, node):
+def gen_multiply_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
 
     # Multiply.
@@ -376,7 +376,7 @@ def gen_multiply_expr(info, node):
 
     return output
 
-def gen_divide_expr(info, node):
+def gen_divide_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
 
     # E1 is in ebx, E2 is in eax
@@ -391,8 +391,8 @@ def gen_divide_expr(info, node):
 
     return output 
 
-def gen_modulo_expr(info, node):
-    output = gen_binary_expr_common(info, node)
+def gen_modulo_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
 
     # E1 is in ebx, E2 is in eax
     # We want eax = E1 % E2
@@ -407,14 +407,96 @@ def gen_modulo_expr(info, node):
 
     return output
 
-def gen_greater_than_expr(info, node):
-    pass
+def gen_equal_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+
+    # Test that ebx == eax (E1 >= E2)
+    output.append('cmp cbx, eax')
+    output.append('mov eax, 0x1')
+    output.append('jeq %s' % label)
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
+
+
+def gen_not_equal_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+
+    # Test that ebx != eax (E1 >= E2)
+    output.append('cmp cbx, eax')
+    output.append('mov eax, 0x1')
+    output.append('jne %s' % label)
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
+
+def gen_greater_than_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+
+    # Test that ebx < eax (E1 < E2)
+    output.append('cmp cbx, eax')
+    output.append('mov eax, 0x1')
+    output.append('jg %s' % label)
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
+
+def gen_greater_than_equal_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+
+    # Test that ebx >= eax (E1 >= E2)
+    output.append('cmp cbx, eax')
+    output.append('mov eax, 0x1')
+    output.append('jge %s' % label)
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
+
+def gen_less_than_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+
+    # Test that ebx < eax (E1 < E2)
+    output.append('cmp cbx, eax')
+    output.append('mov eax, 0x1')
+    output.append('jl %s' % label)
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
+
+def gen_less_than_equal_expr(info, node):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+
+    # Test that ebx <= eax (E1 <= E2)
+    output.append('cmp cbx, eax')
+    output.append('mov eax, 0x1')
+    output.append('jle %s' % label)
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
 
 # Short circuits on E1, don't use gen_binary_expr_common().
-def gen_and_expr(info, node):
+def gen_and_expr(info, node, method_obj):
     output = []
     label = info.get_jump_label()
-    
+    # TODO 
     return output
 
 # Given an ambiguous name node, generate the code for it.
@@ -482,15 +564,17 @@ def gen_array_access_addr(info, node, method_obj):
 
     # Make sure the array we're indexing into is not null.
     output.extend(util.gen_null_check())
-
     output.append('push eax')
 
-    # Generate index code.
+    # Generate index code into ebx.
     output.extend(gen_expr(info, node[1], method_obj))
+    output.append('mov ebx, eax')
 
-    output.append('pop ebx')
+    # eax has array.
+    output.append('pop eax')
 
-    output.extend(util.gen_array_bounds_check())
+    # Check that index is within array bounds.
+    output.extend(util.gen_array_bounds_check(info))
 
     # Skip SIT pointer and length field.
     # Note: java.lang.Object has no fields.

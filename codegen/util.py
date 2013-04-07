@@ -37,8 +37,14 @@ def gen_null_check():
 
     return output
 
+# Checks that the index being accessed (in ebx) is within bounds of the array
+# (at eax).
 def gen_array_bounds_check():
     output = ["; array bounds check"]
+
+    output.append('mov ecx, [eax+12]')
+    output.append('cmp ebx, ecx') # if index >= length, error
+    output.append('jae __exception') # unsigned comparison
 
     return output
 
@@ -75,25 +81,22 @@ def gen_iftrue(info, node, label):
 # Essentially does the the following:
 #   eax = address of object
 #   ebx = number of words to zero out
-#   set ecx = eax
-#   for (eax = 0; eax != ebx; eax++) {
-#       [ecx+4*eax] <- 0
+#   for (ecx = 0; ecx != ebx; ecx++) {
+#       [eax+4*ecx] <- 0
 #   }
-#   restore eax = ecx
 def gen_zero_out(info):
     loop_lbl = info.get_jump_label()
     end_lbl = info.get_jump_label()
 
     output = []
-    output.append('mov ecx, eax') # since je compares eax and ebx
-    output.append('mov eax, 0') # initialize eax = 0
+    output.append('mov ecx, 0')
     output.append(loop_lbl + ':')
-    output.append('je %s' % end_lbl) # if eax == ebx, done
-    output.append('mov [ecx+4*eax], 0') # ecx[eax] = 0
-    output.append('add eax, 0x1') # eax++
+    output.append('cmp ecx, ebx')
+    output.append('je %s' % end_lbl) # if ecx == ebx, done
+    output.append('mov [eax+4*ecx], 0') # eax[ecx] = 0
+    output.append('add ecx, 0x1') # ecx++
     output.append('jmp %s' % loop_lbl)
     output.append(end_lbl + ':')
-    output.append('mov eax, ecx') # restore eax
    
     return output
 
