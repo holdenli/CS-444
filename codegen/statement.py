@@ -76,6 +76,15 @@ def gen_local_variable_decl(info, node, method_obj):
 
 def gen_return_stmt(info, node, method_obj):
     output = []
+
+    if len(node.children) != 0:
+        output.extend(expression.gen_expr(info, node[0], method_obj))
+        pass
+    else:
+        output.append("mov eax, %d" % 0xDEADBEEF)
+
+    output.append("jmp END~%s" % (method_obj.node.label))
+
     return output
 
 def gen_static_field_decl(info, node):

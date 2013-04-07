@@ -311,6 +311,7 @@ def gen_method(info, method_obj):
 
     # restore ebp & esp
     output.extend([
+        "END~%s:" % (method_obj.node.label),
         "mov esp, ebp",
         "pop ebp"
     ])
