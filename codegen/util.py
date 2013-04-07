@@ -2,7 +2,7 @@ from codegen import expression
 
 # Check if eax is null(0)
 # If so, throw exception
-def null_check():
+def gen_null_check():
     output = []
 
     output.append("cmp eax, 0")
@@ -39,3 +39,9 @@ def gen_iftrue(info, node, label):
     output.append(label)
     return output
 
+# Check that the type of eax is assignable to ebx.
+# ???
+def gen_check_type(info, lhs, rhs):
+    output = []
+    
+    return output

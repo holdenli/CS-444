@@ -97,6 +97,9 @@ def gen(options, ast_list, class_index, type_index):
         with open(filename, 'w') as f:
             gen_asm(f, layout, ast_list, info)
 
+    # Copy the stdlib runtime.s file.
+    shutil.copyfile('%s/runtime.s' % output_dir, 'lib/stdlib/runtime.s')
+
 # This returns a list of file layouts for each AST (i.e., one FileLayout for
 # each .java file).
 def build_file_layouts(ast_list, class_index):
@@ -131,8 +134,12 @@ def build_file_layouts(ast_list, class_index):
                 # Method, must not be abstract.
                 elif member.type != None and 'Abstract' not in member.mods:
                     member.node.label = get_method_label(member.node)
-                    file_layout.exports.append(member.node.label)
-                    file_layout.methods.append(member.node)
+
+                    # Code for native methods are found elsewhere, so don't
+                    # export.
+                    if 'Native' not in member.mods:
+                        file_layout.exports.append(member.node.label)
+                        file_layout.methods.append(member.node)
 
                     # Check if it's static int test().
                     if i == 0 and member.name == 'test' and len(member.params) == 0:
@@ -160,6 +167,13 @@ def gen_asm(f, file_layout, ast_list, info):
     # If this is the first file, export __start.
     if file_layout.test != None:
         h.write('global _start')
+
+    h.newline()
+
+    # Runtime calls.
+    h.write('extern __malloc')
+    h.write('extern __exception')
+    h.write('extern NATIVEjava.io.OutputStream.nativeWrite')
 
     # List of labels for items we import.
     h.comment('Imports')
