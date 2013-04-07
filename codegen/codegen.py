@@ -104,6 +104,7 @@ def gen(options, ast_list, class_index, type_index):
 # each .java file).
 def build_file_layouts(ast_list, class_index):
     layouts = []
+    found_test_method = False
 
     for i, ast in enumerate(ast_list):
 
@@ -142,15 +143,22 @@ def build_file_layouts(ast_list, class_index):
                         file_layout.methods.append(member)
 
                     # Check if it's static int test().
-                    if i == 0 and member.name == 'test' and len(member.params) == 0:
-                        file_layout.test = member
-
-        # If we didn't find static int test() in the first file, bail.
-        if i == 0 and file_layout.test == None:
-            logging.error('Failed to find static int test() in first file')
-            sys.exit(42)
+                    if 'Static' in member.mods and \
+                        member.name == 'test' and \
+                        len(member.params) == 0:
+                        if found_test_method:
+                            logging.error('More than one static init test() found')
+                            sys.exit(42)
+                        else:
+                            file_layout.test = member
+                            found_test_method = True
 
         layouts.append(file_layout)
+    
+    # If we didn't find static int test() in the first file, bail.
+    if not found_test_method:
+        logging.error('Failed to find static int test() in first file')
+        sys.exit(42)
 
     return layouts
 
@@ -164,7 +172,7 @@ def gen_asm(f, file_layout, ast_list, info):
 
     h.newline()
 
-    # If this is the first file, export __start.
+    # If this is the "main" file, export __start.
     if file_layout.test != None:
         h.write('global _start')
 
