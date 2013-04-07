@@ -9,7 +9,7 @@ def gen_expr(info, node):
         return gen_postfix_expr(info, node)
 
     else:
-        loggin.warning("gen_expr failed for %s" % node)
+        logging.warning("gen_expr failed for %s" % node)
         return []
 
 def gen_assignment(info, node):
@@ -42,25 +42,28 @@ def gen_assignment(info, node):
     return output
 
 def gen_postfix_expr(info, node):
-   
-    # literal, this, fieldaccess, methodinvoc, arrayaccess, etc..
-
     output = []
+
+    # literal, this, fieldaccess, methodinvoc, arrayaccess, etc..
     if node[0].name == 'Literal':
         output.extend(gen_literal_expr(info, node[0]))
+
+    else:
+        logging.warning("gen_postfix_expr failed for %s" % node[0])
+        return []
 
     return output
 
 def gen_literal_expr(info, node):
     output = []
     if node[0].name == 'DecimalIntegerLiteral':
-        output.append("dd %s" % node[0].value)
+        output.append("dd %s" % node[0].value.value)
 
     elif node[0].name == 'BooleanLiteral':
-        output.append("dd %s" % int(node[0].value == 'true'))
+        output.append("dd %s" % int(node[0].value.value == 'true'))
 
     elif node[0].name == 'CharacterLiteral':
-        output.append("dd %s" % node[0].value) # .value = "'c'"
+        output.append("dd %s" % node[0].value.value) # .value = "'c'"
 
     elif node[0].name == 'StringLiteral':
         pass

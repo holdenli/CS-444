@@ -57,7 +57,7 @@ def gen_static_field_decl(info, node):
     # the expression code and set it.
     initializer = node[3]
     if len(initializer.children) == 1:
-        #TODO: output.extend(expression.gen_expr(info, initializer[0]))
+        output.extend(expression.gen_expr(info, initializer[0]))
         output.append('mov [%s], eax' % node.label)
 
     return output
