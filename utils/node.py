@@ -145,12 +145,7 @@ class Node:
             if self.value != None:
                 s += "='%s'" % (self.value.value)
 
-        if self.name == "Identifier":
-            if self.value == None:
-                logging.warning("Node.debug: %s does not have a value" % self.name)
-            else:
-                s += "='%s'" % (self.value.value)
-        elif self.name == "LocalVariableDeclaration":
+        if self.name == "LocalVariableDeclaration":
             id_node = self.find_child("Identifier")
             if id_node != None and id_node.value != None:
                 s += "='%s'" % (id_node.value.value)
