@@ -74,26 +74,37 @@ def build_class_list(class_index):
     return list(class_index.values())
 
 def gen_sbm(class_list, c):
-    #print(c)
-    matrix_list = []
-    digit = 0
-    chunk = 0
-    for cc in class_list:
-        if digit >= 16:
-            matrix_list.append(chunk)
-            digit = 0
-            chunk = 0
-        if is_supertype(cc, c):
-            #print(cc)
-            chunk = chunk | (1 << (15 - digit))
-        digit = digit + 1 
-    matrix_list.append(chunk)
-    #print(matrix_list)
-
     output = []
     output.append("SBM~%s:" % c.name)
-    for i in matrix_list:
-        output.append("dd %i" % i)
+
+    # classes
+    for cc in class_list:
+        if is_supertype(cc, c):
+            output.append("dd 1 ; %s" % cc.name)
+        else:
+            output.append("dd 0")
+    
+    # primitives
+    for i in range(0,5):
+        output.append("dd 0")
+
+    return output
+
+def gen_sbm_primitives(class_list):
+    output = []
+
+    class_output = []
+    for i in class_list:
+        class_output.append("dd 0")
+
+    for i, s in enumerate(["Boolean", "Byte", "Char", "Int", "Short"]):
+        output.append("SBM~@%s" % s)
+        output.extend(class_output)
+        for j in range(0, 5):
+            if i == j:
+                output.append("dd 1")
+            else:
+                output.append("dd 0")
 
     return output
 
