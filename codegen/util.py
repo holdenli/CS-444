@@ -80,7 +80,7 @@ def gen_iftrue(info, node, label):
 #       [ecx+4*eax] <- 0
 #   }
 #   restore eax = ecx
-def gen_zero_out(info, node):
+def gen_zero_out(info):
     loop_lbl = info.get_jump_label()
     end_lbl = info.get_jump_label()
 

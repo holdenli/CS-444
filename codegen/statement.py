@@ -8,14 +8,14 @@ from codegen import expression
 # Codegen for statements.
 #
 
-def gen_stmt(info, node):
+def gen_stmt(info, node, method_obj):
     if node.name == 'LocalVariableDeclaration':
         logging.warning("gen_stmt: %s" % node)
         return []
     elif node.name == 'Block':
         return gen_block(info, node)
     elif node.name == 'ExpressionStatement':
-        return expression.gen_expr(info, node[0])
+        return gen_expr_stmt(info, node, method_obj)
     elif node.name == 'ReturnStatement':
         logging.warning("gen_stmt: %s" % node)
         return []
@@ -36,7 +36,7 @@ def gen_stmt(info, node):
             node.name)
         sys.exit(1)
 
-def gen_block(info, node):
+def gen_block(info, node, method_obj):
     output = []
 
     # generate local variables for this block
@@ -46,41 +46,39 @@ def gen_block(info, node):
     '''
 
     for stmt in node.children:
-        output.extend(gen_stmt(info, stmt))
+        output.extend(gen_stmt(info, stmt, method_obj))
 
     return output
 
-def gen_expr_stmt(info, stmt):
+def gen_expr_stmt(info, node, method_obj):
     output = []
-
-    output.extend(expression.gen_expr(info, n[0]))
-
+    output.extend(expression.gen_expr(info, node[0], method_obj))
     return output
 
-def gen_if_stmt(info, node):
+def gen_if_stmt(info, node, method_obj):
     output = []
     return output
 
-def gen_for_stmt(info, node):
+def gen_for_stmt(info, node, method_obj):
     output = []
     return output
 
-def gen_while_stmt(info, node):
+def gen_while_stmt(info, node, method_obj):
     output = []
     return output
 
-def gen_empty_stmt(info, node):
+def gen_empty_stmt(info, node, method_obj):
     return []
 
-def gen_local_variable_decl(info, node):
+def gen_local_variable_decl(info, node, method_obj):
     output = []
     return output
 
-def gen_return_stmt(info, node):
+def gen_return_stmt(info, node, method_obj):
     output = []
     return output
 
-def gen_static_field_decl(info, node):
+def gen_static_field_decl(info, node, method_obj):
     assert node.name == 'FieldDeclaration'
     output = []
 

@@ -307,7 +307,7 @@ def gen_method(info, method_obj):
 
     body = node[4] # methodbody or constructorbody
     if len(body.children) != 0:
-        output.extend(statement.gen_block(info, body[0]))
+        output.extend(statement.gen_block(info, body[0], method_obj))
 
     # restore ebp & esp
     output.extend([
