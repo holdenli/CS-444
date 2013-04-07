@@ -10,10 +10,16 @@ def gen_expr(info, node):
     if node.name == 'Assignment':
         return gen_assignment(info, node)
     elif node.name == 'PostfixExpression':
-        return gen_postfix_expr(info, node)
+        return gen_expr(info, node[0])
+    elif node.name == 'CreationExpression':
+        return gen_creation_expr(info, node)
+    elif node.name == 'Literal':
+        return gen_literal_expr(info, node)
+    elif node.name == 'This':
+        pass
 
     else:
-        logging.warning("gen_expr failed for %s" % node)
+        logging.warning("  gen_expr failed for %s" % node)
         return []
 
 def gen_assignment(info, node):
@@ -42,25 +48,6 @@ def gen_assignment(info, node):
     output.append('mov [ebx], eax')
 
     # eax contains the RHS, so we're done.
-
-    return output
-
-def gen_postfix_expr(info, node):
-    output = []
-    
-    logging.warning("gen_postfix_expr: %s" % node[0])
-
-    # literal, this, fieldaccess, methodinvoc, arrayaccess, etc..
-    if node[0].name == 'CreationExpression':
-        output.extend(gen_creation_expr(info, node[0]))
-    elif node[0].name == 'Literal':
-        output.extend(gen_literal_expr(info, node[0]))
-    elif node[0].name == 'This':
-        pass
-
-    else:
-        logging.warning("gen_postfix_expr failed for %s" % node[0])
-        return []
 
     return output
 
