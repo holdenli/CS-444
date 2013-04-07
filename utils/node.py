@@ -141,6 +141,10 @@ class Node:
         
         # Verbose Info
 
+        if not isinstance(self, ASTNode):
+            if self.value != None:
+                s += "='%s'" % (self.value.value)
+
         if self.name == "Identifier":
             if self.value == None:
                 logging.warning("Node.debug: %s does not have a value" % self.name)
