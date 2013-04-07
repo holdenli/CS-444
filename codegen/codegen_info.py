@@ -36,8 +36,7 @@ class CodegenInfo:
             return 4
         
         object_overhead_bytes = 3*4 # SIT, SBM, Array flag
-        c = self.class_index[canon_type]
-        return object_overhead_bytes + len(field_index[c])*4
+        return object_overhead_bytes + len(self.field_index[canon_type])*4
 
     def get_field_offset(self, node):
         if node.name != "FieldAccess":
@@ -48,7 +47,7 @@ class CodegenInfo:
 
         field = Temp_Field(field_name)
 
-        offset = self.field_index[self.class_obj].index(field) * 4
+        offset = self.field_index[self.class_obj.name].index(field) * 4
         return offset
 
     def get_method_offset(self, node):

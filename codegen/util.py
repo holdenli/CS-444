@@ -1,5 +1,3 @@
-from codegen import expression
-
 # check if c is a supertype of the object at eax
 def gen_assignability_check(info, c):
     output = ["; assignability check"]
@@ -68,9 +66,3 @@ def gen_iftrue(info, node, label):
     output.append(label)
     return output
 
-# Check that the type of eax is assignable to ebx.
-# ???
-def gen_check_type(info, lhs, rhs):
-    output = []
-    
-    return output

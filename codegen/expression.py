@@ -1,8 +1,12 @@
 from utils import logging
 
+from codegen import util
+
 # Code generation for expressions.
 
 def gen_expr(info, node):
+    logging.warning("gen_expr: %s" % node)
+    
     if node.name == 'Assignment':
         return gen_assignment(info, node)
     elif node.name == 'PostfixExpression':
@@ -43,10 +47,16 @@ def gen_assignment(info, node):
 
 def gen_postfix_expr(info, node):
     output = []
+    
+    logging.warning("gen_postfix_expr: %s" % node[0])
 
     # literal, this, fieldaccess, methodinvoc, arrayaccess, etc..
-    if node[0].name == 'Literal':
+    if node[0].name == 'CreationExpression':
+        output.extend(gen_creation_expr(info, node[0]))
+    elif node[0].name == 'Literal':
         output.extend(gen_literal_expr(info, node[0]))
+    elif node[0].name == 'This':
+        pass
 
     else:
         logging.warning("gen_postfix_expr failed for %s" % node[0])
@@ -170,11 +180,19 @@ def gen_creation_expr(info, node):
     # calculate args, push args; left-to-right
     args = list(node.find_child("Arguments").children)
     num_args = len(args)
+    arg_types = []
     for arg in args:
         output.extend(gen_expr(arg))
         output.append("push eax")
 
-    output.append("call %s" % node.decl.label)
+        if typecheck.is_array_type(arg[0].canon) == True:
+            # '[]'s replaced with '@', so that it can be accepted.
+            arg_types.append(arg[0].canon[:-2] + '@')
+        else:
+            arg_types.append(arg[0].canon)
+
+    label = 'CONSTRUCTOR~%s.%s~%s' % (canon, canon, '~'.join(arg_types))
+    output.append("call %s" % label)
 
     # pop args
     output.append("add esp %i" % (num_args*4))
