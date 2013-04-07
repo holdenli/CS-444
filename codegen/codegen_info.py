@@ -30,6 +30,9 @@ class CodegenInfo:
         self.jump_counter += 1
         return label
 
+    def get_size(self):
+        return 4 + len(field_index[self.class_obj])*4
+
     def get_field_offset(self, node):
         if node.name != "FieldAccess":
             logging.error("get_field_offset")

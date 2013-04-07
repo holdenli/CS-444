@@ -40,7 +40,7 @@ def gen_sit(method_index, c):
     output = []
     
     output.append("SIT~%s:" % c.name)
-    output.append("dd SBM~%s" % c.name)
+    #output.append("dd SBM~%s" % c.name)
     for m in method_index:
         if m in contain:
             i = contain.index(m)

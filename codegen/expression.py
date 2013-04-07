@@ -79,21 +79,19 @@ def gen_method_invocation(info, node):
         util.null_check()
         output.append("push eax")
 
-    # calculate args, push args; which direction is param passing?!
+    # calculate args, push args; left-to-right
     args = list(node.find_child("Arguments").children)
-    args.reverse()
-    num_args = 0
+    num_args = len(args)
     for arg in args:
         output.extend(gen_expr(arg))
         output.append("push eax")
-        num_args += 1
 
     # TODO:
     # Get the label corresponding to the method, using the SIT.
     offset = info.get_method_offset(node)
     output.append("mov eax, [esp + %i] ; addr of receiver" % (num_args*4))
     output.append("mov eax, [eax] ; SIT")
-    output.append("mov eax, [eax + %i] ; addr of method" % (4 + offset))
+    output.append("mov eax, [eax + %i] ; addr of method" % (offset))
 
     output.append("call eax")
     
@@ -127,7 +125,33 @@ def gen_array_access(info, node):
     return output
 
 def gen_creation_expr(info, node):
-    pass
+    output = ["; gen_creation_expr"]
+
+    output.append("mov eax, %i" % info.get_size())    
+    output.append("push ebx")
+    output.append("call __malloc")
+    output.append("pop ebx")
+    output.append("mov [eax], SIT~%s" % info.class_obj.name)
+    output.append("mov [eax+4], SBM~%s" % info.class_obj.name)
+    output.append("mov [eax+8], 0")
+    output.append("push eax ; this pointer")
+
+    # calculate args, push args; left-to-right
+    args = list(node.find_child("Arguments").children)
+    num_args = len(args)
+    for arg in args:
+        output.extend(gen_expr(arg))
+        output.append("push eax")
+
+    output.append("call %s" % node.label)
+
+    # pop args
+    output.append("add esp %i" % (num_args*4))
+
+    # put "this" on eax
+    output.append("pop eax")
+
+    return output
 
 def gen_cast_expr(info, node):
     assert node.name == 'CastExpression'
