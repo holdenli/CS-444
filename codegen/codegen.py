@@ -153,13 +153,13 @@ def build_file_layouts(ast_list, class_index):
                             file_layout.test = member
                             found_test_method = True
 
+        # If we didn't find static int test() in the first file, bail.
+        if i == 0 and not found_test_method:
+            logging.error('Failed to find static int test() in first file')
+            sys.exit(42)
+
         layouts.append(file_layout)
     
-    # If we didn't find static int test() in the first file, bail.
-    if not found_test_method:
-        logging.error('Failed to find static int test() in first file')
-        sys.exit(42)
-
     return layouts
 
 # Generates the .s file for the given file layout.
@@ -232,9 +232,8 @@ def gen_asm(f, file_layout, ast_list, info):
 
     # Generate methods.
     for method_obj in file_layout.methods:
-        #method_code = gen_method(info, method_obj)
-        #h.writelines(method_code)
-        pass
+        method_code = gen_method(info, method_obj)
+        h.writelines(method_code)
 
     # Generate constructors.
     for constructor_obj in file_layout.constructors:
@@ -308,7 +307,7 @@ def gen_method(info, method_obj):
 
     body = node[4] # methodbody or constructorbody
     if len(body.children) != 0:
-        output.extend(gen_block(info, body[0], 0))
+        output.extend(statement.gen_block(info, body[0]))
 
     # restore ebp & esp
     output.extend([
