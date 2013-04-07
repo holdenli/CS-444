@@ -11,17 +11,67 @@ def gen_expr(info, node):
     if node.name == 'Assignment':
         return gen_assignment(info, node)
     elif node.name == 'PostfixExpression':
-        return gen_expr(info, node[0])
+        return gen_expr(info, node[0]) # Always one expression as child.
+    elif node.name == 'Literal':
+        return gen_literal(info, node)
+    elif node.name == 'This':
+        return gen_this(info, node)
+    elif node.name == 'MethodInvocation':
+        return gen_method_invocation(info, node)
+    elif node.name == 'FieldAccess':
+        return gen_field_access(info, node)
+    elif node.name == 'ArrayAccess':
+        return gen_array_access(info, node)
     elif node.name == 'CreationExpression':
         return gen_creation_expr(info, node)
-    elif node.name == 'Literal':
-        return gen_literal_expr(info, node)
-    elif node.name == 'This':
-        pass
+    elif node.name == 'CastExpression':
+        return gen_cast_expr(info, node)
+    elif node.name == 'InstanceofExpression':
+        return gen_instanceof_expr(info, node)
+    
+    # Binary expressions.
+    elif node.name == 'EqualExpression':
+        return gen_equal_expr(info, node)
+    elif node.name == 'NotEqualExpression':
+        return gen_not_equal_expr(info, node)
+    elif node.name == 'AndExpression':
+        return gen_and_expr(info, node)
+    elif node.name == 'OrExpression':
+        return gen_or_expr(info, node)
+    elif node.name == 'LessThanExpression':
+        return gen_less_than_expr(info, node)
+    elif node.name == 'LessThanEqualExpression':
+        return gen_less_than_equal_expr(info, node)
+    elif node.name == 'GreaterThanExpression':
+        return gen_greater_than_expr(info, node)
+    elif node.name == 'GreaterThanEqualExpression':
+        return gen_greater_than_equal_expr(info, node)
+    elif node.name == 'BinaryAndExpression':
+        return gen_binary_and_expr(info, node)
+    elif node.name == 'BinaryOrExpression':
+        return gen_binary_or_expr(info, node)
+    elif node.name == 'AddExpression':
+        return gen_add_expr(info, node)
+    elif node.name == 'SubtractExpression':
+        return gen_subtract_expr(info, node)
+    elif node.name == 'MultiplyExpression':
+        return gen_multiply_expr(info, node)
+    elif node.name == 'DivideExpression':
+        return gen_divide_expr(info, node)
+    elif node.name == 'ModuloExpression':
+        return gen_modulo_expr(info, node)
+    
+    # Unary expressions.
+    elif node.name == 'NotExpression':
+        return gen_not_expr(info, node)
+    elif node.name == 'NegateExpression':
+        return gen_negate_expr(info, node)
 
+    # Bad.
     else:
-        logging.warning("  gen_expr failed for %s" % node)
-        return []
+        logging.error('FATAL ERROR: Invalid node %s for gen_expr()' %
+            node.name)
+        sys.exit(1)
 
 def gen_assignment(info, node):
     output = []
@@ -55,22 +105,21 @@ def gen_assignment(info, node):
 def gen_literal_expr(info, node):
     output = []
     if node[0].name == 'DecimalIntegerLiteral':
-        output.append("dd %s" % node[0].value.value)
+        output.append("mov eax, %s" % node[0].value)
 
     elif node[0].name == 'BooleanLiteral':
-        output.append("dd %s" % int(node[0].value.value == 'true'))
+        output.append("mov eax, %s" % int(node[0].value == 'true'))
 
     elif node[0].name == 'CharacterLiteral':
-        output.append("dd %s" % node[0].value.value) # .value = "'c'"
+        # TODO: make sure characters are expanded
+        output.append("mov eax, %s" % node[0].value) # .value = "'c'"
 
     elif node[0].name == 'StringLiteral':
+        # TODO: Create new string.
         pass
     
     elif node[0].name == 'NullLiteral':
-        output.append('dd 0')
-
-    # Push value onto stack.
-    output.append('push eax')
+        output.append('mov eax, 0')
 
     return output
 
@@ -240,18 +289,23 @@ def gen_cast_expr(info, node):
 
     return output
 
-
 def gen_add_expr(info, node):
-    output = gen_binary_expr_common(info, node)
+    output = []
 
     # Numbers, just add.
     if primitives.is_numeric(node[0].typ):
+        output.extend(binary_expr_common(info, node))
         output.append('add eax, ebx')
     
-    # If they are objects, have to use String.valueOf().
+    # If they are objects, we do the following:
+    # 1. Use String.valueOf() on each operand.
+    # 2. Create a new empty string.
+    # 3. concat both strings into the new string, using 
     else:
-        # TODO
-        pass
+        output.extend(gen_expr(info, node[0]))
+        # Perform a method call.
+        if primitives.is_numeric(node[0].typ) or node[0].typ == 'Boolean':
+           output.append( 
 
     return output
 
@@ -355,7 +409,7 @@ def gen_binary_expr_common(info, node):
     return output
 
 # Helper for getting the address of array elements.
-def gen_array_access_lvalue(info, node):
+def gen_array_access_addr(info, node):
     assert node.name == 'ArrayAccess'
     output = []
     
@@ -376,9 +430,22 @@ def gen_array_access_lvalue(info, node):
 
     # Skip SIT pointer and length field.
     # Note: java.lang.Object has no fields.
-    outout.append('add eax, 2')
-    output.append('shl eax, 2') # Multiply index by 4.
+    outout.append('add eax, 4')
+    output.append('shl eax, 2') # Multiply index (offset) by 4.
 
     output.append('add eax, ebx') # Address is at array addr + offset.
  
     return output
+
+# Creates a new string from the input (or empty string) and puts the reference
+# in eax.
+def gen_new_string(info, node, init_str):
+    output = []    
+
+    # First we make a char array with length equal to size of init_str
+    num_chars = len(init_str)
+    output.append('mov eax
+    output.extend()
+
+    return output
+

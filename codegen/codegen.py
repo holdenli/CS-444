@@ -424,7 +424,7 @@ def get_static_field_label(node):
 
 
 def get_static_init_label(canonical_type):
-    # Static initiation labels are of the form:
+    # Static initialition labels are of the form:
     # STATICINIT~<canonical_type>
     return 'STATICINIT~%s' % canonical_type
 
