@@ -1,7 +1,7 @@
 
 import sys
 
-from utils.node import Node
+from utils.node import Node, ASTNode
 from utils.node import find_nodes
 from utils import logging
 from scanner import Token
@@ -299,7 +299,7 @@ def build_member_props(tree):
 
     return (fields, methods)
 
-def build_block_env(tree, carry):
+def build_block_env(tree, carry, new_block=True):
     """
         returns a list of environments
         sub-environments are recursively generated
@@ -315,30 +315,31 @@ def build_block_env(tree, carry):
         new_carry = set(carry)
 
         if block.name == 'ForStatement':
-            
-            # block[0] is ForInit
-            # block[0][0] is LocalVariableDeclaration
-            # block[0][0][1] is Identifier for LocalVariableDecl
-            # block[3] is ForBody
-            for_vars = list(block.select(['ForStatement', 'ForInit',
-                'LocalVariableDeclaration']))
+            if new_block:
+                env.children.extend(build_block_env(ASTNode(children=[block]),
+                    new_carry, new_block=False))
+            else:
+                # block[0] is ForInit
+                # block[0][0] is LocalVariableDeclaration
+                # block[0][0][1] is Identifier for LocalVariableDecl
+                # block[3] is ForBody
+                for_vars = list(block.select(['ForStatement', 'ForInit',
+                    'LocalVariableDeclaration']))
 
-            if len(for_vars) != 0:
-                name = for_vars[0][1].value.value
-                if name in new_carry:
-                    block.pprint()
-                    logging.error("No two local variables=%s with overlapping scope have the same name"
-                        % name)
-                    sys.exit(42)
+                if len(for_vars) != 0 and for_vars[0][0] == Node('LocalVariableDeclaration'):
+                    name = for_vars[0][1].value.value
+                    if name in new_carry:
+                        logging.error("No two local variables=%s with overlapping scope have the same name"
+                            % name)
+                        sys.exit(42)
 
-                env.names[name] = for_vars[0]
-                new_carry.add(name)
+                    env.names[name] = for_vars[0]
+                    new_carry.add(name)
 
-            env.children.extend(build_block_env(block[3], new_carry))
+                env.children.extend(build_block_env(block[3], new_carry))
         else:
             for stmt in find_nodes(block, [Node('Block'), Node('ForStatement'),
                 Node('LocalVariableDeclaration')]):
-
                 # are we making a new block?
                 if stmt == Node('Block') or stmt == Node('ForStatement'):
                     env.children.extend(build_block_env(block, new_carry))
