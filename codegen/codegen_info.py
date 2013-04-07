@@ -1,4 +1,5 @@
 from utils import logging
+from utils import class_hierarchy
 
 #
 # One of these created for each file to assist with passing info around in
@@ -60,8 +61,8 @@ class CodegenInfo:
         for child in node.find_child("Arguments").children:
             params.append(child.typ)
         
-        method = Temp_Method(method_name, params)
+        method = class_hierarchy.Temp_Method(method_name, params)
 
-        offest = self.method_index.index(method) * 4
+        offset = self.method_index.index(method) * 4
         return offset
 
