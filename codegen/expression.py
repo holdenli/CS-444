@@ -13,7 +13,7 @@ def gen_expr(info, node):
     elif node.name == 'PostfixExpression':
         return gen_expr(info, node[0]) # Always one expression as child.
     elif node.name == 'Literal':
-        return gen_literal(info, node)
+        return gen_literal_expr(info, node)
     elif node.name == 'This':
         return gen_this(info, node)
     elif node.name == 'MethodInvocation':
@@ -105,14 +105,14 @@ def gen_assignment(info, node):
 def gen_literal_expr(info, node):
     output = []
     if node[0].name == 'DecimalIntegerLiteral':
-        output.append("mov eax, %s" % node[0].value)
+        output.append("mov eax, %s" % node[0].value.value)
 
     elif node[0].name == 'BooleanLiteral':
-        output.append("mov eax, %s" % int(node[0].value == 'true'))
+        output.append("mov eax, %s" % int(node[0].value.value == 'true'))
 
     elif node[0].name == 'CharacterLiteral':
         # TODO: make sure characters are expanded
-        output.append("mov eax, %s" % node[0].value) # .value = "'c'"
+        output.append("mov eax, %s" % node[0].value.value) # .value = "'c'"
 
     elif node[0].name == 'StringLiteral':
         # TODO: Create new string.
@@ -305,7 +305,8 @@ def gen_add_expr(info, node):
         output.extend(gen_expr(info, node[0]))
         # Perform a method call.
         if primitives.is_numeric(node[0].typ) or node[0].typ == 'Boolean':
-           output.append( 
+           pass
+           #output.append( 
 
     return output
 
@@ -444,7 +445,7 @@ def gen_new_string(info, node, init_str):
 
     # First we make a char array with length equal to size of init_str
     num_chars = len(init_str)
-    output.append('mov eax
+    #output.append('mov eax
     output.extend()
 
     return output
