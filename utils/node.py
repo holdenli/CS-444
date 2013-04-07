@@ -153,38 +153,39 @@ class Node:
             else:
                 logging.warning("Node.debug: %s has an invalid identifier" % self.name)
 
-        if verbose and isinstance(self, ASTNode):
+        if verbose and (isinstance(self, ASTNode) or isinstance(self, Node)):
+            
+            members = self.__dict__;
 
             # Some useful stuff
-
             if self.name == "Root" or self.name == "CompilationUnit":
                 c_node = get_class(self)
                 if c_node == None:
                     logging.warning("Node.debug: could not find class decl for " + self.name)
                 elif c_node.obj != None:
                     s += "='%s'" % c_node.obj.name 
-            elif self.obj != None:
+            elif 'obj' in members and self.obj != None:
                     s += "='%s'" % self.obj.name 
 
             s += ">"
 
             # Additional Info
 
-            if self.typ != None:
-                if self.canon != None:
+            if 'typ' in members and self.typ != None:
+                if 'canon' in members and self.canon != None:
                     logging.warning("Node.debug: typ and canon appeared in " + self.name)
                 s += " @typ: %s" % self.typ
-            if self.canon != None:
+            if 'canon' in members and self.canon != None:
                 if self.name != "Type" and self.name != "ArrayType" and self.name != "Name":
                     logging.warning("Node.debug: canon appeared in " + self.name)
                 s += " @canon: %s" % self.canon
-            if self.env != None:
+            if 'env' in members and self.env != None:
                 s += " @env"
-            if self.obj != None:
+            if 'obj' in members and self.obj != None:
                 s += " @obj"
-            if self.decl != None:
+            if 'decl' in members and self.decl != None:
                 s += " @decl"
-            if self.decl_order != None:
+            if 'decl_order' in members and self.decl_order != None:
                 s += " @ord=%d" % self.decl_order
         else:
             s += ">"

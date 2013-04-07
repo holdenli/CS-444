@@ -204,6 +204,11 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                             (meth_recv_name))
                         sys.exit(42)
 
+                    # iteratively resolve the method receiver's identifier --
+                    # used during codegen
+                    iteratively_name_link_nodes(type_index, cu_env, pkg_name,
+                        local_vars, meth_recv.leafs(), disallowed_simple_names)
+
                 else:
                     # resolve some more!
                     find_and_resolve_names(type_index, cu_env, pkg_name,
@@ -235,6 +240,7 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
             # node.children = ['FieldName', 'FieldReceiver']
             if node[1][0] == Node('This'):
                 name = ['this'] + node[0].leaf_values()
+                name_nodes = [node[1][0]] + node[0].leafs()
             else:
                 find_and_resolve_names(type_index, cu_env, pkg_name,
                     node[1],
@@ -258,7 +264,8 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
 
         elif node == Node('Name'):
             name = node.leaf_values()
-
+            name_nodes = node.leafs()
+       
         resolved_node = name_link_name(type_index, cu_env, pkg_name,
             local_vars,
             name,
@@ -269,9 +276,36 @@ def find_and_resolve_names(type_index, cu_env, pkg_name, stmt, local_vars,
                 cu_env['ClassDeclaration'], local_vars))
             sys.exit(42)
 
+        # now lets label each part of this ambiguous name
+        iteratively_name_link_nodes(type_index, cu_env, pkg_name, local_vars,
+            name_nodes, disallowed_simple_names)
+
         node.decl = resolved_node
         node.typ = resolved_node.find_child('Type').canon
         #print('resolved %s in %s' % (name, environment.env_type_name(cu_env)))
+
+def iteratively_name_link_nodes(type_index, cu_env, pkg_name, local_vars, name_nodes,
+    disallowed_simple_names):
+
+    for i in range(len(name_nodes)):
+        name_slice_nodes = name_nodes[:i+1]
+        name_slice = [n.value.value for n in name_slice_nodes]
+        resolved_node_slice = name_link_name(type_index, cu_env, pkg_name,
+           local_vars,
+           name_slice,
+           disallowed_simple_names)
+       
+        if resolved_node_slice != None:
+            name_slice_nodes[-1].decl = resolved_node_slice
+        else:
+            canon_type = resolve_type_by_name(type_index,
+                            cu_env,
+                            pkg_name,
+                            '.'.join(name_slice))
+
+            if canon_type != None:
+                name_slice_nodes[-1].canon = canon_type
+
 
 def member_accessable(class_index, type_index, canon_type, member,
         viewer_canon_type, check_instance=False):
@@ -380,6 +414,9 @@ def name_link_name(type_index, cu_env, pkg_name, local_vars, name_parts,
             e.g. ['a', 'b', 'c'] or ['this', 'c'] representing a.b.c or this.c
     """
     global static_context_flag
+
+    if len(name_parts) == 0:
+        return None
 
     name_fields = []
     if len(name_parts) > 0:
