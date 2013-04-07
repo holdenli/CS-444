@@ -107,7 +107,7 @@ def gen_assignment(info, node, method_obj):
 
     return output
 
-def gen_literal_expr(info, node):
+def gen_literal_expr(info, node, method_obj):
     output = []
     if node[0].name == 'DecimalIntegerLiteral':
         output.append("mov eax, %s" % node[0].value.value)
@@ -129,7 +129,7 @@ def gen_literal_expr(info, node):
     return output
 
 # call method
-def gen_method_invocation(info, node):
+def gen_method_invocation(info, node, method_obj):
     receiver = node.find_child("MethodReceiver")
     if len(receiver.children) != 0 and receiver[0].typ == None:
         return gen_static_method_invocation(info, node, method_obj)
@@ -166,7 +166,7 @@ def gen_method_invocation(info, node):
 
     return output
 
-def gen_static_method_invocation(info, node):
+def gen_static_method_invocation(info, node, method_obj):
     receiver = node.find_child("MethodReceiver")[0]
     assert receiver.canon != None
 
@@ -200,7 +200,7 @@ def gen_field_access(info, node):
     return output
 
 # Return addr of array access.
-def gen_array_access(info, node):
+def gen_array_access(info, node, method_obj):
     output = []
     
     # Get the address of the item we want, dereference into eax.
@@ -209,7 +209,7 @@ def gen_array_access(info, node):
 
     return output
 
-def gen_creation_expr(info, node):
+def gen_creation_expr(info, node, method_obj):
     canon = node.find_child("Type").canon
     if canon.endswith('[]'):
         return gen_creation_expr_array(info, node, method_obj)
@@ -418,7 +418,7 @@ def gen_and_expr(info, node):
     return output
 
 # Given an ambiguous name node, generate the code for it.
-def gen_ambiguous_name(info, node):
+def gen_ambiguous_name(info, node, method_obj):
     output = []
 
     first_significant_identifer = -1

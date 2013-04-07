@@ -88,10 +88,10 @@ def gen_zero_out(info):
     output.append('mov ecx, eax') # since je compares eax and ebx
     output.append('mov eax, 0') # initialize eax = 0
     output.append(loop_lbl + ':')
-    output.append('je %s', end_lbl) # if eax == ebx, done
+    output.append('je %s' % end_lbl) # if eax == ebx, done
     output.append('mov [ecx+4*eax], 0') # ecx[eax] = 0
     output.append('add eax, 0x1') # eax++
-    output.append('jmp %s', loop_lbl)
+    output.append('jmp %s' % loop_lbl)
     output.append(end_lbl + ':')
     output.append('mov eax, ecx') # restore eax
    

@@ -13,21 +13,21 @@ def gen_stmt(info, node, method_obj):
         logging.warning("gen_stmt: %s" % node)
         return []
     elif node.name == 'Block':
-        return gen_block(info, node)
+        return gen_block(info, node, method_obj)
     elif node.name == 'ExpressionStatement':
         return gen_expr_stmt(info, node, method_obj)
     elif node.name == 'ReturnStatement':
         logging.warning("gen_stmt: %s" % node)
-        return []
+        return gen_return_stmt(info, node, method_obj)
     elif node.name == 'IfStatement':
         logging.warning("gen_stmt: %s" % node)
-        return []
+        return gen_if_stmt(info, node, method_obj)
     elif node.name == 'WhileStatement':
         logging.warning("gen_stmt: %s" % node)
-        return []
+        return gen_while_stmt(info, node, method_obj)
     elif node.name == 'ForStatement':
         logging.warning("gen_stmt: %s" % node)
-        return []
+        return gen_for_stmt(info, node, method_obj)
 
 
     # Bad.
@@ -78,7 +78,7 @@ def gen_return_stmt(info, node, method_obj):
     output = []
     return output
 
-def gen_static_field_decl(info, node, method_obj):
+def gen_static_field_decl(info, node):
     assert node.name == 'FieldDeclaration'
     output = []
 
@@ -86,7 +86,7 @@ def gen_static_field_decl(info, node, method_obj):
     # the expression code and set it.
     initializer = node[3]
     if len(initializer.children) == 1:
-        output.extend(expression.gen_expr(info, initializer[0]))
+        output.extend(expression.gen_expr(info, initializer[0], None))
         output.append('mov [%s], eax' % node.label)
 
     return output

@@ -27,7 +27,7 @@ class CodegenInfo:
         self.jump_counter = 0
 
     def get_jump_label(self):
-        label = '__jump' + self.jump_counter
+        label = '__jump' + str(self.jump_counter)
         self.jump_counter += 1
         return label
 
