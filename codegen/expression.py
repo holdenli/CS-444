@@ -1,3 +1,5 @@
+import sys
+
 from utils import logging
 from utils import primitives
 
@@ -67,6 +69,9 @@ def gen_expr(info, node):
     elif node.name == 'NegateExpression':
         return gen_negate_expr(info, node)
 
+    elif node.name == 'Name':
+        return gen_ambiguous_name(info, node)
+
     # Bad.
     else:
         logging.error('FATAL ERROR: Invalid node %s for gen_expr()' %
@@ -126,21 +131,26 @@ def gen_literal_expr(info, node):
 # call method
 def gen_method_invocation(info, node):
     receiver = node.find_child("MethodReceiver")
-    assert receiver.typ != None
+    if len(receiver.children) != 0 and receiver[0].typ == None:
+        return gen_static_method_invocation(info, node)
 
     output = ["; gen_method_invocation for %s" % node.decl.label]
 
     # get addr of method receiver
-    obj_output = gen_expr(info, receiver)
+    obj_output = None
+    if len(receiver.children) != 0:
+        obj_output = gen_expr(info, receiver[0])
+    else:
+        obj_output = gen_this(info, None) 
     output.extend(obj_output)
-    util.null_check()
+    output.extend(util.gen_null_check())
     output.append("push eax")
 
     # calculate args, push args; left-to-right
     args = list(node.find_child("Arguments").children)
     num_args = len(args)
     for arg in args:
-        output.extend(gen_expr(arg))
+        output.extend(gen_expr(info, arg))
         output.append("push eax")
 
     # Get the label corresponding to the method, using the SIT.
@@ -152,12 +162,12 @@ def gen_method_invocation(info, node):
     output.append("call eax")
     
     # pop obj addr and args
-    output.append("add esp %i" % 4+(num_args*4))
+    output.append("add esp %i" % (4 + num_args*4))
 
     return output
 
 def gen_static_method_invocation(info, node):
-    receiver = node.find_child("MethodReceiver")
+    receiver = node.find_child("MethodReceiver")[0]
     assert receiver.canon != None
 
     output = ["; gen_static_method_invocation for %s" % node.decl.label]
@@ -166,7 +176,7 @@ def gen_static_method_invocation(info, node):
     args = list(node.find_child("Arguments").children)
     num_args = len(args)
     for arg in args:
-        output.extend(gen_expr(arg))
+        output.extend(gen_expr(info, arg))
         output.append("push eax")
 
     output.append("call %s" % node.decl.label)
@@ -182,7 +192,7 @@ def gen_field_access(info, node):
     obj_output = gen_expr(info, node.find_child("FieldReceiver"))
     output.extend(obj_output)
     
-    util.null_check()
+    output.extend(util.gen_null_check())
 
     offset = info.get_field_offset(node)
     output.append("add eax, %i" % (4 + offset))
