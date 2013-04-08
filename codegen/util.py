@@ -93,7 +93,13 @@ def gen_zero_out(info):
     output.append(loop_lbl + ':')
     output.append('cmp ecx, ebx')
     output.append('je %s' % end_lbl) # if ecx == ebx, done
-    output.append('mov [eax+4*ecx], 0') # eax[ecx] = 0
+    '''
+    output.append('mov edx, ecx')
+    output.append('shl edx, 2')
+    output.append('add edx, eax')
+    output.append('mov [edx], 0') # eax[ecx] = 0
+    '''
+    output.append('mov dword [eax + 4 * ecx], 0') # eax[ecx] = 0
     output.append('add ecx, 0x1') # ecx++
     output.append('jmp %s' % loop_lbl)
     output.append(end_lbl + ':')

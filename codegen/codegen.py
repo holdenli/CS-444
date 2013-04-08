@@ -209,7 +209,7 @@ def gen_asm(f, file_layout, ast_list, info):
     for class_obj in info.class_list:
         if class_obj.name != canon_type:
             h.write('extern SBM~%s' % class_obj.name)
-    h.write('global SIT~%s' % canon_type)
+    h.write('global SBM~%s' % canon_type)
 
     h.newline()
 
@@ -336,7 +336,9 @@ def gen_method(info, method_obj):
 def gen_static_init(info, file_layout):
     output = []
 
-    output.append(get_static_init_label(file_layout.canonical_type) + ':')
+    static_init_lbl = get_static_init_label(file_layout.canonical_type)
+    output.append('global ' + static_init_lbl)
+    output.append(static_init_lbl + ':')
 
     # Do stuff.
     for static_field_obj in file_layout.statics:

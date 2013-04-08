@@ -69,7 +69,7 @@ def gen_expr(info, node, method_obj):
     elif node.name == 'NotExpression':
         return gen_not_expr(info, node, method_obj)
     elif node.name == 'NegateExpression':
-        return []#gen_negate_expr(info, node, method_obj)
+        return gen_negate_expr(info, node, method_obj)
 
     elif node.name == 'Name':
         return gen_ambiguous_name(info, node, method_obj)
@@ -103,7 +103,7 @@ def gen_assignment(info, node, method_obj):
         # output.extend(typecheck_array_assign)
         pass
 
-    output.append('mov [ebx], eax')
+    output.append('mov dword [ebx], eax')
 
     # eax contains the RHS, so we're done.
 
@@ -229,9 +229,9 @@ def gen_creation_expr(info, node, method_obj):
     output.append('mov eax, %d' % (num_bytes / 4))
     output.extend(util.gen_zero_out(info))
 
-    output.append("mov [eax], SIT~%s" % canon)
-    output.append("mov [eax+4], SBM~%s" % canon)
-    output.append("mov [eax+8], 0") # Not an array, so 0.
+    output.append("mov dword [eax], SIT~%s" % canon)
+    output.append("mov dword [eax+4], SBM~%s" % canon)
+    output.append("mov dword [eax+8], 0") # Not an array, so 0.
     output.append("push eax ; this pointer")
 
     # calculate args, push args; left-to-right
@@ -248,7 +248,8 @@ def gen_creation_expr(info, node, method_obj):
         else:
             arg_types.append(arg[0].typ)
 
-    label = 'CONSTRUCTOR~%s.%s~%s' % (canon, canon, '~'.join(arg_types))
+    constructor_name = canon.split(".")[-1]
+    label = 'CONSTRUCTOR~%s.%s~%s' % (canon, constructor_name, '~'.join(arg_types))
     output.append("call %s" % label)
 
     # pop args
@@ -293,10 +294,10 @@ def gen_creation_expr_array(info, node, method_obj):
     output.append('pop ebx') # Restore array length.
 
     # Object metadata.
-    output.append("mov [eax], SIT~java.lang.Object")
-    output.append("mov [eax+4], SBM~%s" % canon)
-    output.append("mov [eax+8], 1")
-    output.append("mov [eax+12], ebx") # Length
+    output.append("mov dword [eax], SIT~java.lang.Object")
+    output.append("mov dword [eax+4], SBM~%s" % canon)
+    output.append("mov dword [eax+8], 1")
+    output.append("mov dword [eax+12], ebx") # Length
 
     return output
 
@@ -419,11 +420,12 @@ def gen_equal_expr(info, node, method_obj):
     label = info.get_jump_label()
 
     # Test that ebx == eax (E1 >= E2)
-    output.append('cmp cbx, eax')
-    output.append('mov eax, 0x1')
-    output.append('jeq %s' % label)
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0x1')
+    output.append('cmp ebx, eax')
+    output.append('je %s' % label)
+    output.append('mov ecx, 0')
     output.append(label + ':')
+    output.append('mov eax, ecx')
 
     return output
 
@@ -434,11 +436,12 @@ def gen_not_equal_expr(info, node, method_obj):
     label = info.get_jump_label()
 
     # Test that ebx != eax (E1 >= E2)
-    output.append('cmp cbx, eax')
-    output.append('mov eax, 0x1')
+    output.append('mov ecx, 0x1')
+    output.append('cmp ebx, eax')
     output.append('jne %s' % label)
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0')
     output.append(label + ':')
+    output.append('mov eax, ecx')
 
     return output
 
@@ -448,11 +451,12 @@ def gen_greater_than_expr(info, node, method_obj):
     label = info.get_jump_label()
 
     # Test that ebx < eax (E1 < E2)
-    output.append('cmp cbx, eax')
-    output.append('mov eax, 0x1')
+    output.append('mov ecx, 0x1')
+    output.append('cmp ebx, eax')
     output.append('jg %s' % label)
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0')
     output.append(label + ':')
+    output.append('mov eax, ecx')
 
     return output
 
@@ -462,11 +466,12 @@ def gen_greater_than_equal_expr(info, node, method_obj):
     label = info.get_jump_label()
 
     # Test that ebx >= eax (E1 >= E2)
-    output.append('cmp cbx, eax')
-    output.append('mov eax, 0x1')
+    output.append('mov ecx, 0x1')
+    output.append('cmp ebx, eax')
     output.append('jge %s' % label)
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0')
     output.append(label + ':')
+    output.append('mov eax, ecx')
 
     return output
 
@@ -476,11 +481,12 @@ def gen_less_than_expr(info, node, method_obj):
     label = info.get_jump_label()
 
     # Test that ebx < eax (E1 < E2)
-    output.append('cmp cbx, eax')
-    output.append('mov eax, 0x1')
+    output.append('mov ecx, 0x1')
+    output.append('cmp ebx, eax')
     output.append('jl %s' % label)
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0')
     output.append(label + ':')
+    output.append('mov eax, ecx')
 
     return output
 
@@ -490,11 +496,12 @@ def gen_less_than_equal_expr(info, node):
     label = info.get_jump_label()
 
     # Test that ebx <= eax (E1 <= E2)
-    output.append('cmp cbx, eax')
-    output.append('mov eax, 0x1')
+    output.append('mov ecx, 0x1')
+    output.append('cmp ebx, eax')
     output.append('jle %s' % label)
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0')
     output.append(label + ':')
+    output.append('mov eax, ecx')
 
     return output
 
