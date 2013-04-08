@@ -312,7 +312,7 @@ def gen_constructor(info, constructor_obj):
             len(field_node[3].children) == 1: # Initializer
 
             # Evaluate initializer.
-            output.extend(expression.gen_expr(field_node[3][0])
+            output.extend(expression.gen_expr(field_node[3][0]))
 
             # Get the address of 'this'.
             this_offset = (len(constructor_obj.params) * 4) + 8 
@@ -322,7 +322,7 @@ def gen_constructor(info, constructor_obj):
 
             # Assign to field offset.
             field_name = field_obj.name
-            field_offset = info.get_field_offset_from_field_name(field_name):
+            field_offset = info.get_field_offset_from_field_name(field_name)
             output.append('mov [ebx+%d], eax' % field_offset)
 
     body = node[4] # ConstructorBody
