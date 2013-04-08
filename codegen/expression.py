@@ -115,15 +115,15 @@ def gen_literal_expr(info, node, method_obj):
         output.append("mov eax, %s" % node[0].value.value)
 
     elif node[0].name == 'BooleanLiteral':
-        output.append("mov eax, %s" % int(node[0].value.value == 'true'))
+        output.append("mov eax, %d" % int(node[0].value.value == 'true'))
 
     elif node[0].name == 'CharacterLiteral':
         # TODO: make sure characters are expanded
-        output.append("mov eax, %s" % node[0].value.value) # .value = "'c'"
+        output.append("mov eax, %d" % ord(node[0].value.value)) # .value = "'c'"
 
     elif node[0].name == 'StringLiteral':
-        # TODO: Create new string.
-        pass
+        # TODO: make sure characters are expanded
+        output.extend(gen_new_string(info, node[0].value.value))
     
     elif node[0].name == 'NullLiteral':
         output.append('mov eax, 0')
@@ -635,13 +635,40 @@ def gen_ambiguous_name_addr(info, node, method_obj):
 
 # Creates a new string from the input (or empty string) and puts the reference
 # in eax.
-def gen_new_string(info, node, init_str):
+def gen_new_string(info, init_str):
     output = []    
 
     # First we make a char array with length equal to size of init_str
     num_chars = len(init_str)
-    #output.append('mov eax
-    output.extend()
+
+    # Make a new array.
+    output = ["; gen_new_string"]
+
+    # Put number of bytes in eax.
+    output.append('mov eax, %d' % ((num_chars + 4) * 4))
+
+    # Calculate number of bytes we need for the array.
+
+    # Allocate. eax has addr. 
+    output.append('call __malloc')
+
+    # Zero out array.
+    output.append('mov ebx, %d' % (num_chars + 4))
+    output.extend(util.gen_zero_out(info)) # eax = ptr, ebx = num words
+
+    output.append('pop ebx') # Restore array length.
+
+    # Object metadata.
+    output.append("mov dword [eax], SIT~java.lang.Object")
+    output.append("mov dword [eax+4], SBM~@Char")
+    output.append("mov dword [eax+8], 1")
+    output.append("mov dword [eax+12], %d", num_chars) # Length
+
+    # Fill in elems.
+    offset = 0
+    for c in init_str:
+        output.append('mov dword [eax+%d], %d' % ((offset + 4) * 16), ord(c)))
+        offset += 1
 
     return output
 
