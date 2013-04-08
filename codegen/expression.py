@@ -231,7 +231,7 @@ def gen_creation_expr(info, node, method_obj):
 
     output.append("mov [eax], SIT~%s" % canon)
     output.append("mov [eax+4], SBM~%s" % canon)
-    output.append("mov [eax+8], 0")
+    output.append("mov [eax+8], 0") # Not an array, so 0.
     output.append("push eax ; this pointer")
 
     # calculate args, push args; left-to-right
@@ -325,8 +325,7 @@ def gen_add_expr(info, node, method_obj):
     
     # If they are objects, we do the following:
     # 1. Use String.valueOf() on each operand.
-    # 2. Create a new empty string.
-    # 3. concat both strings into the new string, using 
+    # 2. Do a LHS.concat(RHS), which returns a new string.
     else:
 
         # Convert LHS to a string.
@@ -337,8 +336,14 @@ def gen_add_expr(info, node, method_obj):
         output.extend(gen_string_valueof(info, node[1], method_obj))
         output.append('push eax')
 
-        # LHS is at esp+8, RHS is at esp+4. We need to make a new empty string
-        # to concat both onto.
+        # Receiver is LHS, Argument is RHS (already done!), just need to call
+        # the correct method.
+        output.append('call METHOD~java.lang.String.concat~java.lang.String')
+
+        # Jump back.
+        output.append('add esp, 8')
+
+    return output
 
 # Evaluates the node, then calls the correct java.lang.String.valueOf function
 # based on the type of the node (assumed to be in eax).
@@ -359,7 +364,6 @@ def gen_string_valueof(info, node, method_obj):
     output.append('call %s' % valueof_method_lbl)
 
     return output # result is in eax
-
 
 def gen_subtract_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
@@ -525,6 +529,37 @@ def gen_ambiguous_name(info, node, method_obj):
 def gen_this(info, node, method_obj):
     output = []
     # TODO
+    return output
+
+def gen_instanceof_expr(info, node, method_obj):
+    output = []
+    # TODO
+    
+    return output
+
+def gen_not_expr(info, node, method_obj):
+    output = []
+    output.extend(gen_expr(info, node[0], method_obj))
+
+    label = info.get_jump_label()
+
+    output.append('mov ebx, 0') # test if exp == 0
+    output.append('cmp eax, ebx')
+    output.append('mov eax, 1') # set result to 1
+    output.append('je %s' % label) # if exp == 0, keep it 1
+    output.append('mov eax, 0')
+    output.append(label + ':')
+
+    return output
+
+def gen_negate_expr(info, node, method_obj):
+    output = []
+    output.extend(gen_expr(info, node[0], method_obj))
+
+    output.append('mov ebx, eax') # ebx = E1
+    output.append('mov eax, 0') # eax = 0
+    output.append('sub eax, ebx') # eax = 0 - E1
+
     return output
 
 #
