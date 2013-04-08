@@ -121,6 +121,8 @@ def gen_for_stmt(info, node, method_obj):
     if len(node[2].children) == 1:
         output.extend(expression.gen_expr(info, node[2][0], method_obj))
 
+    output.append('jmp %s' % loop_lbl)
+
     output.append(end_lbl + ':')
 
     return output
@@ -141,6 +143,8 @@ def gen_while_stmt(info, node, method_obj):
 
     # Loop body.
     output.extend(gen_stmt(info, node[1], method_obj))
+
+    output.append('jmp %s' % loop_lbl)
 
     output.append(end_lbl + ':')
 
