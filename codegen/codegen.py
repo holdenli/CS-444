@@ -280,8 +280,8 @@ def gen_constructor(info, constructor_obj):
     # Preprocessing:
     # Assign frame pointer offsets to each parameter and local variable
     # declaration node.
-    param_start_index = len(node.find_child('Parameters').children) + 1
-    for decl in node.find_child('Parameters'):
+    param_start_index = len(node.find_child('Parameters').children) + 2
+    for decl in node.find_child('Parameters').children:
         decl.frame_offset = param_start_index
         param_start_index -= 1
 
@@ -346,7 +346,7 @@ def gen_method(info, method_obj):
     # Preprocessing:
     # Assign frame pointer offsets to each parameter and local variable
     # declaration node.
-    param_start_index = len(node.find_child('Parameters').children)
+    param_start_index = len(node.find_child('Parameters').children) + 2
     for decl in node.find_child('Parameters').children:
         decl.frame_offset = param_start_index
         param_start_index -= 1

@@ -116,12 +116,9 @@ def gen_literal_expr(info, node, method_obj):
         output.append("mov eax, %d" % int(node[0].value.value == 'true'))
 
     elif node[0].name == 'CharacterLiteral':
-        # TODO: make sure characters are expanded
-        # output.append("mov eax, %d" % ord(node[0].value.value)) # .value = "'c'"
-        pass
+        output.append("mov eax, %d" % ord(node[0].value.value[0])) # .value = "'c'"
 
     elif node[0].name == 'StringLiteral':
-        # TODO: make sure characters are expanded
         output.extend(gen_new_string(info, node[0].value.value))
     
     elif node[0].name == 'NullLiteral':
@@ -523,20 +520,9 @@ def gen_and_expr(info, node, method_obj):
 def gen_ambiguous_name(info, node, method_obj):
     output = []
 
-    first_significant_identifer = -1
-    first_significant_node = None
-    for i, identifier_node in enumerate(node.children):
-        if identifier_node.decl != None:
-            first_significant_identifer = i
-            first_significant_node = identifier_node
-            break
-
-    assert first_significant_identifer != -1
-
-    # TODO:
-    # Depending on the type, follow the correct chain and generate code.
-    if first_significant_node.decl.name == 'TypeDeclaration':
-        pass
+    output.extend(gen_ambiguous_name_addr(info, node, method_obj))
+    output.extend(util.gen_null_check())
+    output.append('mov eax, [eax]')
 
     return output
 
@@ -669,12 +655,102 @@ def gen_ambiguous_name_addr(info, node, method_obj):
 
     assert significant_index != -1 # Did not find anything, error.
 
+    # We have Type.something, so there must be a next node.
+    # This is a Static field access.
+    i = significant_index
+    prev_type = None
+    if id_node.canon != None:
+        assert (i + 1) < len(node.children)
+
+        # Return address of static field.
+        next_node = node[i + 1].decl # decl should be static field ASTNode
+        assert next_node.name == 'FieldDeclaration'
+        assert 'static' in next_node.modifiers
+        output.append('mov eax, %d' % next_node.label)
+
+        i += 2 # Processed 2 nodes.
+        prev_type = next_node.decl[1].canon # Get type from Type node
+
+    # We have local_var.something. Move its addr to eax.
+    elif id_node.decl.name == 'LocalVariableDeclaration':
+        assert i == 0 # Local variable must be first identifier.
+
+        # Get the offset from the frame pointer.
+        output.append('mov eax, ebp')
+        local_var_offset = id_node.decl.frame_offset * 4
+        output.append('add eax, %d' % local_var_offset)
+
+        i += 1
+        prev_type = id_node.decl[1].canon # Get type from Type node
+
+    # We have a parameter.something. Move its addr to eax.
+    elif id_node.decl.name == 'Parameter':
+        assert i == 0 # Parameter must be first identifier.
+
+        # Get the offset from the frame pointer.
+        output.append('mov eax, ebp')
+        param_offset = (id_node.decl.frame_offset * 4)
+        output.append('add eax, %d' % param_offset)
+
+    # We have an implicit 'this' on an instance field.
+    elif id_node.decl.name == 'FieldDeclaration':
+        assert i == 0 # Field declaration must be first identifier.
+
+        # Get this into eax.
+        output.extend(gen_this(info, None, method_obj))
+
+        # If the field type is array, we must get the array field.
+        offset = 0
+        if typecheck.is_array_type(id_node.decl[1].canon):
+            assert i == (len(node.children) - 1) # Must be last element.
+            offset = 12
+            prev_type = 'Int' # Generic type.
+        else:
+            field_name = id_node.decl.obj.name
+            offset = info.get_field_offset_from_field_name(info, field_name)
+            offset += 12
+            prev_type = id_node.decl[1].canon # Get type from Type node
+
+        # Load the field address offset.
+        output.append('add eax, %d' % offset)
+
+        i += 1
+
+    # All the remaining things are instance fields. We have the address in eax
+    # already, so we just keep going.
     while i < len(node.children):
-        # We have Type.something, so keep going.
-        if id_node.canon != None: # Type.
+        assert i >= 1
+        assert prev_type != None
+        field_node = node[i]
+
+        assert field_node.decl.name in ['FieldDeclaration',
+            'FakeFieldDeclaration']
+
+        # Nullcheck and dereference the previous result into eax.
+        output.extend(util.gen_null_check())
+        output.append('mov eax, [eax]')
+
+        # Calculate the offset of the field.
+        offset = 0
+
+        # Array; length has type Int.
+        if typecheck.is_array_type(prev_type):
+            assert i == (len(node.children) - 1) # Must be last element.
+            offset = 12
+            prev_type = 'Int'
+
+        # Object. Must search up the object's type (in prev_type) in the field
+        # index and get the offset.
+        else:
+            prev_type_field_list = info.field_index[prev_type]
+            field_name = field_node.decl.obj.name
+            temp = class_hierarchy.Temp_Field(field_name)
+            offset = (prev_type_field_list.index(temp) * 4) + 12
+            # Keep the type.
+            prev_type = field_node.decl[1].canon
+
+        output.append('add eax, %d' % offset)
             
-
-
 
     return output
 
