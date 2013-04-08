@@ -326,7 +326,7 @@ def build_block_env(tree, carry, new_block=True):
                 for_vars = list(block.select(['ForStatement', 'ForInit',
                     'LocalVariableDeclaration']))
 
-                if len(for_vars) != 0 and for_vars[0][0] == Node('LocalVariableDeclaration'):
+                if len(for_vars) != 0:
                     name = for_vars[0][1].value.value
                     if name in new_carry:
                         logging.error("No two local variables=%s with overlapping scope have the same name"
