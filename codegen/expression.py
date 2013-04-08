@@ -266,7 +266,7 @@ def gen_creation_expr(info, node, method_obj):
 
 def gen_creation_expr_array(info, node, method_obj):
     canon = node.find_child("Type").canon
-    assert not canon.endswith('[]')
+    assert canon.endswith('[]')
     canon = canon[:-2]
     if canon in primitives.primitive_types:
         canon = "@" + canon # add @ infront of primitives for SBM
@@ -284,7 +284,7 @@ def gen_creation_expr_array(info, node, method_obj):
 
     # Calculate number of bytes we need for the array.
     output.append('push eax') # Save array length.
-    outout.append('add eax, 4')
+    output.append('add eax, 4')
     output.append('push eax') # Save num words.
     output.append('shl eax, 2') # Multiply index (offset) by 4.
 
@@ -511,7 +511,7 @@ def gen_less_than_expr(info, node, method_obj):
 
     return output
 
-def gen_less_than_equal_expr(info, node):
+def gen_less_than_equal_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
 
     label = info.get_jump_label()
@@ -531,13 +531,13 @@ def gen_and_expr(info, node, method_obj):
     output = []
     label = info.get_jump_label()
 
-    output.append(gen_expr(info, node[0], method_obj))
+    output.extend(gen_expr(info, node[0], method_obj))
     output.append('mov ecx, 0') # result is false by default
     output.append('cmp eax, 0') # now we test..
     output.append('je %s' % label) # if false, we end up at the BOTTOM
 
     # the result was true! now try the second expr:
-    output.append(gen_expr(info, node[1], method_obj))
+    output.extend(gen_expr(info, node[1], method_obj))
     output.append('mov ecx, 0')
     output.append('cmp eax, 0') # we test again..
     output.append('je %s' % label) # if false, we end up at the BOTTOM
@@ -553,13 +553,13 @@ def gen_or_expr(info, node, method_obj):
     output = []
     label = info.get_jump_label()
 
-    output.append(gen_expr(info, node[0], method_obj))
+    output.extend(gen_expr(info, node[0], method_obj))
     output.append('mov ecx, 1') # result is true by default
     output.append('cmp eax, 0') # now we test..
     output.append('jne %s' % label) # if NOT false (true), we end up at the BOTTOM
 
     # try again with the right operand..
-    output.append(gen_expr(info, node[1], method_obj))
+    output.extend(gen_expr(info, node[1], method_obj))
     output.append('mov ecx, 1') # result is true by default
     output.append('cmp eax, 0') # now we test..
     output.append('jne %s' % label) # jump to the bottom if true
@@ -694,6 +694,7 @@ def gen_field_access_addr(info, node, method_obj):
     return output
 
 def gen_ambiguous_name_addr(info, node, method_obj):
+    return [] # OH NOOOOOOOOOOOOOOOOOOO
     assert node.name == 'Name'
 
     output = []
@@ -713,8 +714,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
     # This is a Static field access.
     i = significant_index
     prev_type = None
-    # TODO HOLDEN: this should be isattr
-    if id_node.canon != None:
+    if hasattr(id_node, 'canon') and id_node.canon != None:
         assert (i + 1) < len(node.children)
 
         # Return address of static field.

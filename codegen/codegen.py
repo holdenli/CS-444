@@ -9,6 +9,7 @@ from utils import logging
 from utils.options import JooscOptions
 
 from codegen import statement
+from codegen import expression
 from codegen import class_layout
 from codegen.codegen_info import CodegenInfo
 
@@ -291,6 +292,7 @@ def gen_constructor(info, constructor_obj):
         decl.frame_offset = local_var_start_index
         local_var_start_index -= 1
         num_vars += 1
+
     output = []
 
     # Preamble for constructor.
@@ -311,7 +313,7 @@ def gen_constructor(info, constructor_obj):
             len(field_node[3].children) == 1: # Initializer
 
             # Evaluate initializer.
-            output.extend(expression.gen_expr(field_node[3][0]))
+            output.extend(expression.gen_expr(info, field_node[3][0], None))
 
             # Get the address of 'this'.
             this_offset = (len(constructor_obj.params) * 4) + 8 

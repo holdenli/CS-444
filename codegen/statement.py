@@ -24,6 +24,8 @@ def gen_stmt(info, node, method_obj):
         return gen_while_stmt(info, node, method_obj)
     elif node.name == 'ForStatement':
         return gen_for_stmt(info, node, method_obj)
+    elif node.name == 'EmptyStatement':
+        return []
 
     # Bad.
     else:
