@@ -33,9 +33,10 @@ def gen_stmt(info, node, method_obj):
         sys.exit(1)
 
 def gen_local_variable_decl(info, node, method_obj):
-    output = []
+    output = ["; gen_local_variable_decl on %s" % node]
+
     # Generate the initialization code.
-    output.extend(gen_expr(info, node[2][0], method_obj))
+    output.extend(expression.gen_expr(info, node[2][0], method_obj))
 
     # Get the offset.
     offset = node.frame_offset * 4
@@ -147,10 +148,6 @@ def gen_while_stmt(info, node, method_obj):
 
 def gen_empty_stmt(info, node, method_obj):
     return []
-
-def gen_local_variable_decl(info, node, method_obj):
-    output = []
-    return output
 
 def gen_return_stmt(info, node, method_obj):
     output = []

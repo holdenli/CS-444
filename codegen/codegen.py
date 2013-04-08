@@ -289,7 +289,8 @@ def gen_constructor(info, constructor_obj):
 
     local_var_start_index = -1
     num_vars = 0
-    for decl in utils.node.find_nodes(node, utils.node.Node('LocalVariableDeclaration')):
+    all_local_decls = list(node.select(['LocalVariableDeclaration']))
+    for decl in all_local_decls:
         decl.frame_offset = local_var_start_index
         local_var_start_index -= 1
         num_vars += 1
@@ -357,7 +358,8 @@ def gen_method(info, method_obj):
 
     local_var_start_index = -1
     num_vars = 0
-    for decl in utils.node.find_nodes(node, utils.node.Node('LocalVariableDeclaration')):
+    all_local_decls = list(node.select(['LocalVariableDeclaration']))
+    for decl in all_local_decls:
         decl.frame_offset = local_var_start_index
         local_var_start_index -= 1
         num_vars += 1

@@ -4,6 +4,7 @@ import typecheck
 
 from utils import logging
 from utils import primitives
+from utils import class_hierarchy
 
 from codegen import util
 
@@ -605,11 +606,13 @@ def gen_or_expr(info, node, method_obj):
 
 # Given an ambiguous name node, generate the code for it.
 def gen_ambiguous_name(info, node, method_obj):
-    output = []
+    output = ["; START gen_ambiguous_name"]
 
     output.extend(gen_ambiguous_name_addr(info, node, method_obj))
     output.extend(util.gen_null_check())
     output.append('mov eax, [eax]')
+
+    output.append('; END gen_ambiguous_name')
 
     return output
 
@@ -740,7 +743,6 @@ def gen_field_access_addr(info, node, method_obj):
     return output
 
 def gen_ambiguous_name_addr(info, node, method_obj):
-    return [] # OH NOOOOOOOOOOOOOOOOOOO
     assert node.name == 'Name'
 
     output = ['; gen_ambiguous_name_addr']
@@ -749,7 +751,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
     significant_node = None
     significant_index = -1
     for i, id_node in enumerate(node.children):
-        if id_node.decl != None or id_node.canon != None:
+        if hasattr(id_node, 'decl') or hasattr(id_node, 'canon'):
             significant_node = id_node
             significant_index = i
             break
@@ -758,6 +760,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
 
     # We have Type.something, so there must be a next node.
     # This is a Static field access.
+    id_node = significant_node
     i = significant_index
     prev_type = None
     if hasattr(id_node, 'canon') and id_node.canon != None:
@@ -767,10 +770,10 @@ def gen_ambiguous_name_addr(info, node, method_obj):
         next_node = node[i + 1].decl # decl should be static field ASTNode
         assert next_node.name == 'FieldDeclaration'
         assert 'static' in next_node.modifiers
-        output.append('mov eax, %d' % next_node.label)
+        output.append('mov eax, %s' % next_node.label)
 
         i += 2 # Processed 2 nodes.
-        prev_type = next_node.decl[1].canon # Get type from Type node
+        prev_type = next_node[1].canon # Get type from Type node
 
     # We have local_var.something. Move its addr to eax.
     elif id_node.decl.name == 'LocalVariableDeclaration':
@@ -782,7 +785,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
         output.append('add eax, %d' % local_var_offset)
 
         i += 1
-        prev_type = id_node.decl[1].canon # Get type from Type node
+        prev_type = id_node.decl[0].canon # Get type from Type node
 
     # We have a parameter.something. Move its addr to eax.
     elif id_node.decl.name == 'Parameter':
@@ -792,6 +795,9 @@ def gen_ambiguous_name_addr(info, node, method_obj):
         output.append('mov eax, ebp')
         param_offset = (id_node.decl.frame_offset * 4)
         output.append('add eax, %d' % param_offset)
+
+        i += 1
+        prev_type = id_node.decl[0].canon # Get type from Type node
 
     # We have an implicit 'this' on an instance field.
     elif id_node.decl.name == 'FieldDeclaration':
@@ -803,15 +809,13 @@ def gen_ambiguous_name_addr(info, node, method_obj):
         # If the field type is array, we must get the array field.
         offset = 0
         if typecheck.is_array_type(id_node.decl[1].canon):
-            assert i == (len(node.children) - 1) # Must be last element.
             offset = 12
-            prev_type = 'Int' # Generic type.
         else:
             receiver_type = info.class_obj.name
             field_name = id_node.decl.obj.name
             offset = info.get_field_offset_from_field_name(receiver_type, field_name)
             offset += 12
-            prev_type = id_node.decl[1].canon # Get type from Type node
+        prev_type = id_node.decl[1].canon # Generic type.
 
         # Load the field address offset.
         output.append('add eax, %d' % offset)
@@ -852,7 +856,9 @@ def gen_ambiguous_name_addr(info, node, method_obj):
             prev_type = field_node.decl[1].canon
 
         output.append('add eax, %d' % offset)
-    
+
+        i += 1   
+        
     output.append('; end of gen_ambiguous_name_addr')    
 
     return output
