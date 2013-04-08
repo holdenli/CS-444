@@ -198,13 +198,9 @@ def gen_static_method_invocation(info, node, method_obj):
 def gen_field_access(info, node, method_obj):
     output = ["; gen_field_access"]
 
-    obj_output = gen_expr(info, node.find_child("FieldReceiver")[0], method_obj)
-    output.extend(obj_output)
-    
-    output.extend(util.gen_null_check())
-
-    offset = info.get_field_offset(node)
-    output.append("add eax, %i" % (4 + offset))
+    # Gets the field receiver.
+    output.extend(gen_field_access_addr(info, node, method_obj))
+    output.append('mov eax, [eax]')
 
     return output
 
@@ -639,10 +635,47 @@ def gen_array_access_addr(info, node, method_obj):
  
     return output
 
+def gen_field_access_addr(info, node, method_obj):
+    output = []
+
+    # Gets the field receiver.
+    obj_output = gen_expr(info, node.find_child("FieldReceiver")[0], method_obj)
+    output.extend(obj_output)
+    
+    output.extend(util.gen_null_check())
+
+    if typecheck.is_array_type(node[1].typ) == True: # Array
+        output.append('add eax, %d' % 12)
+
+    else: # Object.
+        offset = info.get_field_offset(node)
+        output.append("add eax, %i" % (12 + offset))
+
+    return output
 
 def gen_ambiguous_name_addr(info, node, method_obj):
+    assert node.name == 'Name'
+
     output = []
-    # TODO
+
+    # Loop through each identifier node, looking for a significant node.
+    significant_node = None
+    significant_index = -1
+    for i, id_node in enumerate(node.children):
+        if id_node.decl != None or id_node.canon != None:
+            significant_node = id_node
+            significant_index = i
+            break
+
+    assert significant_index != -1 # Did not find anything, error.
+
+    while i < len(node.children):
+        # We have Type.something, so keep going.
+        if id_node.canon != None: # Type.
+            
+
+
+
     return output
 
 # Creates a new string from the input (or empty string) and puts the reference

@@ -247,8 +247,7 @@ def gen_asm(f, file_layout, ast_list, info):
 
     # Generate constructors.
     for constructor_obj in file_layout.constructors:
-        constructor_code = [(constructor_obj.node.label + ':'), "ret"]
-        #constructor_code = gen_constructor(info, constructor_obj)
+        constructor_code = gen_constructor(info, constructor_obj)
         h.writelines(constructor_code)
 
     # Generate static initialization.
@@ -323,6 +322,7 @@ def gen_constructor(info, constructor_obj):
             # Assign to field offset.
             field_name = field_obj.name
             field_offset = info.get_field_offset_from_field_name(field_name)
+            field_offset += 12
             output.append('mov [ebx+%d], eax' % field_offset)
 
     body = node[4] # ConstructorBody
