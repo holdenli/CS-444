@@ -331,7 +331,7 @@ def gen_creation_expr_array(info, node, method_obj):
 def gen_cast_expr(info, node, method_obj):
     end_lbl = info.get_jump_label()
 
-    output = ["; gen_cast_expr"]
+    output = ["; START gen_cast_expr"]
 
     output.extend(gen_expr(info, node[1], method_obj))
 
@@ -354,6 +354,8 @@ def gen_cast_expr(info, node, method_obj):
 
     output.append(end_lbl + ":")
 
+    output.append("; END gen_creation_expr_array")
+    
     return output
 
 def gen_binary_and_expr(info, node, method_obj):

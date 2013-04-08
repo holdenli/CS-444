@@ -19,9 +19,12 @@ public class Inherits {
     }
 
     public static int test() {
-        String s = "false";
-        String t = s + "fdsa";
-        System.out.println(t);
+        Inherits s = new Inherits2();
+        Object t = (Object)"hello";
+        if ("hello" == "hello")
+        {
+            return 25;
+        }
         return 1;
     }
 

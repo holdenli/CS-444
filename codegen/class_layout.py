@@ -42,12 +42,12 @@ def gen_sit(method_index, c):
     output.append("SIT~%s:" % c.name)
     #output.append("dd SBM~%s" % c.name)
     for m in method_index:
-        if not c.interface and 'Abstract' not in m.mods and m in contain:
+        if (not c.interface) and ('Abstract' not in c.mods) and (m in contain):
             i = contain.index(m)
             actual_m = contain[i]
             output.append("dd %s ; %s | %s" % (actual_m.node.label, c.name, actual_m.name))
         else:
-            output.append("dd 0")
+            output.append("dd 0 ; %s" % m.name)
 
     return output
 
