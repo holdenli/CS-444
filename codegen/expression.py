@@ -321,6 +321,22 @@ def gen_cast_expr(info, node, method_obj):
 
     return output
 
+def gen_binary_and_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+    output.append("and eax, ebx")
+
+    return output
+
+def gen_binary_or_expr(info, node, method_obj):
+    output = gen_binary_expr_common(info, node, method_obj)
+
+    label = info.get_jump_label()
+    output.append("or eax, ebx")
+
+    return output
+
 def gen_add_expr(info, node, method_obj):
     output = []
 
@@ -513,7 +529,44 @@ def gen_less_than_equal_expr(info, node):
 def gen_and_expr(info, node, method_obj):
     output = []
     label = info.get_jump_label()
-    # TODO 
+
+    output.append(gen_expr(info, node[0], method_obj))
+    output.append('mov ecx, 0') # result is false by default
+    output.append('cmp eax, 0') # now we test..
+    output.append('je %s' % label) # if false, we end up at the BOTTOM
+
+    # the result was true! now try the second expr:
+    output.append(gen_expr(info, node[1], method_obj))
+    output.append('mov ecx, 0')
+    output.append('cmp eax, 0') # we test again..
+    output.append('je %s' % label) # if false, we end up at the BOTTOM
+    output.append('mov ecx, 1')
+
+    output.append('%s:' % label) # BOTTOM!
+    output.append('mov eax, ecx')
+
+    return output
+
+# Short circuits on E1, don't use gen_binary_expr_common().
+def gen_or_expr(info, node, method_obj):
+    output = []
+    label = info.get_jump_label()
+
+    output.append(gen_expr(info, node[0], method_obj))
+    output.append('mov ecx, 1') # result is true by default
+    output.append('cmp eax, 0') # now we test..
+    output.append('jne %s' % label) # if NOT false (true), we end up at the BOTTOM
+
+    # try again with the right operand..
+    output.append(gen_expr(info, node[1], method_obj))
+    output.append('mov ecx, 1') # result is true by default
+    output.append('cmp eax, 0') # now we test..
+    output.append('jne %s' % label) # jump to the bottom if true
+    output.append('mov eax, 0')
+
+    output.append('%s:' % label) # BOTTOM
+    output.append('mov eax, ecx');
+
     return output
 
 # Given an ambiguous name node, generate the code for it.
