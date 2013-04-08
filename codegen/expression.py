@@ -137,9 +137,10 @@ def gen_method_invocation(info, node, method_obj):
     if len(receiver.children) != 0 and receiver[0].typ == None:
         return gen_static_method_invocation(info, node, method_obj)
 
-    output = ["; gen_method_invocation for %s" % node.decl.label]
+    output = ["; START gen_method_invocation for %s" % node.decl.label]
 
     # get addr of method receiver
+    output.append("; Eval receiver")
     obj_output = None
     if len(receiver.children) != 0:
         obj_output = gen_expr(info, receiver[0], method_obj)
@@ -152,11 +153,13 @@ def gen_method_invocation(info, node, method_obj):
     # calculate args, push args; left-to-right
     args = list(node.find_child("Arguments").children)
     num_args = len(args)
+    output.append("; Eval %i args" % num_args)
     for arg in args:
         output.extend(gen_expr(info, arg, method_obj))
         output.append("push eax")
 
     # Get the label corresponding to the method, using the SIT.
+    output.append("; Get method impl")
     offset = info.get_method_offset(node)
     output.append("mov eax, [esp + %i] ; addr of receiver" % (num_args*4))
     output.append("mov eax, [eax] ; SIT")
@@ -165,7 +168,9 @@ def gen_method_invocation(info, node, method_obj):
     output.append("call eax")
     
     # pop obj addr and args
-    output.append("add esp, %i" % (4 + num_args*4))
+    output.append("add esp, %i ; pop this and args" % (4 + num_args*4))
+
+    output.append("; END gen_method_invocation")
 
     return output
 
@@ -173,18 +178,21 @@ def gen_static_method_invocation(info, node, method_obj):
     receiver = node.find_child("MethodReceiver")[0]
     assert receiver.canon != None
 
-    output = ["; gen_static_method_invocation for %s" % node.decl.label]
+    output = ["; START gen_static_method_invocation for %s" % node.decl.label]
 
     # calculate args, push args; left-to-right
     args = list(node.find_child("Arguments").children)
     num_args = len(args)
+    output.append("; Eval %i args" % num_args)
     for arg in args:
         output.extend(gen_expr(info, arg, method_obj))
         output.append("push eax")
 
     output.append("call %s" % node.decl.label)
 
-    output.append("add esp, %i" % (num_args*4))
+    output.append("add esp, %i ; pop args" % (num_args*4))
+
+    output.append("; END gen_static_method_invocation")
 
     return output
 
@@ -217,7 +225,7 @@ def gen_creation_expr(info, node, method_obj):
     if canon.endswith('[]'):
         return gen_creation_expr_array(info, node, method_obj)
     
-    output = ["; gen_creation_expr"]
+    output = ["; START gen_creation_expr"]
 
     num_bytes = info.get_size(canon)
 
@@ -227,7 +235,7 @@ def gen_creation_expr(info, node, method_obj):
     output.append("pop ebx") # Safety
 
     # Zero out fields.
-    output.append('mov eax, %d' % (num_bytes / 4))
+    output.append('mov ebx, %d' % (num_bytes / 4))
     output.extend(util.gen_zero_out(info))
 
     output.append("mov dword [eax], SIT~%s" % canon)
@@ -259,6 +267,8 @@ def gen_creation_expr(info, node, method_obj):
     # put "this" on eax
     output.append("pop eax")
 
+    output.append("; END gen_creation_expr")
+
     return output
 
 def gen_creation_expr_array(info, node, method_obj):
@@ -268,7 +278,7 @@ def gen_creation_expr_array(info, node, method_obj):
     if canon in primitives.primitive_types:
         canon = "@" + canon # add @ infront of primitives for SBM
 
-    output = ["; gen_creation_expr_array"]
+    output = ["; START gen_creation_expr_array"]
 
     # put length of array in eax
     args = node.find_child("Arguments").children
@@ -299,6 +309,8 @@ def gen_creation_expr_array(info, node, method_obj):
     output.append("mov dword [eax+4], SBM~%s" % canon)
     output.append("mov dword [eax+8], 1")
     output.append("mov dword [eax+12], ebx") # Length
+
+    output.append("; END gen_creation_expr_array")
 
     return output
 
