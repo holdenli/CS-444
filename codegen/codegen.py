@@ -278,7 +278,9 @@ def gen_constructor(info, constructor_obj):
     node = constructor_obj.node
     assert node.name == 'ConstructorDeclaration'
 
-    # Assign frame offsets to each parameter and local variable declaration.
+    # Preprocessing:
+    # Assign frame pointer offsets to each parameter and local variable
+    # declaration node.
     param_start_index = len(node.find_child('Parameters').children) + 1
     for decl in node.find_child('Parameters'):
         decl.frame_offset = param_start_index
@@ -290,7 +292,6 @@ def gen_constructor(info, constructor_obj):
         decl.frame_offset = local_var_start_index
         local_var_start_index -= 1
         num_vars += 1
-
     output = []
 
     # Preamble for constructor.
@@ -301,13 +302,39 @@ def gen_constructor(info, constructor_obj):
         "push ebp",
         "mov ebp, esp",
     ])
+    # make room for local vars in the stack
+    output.append("sub esp, %d" % (num_vars*4))
 
+    # Initialize instance fields.
+    for field_obj in info.field_index[info.class_obj.name]:
+        field_node = field_obj.node
+        if 'Static' not in field_obj.mods and \
+            len(field_node[3].children) == 1: # Initializer
+
+            # Evaluate initializer.
+            output.extend(expression.gen_expr(field_node[3][0])
+
+            # Get the address of 'this'.
+            this_offset = (len(constructor_obj.params) * 4) + 8 
+            output.append('mov ebx, ebp')
+            output.append('add ebx, %d' % this_offset)
+            output.append('mov ebx, [ebx]')
+
+            # Assign to field offset.
+            field_name = field_obj.name
+            field_offset = info.get_field_offset_from_field_name(field_name):
+            output.append('mov [ebx+%d], eax' % field_offset)
+
+    body = node[4] # ConstructorBody
+    if len(body.children) != 0:
+        output.extend(statement.gen_block(info, body[0], constructor_obj))
 
     # restore ebp & esp
     output.extend([
-        "END~%s:" % (method_obj.node.label),
+        "END~%s:" % (constructor_obj.node.label),
         "mov esp, ebp",
-        "pop ebp"
+        "pop ebp",
+        "ret"
     ])
 
     return output
@@ -317,10 +344,10 @@ def gen_method(info, method_obj):
     assert node.name in 'MethodDeclaration'
 
     # Preprocessing:
-    # Assign frame pointer  offsets to each parameter and local variable
+    # Assign frame pointer offsets to each parameter and local variable
     # declaration node.
-    param_start_index = len(node.find_child('Parameters').children) + 1
-    for decl in node.find_child('Parameters'):
+    param_start_index = len(node.find_child('Parameters').children)
+    for decl in node.find_child('Parameters').children:
         decl.frame_offset = param_start_index
         param_start_index -= 1
 
@@ -342,9 +369,9 @@ def gen_method(info, method_obj):
         "mov ebp, esp",
     ])
     # make room for local vars in the stack
-    output.append("sub esp, %d" %  (num_vars*4))
+    output.append("sub esp, %d" % (num_vars*4))
 
-    body = node[4] # methodbody or constructorbody
+    body = node[4] # MethodBody
     if len(body.children) != 0:
         output.extend(statement.gen_block(info, body[0], method_obj))
 

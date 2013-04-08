@@ -219,6 +219,7 @@ def gen_creation_expr(info, node, method_obj):
     
     output = ["; gen_creation_expr"]
 
+    # Number of bytes we will malloc (including metadata).
     num_bytes = info.get_size(canon)
 
     output.append("mov eax, %i" % num_bytes)
@@ -227,7 +228,7 @@ def gen_creation_expr(info, node, method_obj):
     output.append("pop ebx") # Safety
 
     # Zero out fields.
-    output.append('mov eax, %d' % (num_bytes / 4))
+    output.append('mov ebx, %d' % (num_bytes / 4))
     output.extend(util.gen_zero_out(info))
 
     output.append("mov dword [eax], SIT~%s" % canon)
@@ -430,7 +431,6 @@ def gen_equal_expr(info, node, method_obj):
 
     return output
 
-
 def gen_not_equal_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
 
@@ -534,9 +534,14 @@ def gen_ambiguous_name(info, node, method_obj):
 
     return output
 
+# Note: node is unused and can be junk.
 def gen_this(info, node, method_obj):
     output = []
-    # TODO
+
+    # 'this' is found before (i.e., below) all params.
+    offset = len(method_obj.params) * 4
+    output.append('mov eax, [ebp+%d]' % (offset + 8))
+
     return output
 
 def gen_instanceof_expr(info, node, method_obj):
@@ -573,12 +578,6 @@ def gen_negate_expr(info, node, method_obj):
 #
 # Code generation helpers.
 #
-
-# Preamble for method call.
-def gen_method_call(info, node, method_obj):
-    output = []
-    # TODO
-    return output
 
 # Helper for generating code common for all binary expressions.
 # After calling this function, LHS is in ebx, RHS is in eax.
@@ -630,8 +629,10 @@ def gen_array_access_addr(info, node, method_obj):
  
     return output
 
+
 def gen_ambiguous_name_addr(info, node, method_obj):
     output = []
+    # TODO
     return output
 
 # Creates a new string from the input (or empty string) and puts the reference
@@ -668,7 +669,7 @@ def gen_new_string(info, init_str):
     # Fill in elems.
     offset = 0
     for c in init_str:
-        output.append('mov dword [eax+%d], %d' % (((offset + 4) * 16), ord(c)))
+        output.append('mov dword [eax+%d], %d' % (((offset + 4) * 4), ord(c)))
         offset += 1
 
     return output
