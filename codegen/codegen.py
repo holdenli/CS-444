@@ -308,8 +308,23 @@ def gen_constructor(info, constructor_obj):
     # make room for local vars in the stack
     output.append("sub esp, %d" % (num_vars*4))
 
+    # Call superclass default constructor if this is not java.lang.Object.
+    if info.class_obj.name != 'java.lang.Object':
+        this_offset = (len(constructor_obj.params) * 4) + 8
+        output.append('mov eax, %d' % this_offset)
+        output.append('mov eax, [eax+ebp]')
+        output.append('push eax')
+        superclass = info.class_obj.extends.name
+        superclass_simple = superclass.split('.')[-1]
+        superclass_label = 'CONSTUCTOR~%s.%s~' % (superclass, superclass_simple)
+        output.append('call %s' % superclass_label)
+        output.append('add esp, 4')
+
     # Initialize instance fields.
-    for field_obj in info.field_index[info.class_obj.name]:
+    for member in info.class_obj.declare:
+        if isinstance(member, class_hierarchy.Field) == False:
+            continue
+        field_obj = member
         field_node = field_obj.node
         if 'Static' not in field_obj.mods and \
             len(field_node[3].children) == 1: # Initializer
