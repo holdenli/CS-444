@@ -96,10 +96,31 @@ def gen_assignment(info, node, method_obj):
 
     output.append('pop ebx')
 
+    """
     # TODO: Type check if ebx (L-value) is array element.
     if node[0].name == 'ArrayAccess':
-        # output.extend(typecheck_array_assign)
-        pass
+        end_lbl = info.get_jump_label()
+
+        canon = node[0][0][0].typ
+
+        if primitives.is_primitive(canon):
+            canon = "@" + canon
+
+        # check null
+        output.append("cmp eax, 0")
+        output.append("je %s" % end_lbl)
+
+        output.append('push eax')
+
+        util.gen_assignability_check(info, canon)
+
+        output.append("cmp eax, 0")
+        output.append("je __exception")
+
+        output.append('pop eax')
+
+        output.append(end_lbl + ":")
+    """
 
     output.append('mov dword [ebx], eax')
 
@@ -307,17 +328,30 @@ def gen_creation_expr_array(info, node, method_obj):
     return output
 
 def gen_cast_expr(info, node, method_obj):
-    assert node.name == 'CastExpression'
-    output = []
+    end_lbl = info.get_jump_label()
+
+    output = ["; gen_cast_expr"]
 
     output.extend(gen_expr(info, node[1], method_obj))
 
-    # If these are numeric types, eax already has result, so we are done. So
-    # we only need to generate code for typechecking assignability for
-    # reference types.
-    if primitives.is_numeric(node[1].typ) == False:
-        # TODO: Check SBM
-        pass
+    if primitives.is_primitive(node[1].typ):
+        return output
+
+    # check null
+    output.append("cmp eax, 0")
+    output.append("je %s" % end_lbl)
+
+    output.append("push eax")
+
+    canon = node[0].canon
+    util.gen_assignability_check(info, canon)
+
+    output.append("cmp eax, 0")
+    output.append("je __exception")
+
+    output.append("pop eax")
+
+    output.append(end_lbl + ":")
 
     return output
 
@@ -590,9 +624,22 @@ def gen_this(info, node, method_obj):
     return output
 
 def gen_instanceof_expr(info, node, method_obj):
-    output = []
-    # TODO
-    
+    end_lbl = info.get_jump_label()
+
+    output = ["; gen_instanceof_expr"]
+
+    output.extend(gen_expr(info, node[0], method_obj))
+
+    # check null
+    output.append("cmp eax, 0")
+    output.append("je %s" % end_lbl)
+
+    canon = node[1].canon
+
+    util.gen_assignability_check(info, canon)
+
+    output.append(end_lbl + ":")
+
     return output
 
 def gen_not_expr(info, node, method_obj):

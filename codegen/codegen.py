@@ -154,16 +154,17 @@ def build_file_layouts(ast_list, class_index):
                         member.name == 'test' and \
                         len(member.params) == 0:
                         if found_test_method:
-                            logging.error('More than one static init test() found')
-                            sys.exit(42)
+                            pass
+                            #logging.error('More than one static init test() found')
+                            #sys.exit(42)
                         else:
                             file_layout.test = member
                             found_test_method = True
 
         # If we didn't find static int test() in the first file, bail.
-        if i == 0 and not found_test_method:
-            logging.error('Failed to find static int test() in first file')
-            sys.exit(42)
+        #if i == 0 and not found_test_method:
+        #    logging.error('Failed to find static int test() in first file')
+        #    sys.exit(42)
 
         layouts.append(file_layout)
     

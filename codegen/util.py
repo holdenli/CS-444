@@ -1,29 +1,60 @@
-# check if c is a supertype of the object at eax
-def gen_assignability_check(info, c):
+# check if c (canon) is a supertype of the object at eax; return true or false on eax
+def gen_assignability_check(info, canon):
+    is_array = False
+    if canon.endswith("[]"):
+        canon = canon[:-2]
+        is_array = True
+
+    end_lbl = info.get_jump_label()
+    normal_lbl = info.get_jump_label()
+
     output = ["; assignability check"]
 
-    output.append("push eax")
+    # array check
+    # if array then make sure canon is array type or
+    # cloneable, serializable, or object
+    output.append("mov eax, [eax + 8] ; Array flag")
+    if canon in ["java.lang.Object", "java.io.Serializable", "java.lang.Cloneable"]:
+        output.append("cmp eax, 1") # Test if runtime type is an array.
+        output.append('je %s' % end_lbl) # If it's an array, we're done, since eax has 1.
+        output.append('jmp %s' % normal_lbl) # Perform a regular object check.
+
+    # We're comparing against array, so we test array assignability.
+    elif is_array:
+        output.append("cmp eax, 1")
+        output.append("je %s" % normal_lbl)
+        # Otherwise, fall through to false.
+
+    else:
+        output.append("cmp eax, 0")
+        output.append("je %s" % normal_lbl)
+
+    # "false" code
+    output.append("mov eax, 0")
+    output.append("jmp %s" % end_lbl)
+
+    # normal code: look up SBM
+    output.append(normal_lbl + ":")
 
     output.append("mov eax, [eax + 4] ; SBM")
 
     offset = 0
-    if c == "Boolean":
+    if canon == "Boolean":
         offset = len(info.class_list)
-    elif c == "Byte":
+    elif canon == "Byte":
         offset = len(info.class_list) + 1
-    elif c == "Char":
+    elif canon == "Char":
         offset = len(info.class_list) + 2
-    elif c == "Int":
+    elif canon == "Int":
         offset = len(info.class_list) + 3
-    elif c == "Short":
+    elif canon == "Short":
         offset = len(info.class_list) + 4
     else:
+        c = info.class_index[canon]
         offset = info.class_list.index(c) * 4
     output.append("mov eax, [eax + %i]" % offset)
 
-    output.append("cmp eax, 0")
-    output.append("je __exception")
-    output.append("pop eax")
+    output.append(end_lbl + ":")
 
     return output
 
