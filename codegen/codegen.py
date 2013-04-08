@@ -271,26 +271,8 @@ def gen_constructor(info, constructor_obj):
         "mov ebp, esp",
     ])
 
-    return output
-
-def gen_method(info, method_obj):
-    node = method_obj.node
-    assert node.name in 'MethodDeclaration'
-
-    output = []
-
-    # Preamble for method.
-    output.append(method_obj.node.label + ':')
-
-    # save ebp & esp
-    output.extend([
-        "push ebp",
-        "mov ebp, esp",
-    ])
-
-    # assign frame offsets to each parameter and
-    # local variable declaration nodes
-    start_index = len(node.find_child('Parameters').children) + 1
+    # Assign frame offsets to each parameter and local variable declaration.
+    start_index = len(node.fined_child('Parameters').children) + 1
     for decl in node.find_child('Parameters'):
         decl.frame_offset = start_index
         start_index -= 1
@@ -302,6 +284,38 @@ def gen_method(info, method_obj):
         start_index -= 1
         num_vars += 1
 
+
+    return output
+
+def gen_method(info, method_obj):
+    node = method_obj.node
+    assert node.name in 'MethodDeclaration'
+
+    # Preprocessing:
+    # Assign frame pointer  offsets to each parameter and local variable
+    # declaration node.
+    param_start_index = len(node.find_child('Parameters').children) + 1
+    for decl in node.find_child('Parameters'):
+        decl.frame_offset = start_index
+        start_index -= 1
+
+    local_var_start_index = -1
+    num_vars = 0
+    for decl in utils.node.find_nodes(node, utils.node.Node('LocalVariableDeclaration')):
+        decl.frame_offset = local_var_start_index
+        local_var_start_index -= 1
+        num_vars += 1
+
+    output = []
+
+    # Preamble for method.
+    output.append(method_obj.node.label + ':')
+
+    # save ebp & esp
+    output.extend([
+        "push ebp",
+        "mov ebp, esp",
+    ])
     # make room for local vars in the stack
     output.append("add esp, %d" %  (num_vars*4))
 
