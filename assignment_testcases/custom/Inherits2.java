@@ -21,6 +21,7 @@ public class Inherits2 extends Inherits {
         i = Inherits.foo;
         i = z2;
         i = i;
+        this.i = 6;
     }
 
 }

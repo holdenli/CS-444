@@ -696,7 +696,7 @@ def gen_binary_expr_common(info, node, method_obj):
 # Helper for getting the address of array elements.
 def gen_array_access_addr(info, node, method_obj):
     assert node.name == 'ArrayAccess'
-    output = []
+    output = ['; BEGIN gen_array_access_addr']
     
     # Generate receiver code.
     output.extend(gen_expr(info, node[0][0], method_obj))
@@ -717,10 +717,12 @@ def gen_array_access_addr(info, node, method_obj):
 
     # Skip SIT pointer and length field.
     # Note: java.lang.Object has no fields.
-    output.append('add eax, 4')
-    output.append('shl eax, 2') # Multiply index (offset) by 4.
+    output.append('add ebx, 4')
+    output.append('shl ebx, 2') # Multiply index (offset) by 4.
 
     output.append('add eax, ebx') # Address is at array addr + offset.
+
+    output.append('; END gen_array_access_addr')
  
     return output
 

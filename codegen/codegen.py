@@ -316,7 +316,7 @@ def gen_constructor(info, constructor_obj):
         output.append('push eax')
         superclass = info.class_obj.extends.name
         superclass_simple = superclass.split('.')[-1]
-        superclass_label = 'CONSTUCTOR~%s.%s~' % (superclass, superclass_simple)
+        superclass_label = 'CONSTRUCTOR~%s.%s~' % (superclass, superclass_simple)
         output.append('call %s' % superclass_label)
         output.append('add esp, 4')
 

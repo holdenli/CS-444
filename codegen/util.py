@@ -119,7 +119,7 @@ def gen_zero_out(info):
     loop_lbl = info.get_jump_label()
     end_lbl = info.get_jump_label()
 
-    output = []
+    output = ['; begin gen_zero_out']
     output.append('mov ecx, 0')
     output.append(loop_lbl + ':')
     output.append('cmp ecx, ebx')
@@ -135,5 +135,7 @@ def gen_zero_out(info):
     output.append('jmp %s' % loop_lbl)
     output.append(end_lbl + ':')
    
+    output.append('; end gen_zero_out')
+
     return output
 

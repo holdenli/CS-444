@@ -2,7 +2,7 @@ package apple;
 
 public class Inherits {
 
-    public static int foo = 41;
+    public static int foo = 100;
     public int i = 2;
     public int j;
 
@@ -19,8 +19,9 @@ public class Inherits {
     }
 
     public static int test() {
-        Inherits i = new Inherits2();
-        return i.i;
+        int[] i = new int[5];
+        i[4] = 4; 
+        return i[4];
     }
 
 }
