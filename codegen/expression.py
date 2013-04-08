@@ -119,7 +119,8 @@ def gen_literal_expr(info, node, method_obj):
 
     elif node[0].name == 'CharacterLiteral':
         # TODO: make sure characters are expanded
-        output.append("mov eax, %d" % ord(node[0].value.value)) # .value = "'c'"
+        # output.append("mov eax, %d" % ord(node[0].value.value)) # .value = "'c'"
+        pass
 
     elif node[0].name == 'StringLiteral':
         # TODO: make sure characters are expanded
@@ -662,12 +663,12 @@ def gen_new_string(info, init_str):
     output.append("mov dword [eax], SIT~java.lang.Object")
     output.append("mov dword [eax+4], SBM~@Char")
     output.append("mov dword [eax+8], 1")
-    output.append("mov dword [eax+12], %d", num_chars) # Length
+    output.append("mov dword [eax+12], %d" % num_chars) # Length
 
     # Fill in elems.
     offset = 0
     for c in init_str:
-        output.append('mov dword [eax+%d], %d' % ((offset + 4) * 16), ord(c)))
+        output.append('mov dword [eax+%d], %d' % (((offset + 4) * 16), ord(c)))
         offset += 1
 
     return output

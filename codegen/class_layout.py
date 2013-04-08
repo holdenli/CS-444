@@ -98,7 +98,8 @@ def gen_sbm_primitives(class_list):
         class_output.append("dd 0")
 
     for i, s in enumerate(["Boolean", "Byte", "Char", "Int", "Short"]):
-        output.append("SBM~@%s" % s)
+        output.append("global SBM~@%s" % s)
+        output.append("SBM~@%s:" % s)
         output.extend(class_output)
         for j in range(0, 5):
             if i == j:

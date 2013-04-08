@@ -103,7 +103,7 @@ def gen(options, ast_list, class_index, type_index):
     # Utility files.
     with open('%s/misc.s' % output_dir, 'w') as f:
         output = class_layout.gen_sbm_primitives(class_list)
-        for line in outputs:
+        for line in output:
             f.write(line + '\n')
 
 # This returns a list of file layouts for each AST (i.e., one FileLayout for
@@ -247,7 +247,8 @@ def gen_asm(f, file_layout, ast_list, info):
 
     # Generate constructors.
     for constructor_obj in file_layout.constructors:
-        constructor_code = gen_constructor(info, constructor_obj)
+        constructor_code = [(constructor_obj.node.label + ':'), "ret"]
+        #constructor_code = gen_constructor(info, constructor_obj)
         h.writelines(constructor_code)
 
     # Generate static initialization.
