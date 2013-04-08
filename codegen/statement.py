@@ -9,7 +9,6 @@ from codegen import expression
 #
 
 def gen_stmt(info, node, method_obj):
-    logging.warning("gen_stmt:", node)
     if node.name == 'LocalVariableDeclaration':
         return gen_local_variable_decl(info, node, method_obj)
     elif node.name == 'Block':
