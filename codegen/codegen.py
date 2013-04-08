@@ -325,9 +325,9 @@ def gen_constructor(info, constructor_obj):
             field_offset += 12
             output.append('mov [ebx+%d], eax' % field_offset)
 
-    body = node[4] # ConstructorBody
+    body = node # ConstructorBody
     if len(body.children) != 0:
-        output.extend(statement.gen_block(info, body[0], constructor_obj))
+        output.extend(statement.gen_block(info, body[3], constructor_obj))
 
     # restore ebp & esp
     output.extend([

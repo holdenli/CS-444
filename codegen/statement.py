@@ -9,6 +9,7 @@ from codegen import expression
 #
 
 def gen_stmt(info, node, method_obj):
+    logging.warning("gen_stmt:", node)
     if node.name == 'LocalVariableDeclaration':
         return gen_local_variable_decl(info, node, method_obj)
     elif node.name == 'Block':
@@ -26,7 +27,7 @@ def gen_stmt(info, node, method_obj):
 
     # Bad.
     else:
-        logging.error('FATAL ERROR: Invalid node %s for gen_block()' %
+        logging.error('FATAL ERROR: Invalid node %s for gen_stmt()' %
             node.name)
         sys.exit(1)
 

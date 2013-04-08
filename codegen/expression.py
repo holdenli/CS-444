@@ -10,6 +10,7 @@ from codegen import util
 # Code generation for expressions.
 
 def gen_expr(info, node, method_obj):
+    logging.warning("gen_expr:", node)
     if node.name == 'Assignment':
         return gen_assignment(info, node, method_obj)
     elif node.name == 'PostfixExpression':
@@ -712,6 +713,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
     # This is a Static field access.
     i = significant_index
     prev_type = None
+    # TODO HOLDEN: this should be isattr
     if id_node.canon != None:
         assert (i + 1) < len(node.children)
 
