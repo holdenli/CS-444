@@ -51,7 +51,6 @@ SINGLELINE_PATTERNS = {
 }
 
 def unescape_str(s):
-
     def unescape_chr(seq):
         sequences = {
             '\\b': "\b",
@@ -68,7 +67,7 @@ def unescape_str(s):
             return sequences[seq]
 
         # octal escapes:
-        return chr(int(s[1:], 8))
+        return chr(int(seq[1:], 8))
 
     seq_re = re.compile("(%s)" % ESCAPE_SEQUENCE)
 
