@@ -73,7 +73,7 @@ def gen_if_stmt(info, node, method_obj):
     output.extend(expression.gen_expr(info, node[0], method_obj))
     output.append('mov ebx, 0')
     output.append('cmp eax, ebx')
-    output.append('je %' % else_label) # statement is false, jump to else
+    output.append('je %s' % else_label) # statement is false, jump to else
 
     # True path.
     output.extend(gen_stmt(info, node[1], method_obj))
@@ -94,7 +94,7 @@ def gen_for_stmt(info, node, method_obj):
     # Initialize, if any.
     if len(node[0].children) == 1:
         if node[0][0].name == 'LocalVariableDeclaration':
-            output.extend(gen_local_variable_decl(info, node[0][0], method_obj)
+            output.extend(gen_local_variable_decl(info, node[0][0], method_obj))
         else: # expression
             output.extend(expression.gen_expr(info, node[0][0], method_obj))
 

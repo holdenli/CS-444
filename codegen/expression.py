@@ -629,6 +629,10 @@ def gen_array_access_addr(info, node, method_obj):
  
     return output
 
+def gen_ambiguous_name_addr(info, node, method_obj):
+    output = []
+    return output
+
 # Creates a new string from the input (or empty string) and puts the reference
 # in eax.
 def gen_new_string(info, node, init_str):
