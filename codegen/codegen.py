@@ -100,6 +100,12 @@ def gen(options, ast_list, class_index, type_index):
     # Copy the stdlib runtime.s file.
     shutil.copyfile('lib/stdlib/5.1/runtime.s', '%s/runtime.s' % output_dir)
 
+    # Utility files.
+    with open('%s/misc.s' % output_dir, 'w') as f:
+        output = class_layout.gen_sbm_primitives(class_list)
+        for line in outputs:
+            f.write(line + '\n')
+
 # This returns a list of file layouts for each AST (i.e., one FileLayout for
 # each .java file).
 def build_file_layouts(ast_list, class_index):
@@ -168,6 +174,8 @@ def gen_asm(f, file_layout, ast_list, info):
     h = FileHelper(f)
     canon_type = file_layout.canonical_type # Convenience.
 
+    h.write('section .text')
+
     h.comment(file_layout.canonical_type)
 
     h.newline()
@@ -175,6 +183,13 @@ def gen_asm(f, file_layout, ast_list, info):
     # If this is the "main" file, export __start.
     if file_layout.test != None:
         h.write('global _start')
+
+    # SBM for primitive types.
+    h.write('extern SBM~@Boolean')
+    h.write('extern SBM~@Byte')
+    h.write('extern SBM~@Char')
+    h.write('extern SBM~@Int')
+    h.write('extern SBM~@Short')
 
     h.newline()
 
@@ -225,11 +240,6 @@ def gen_asm(f, file_layout, ast_list, info):
 
     h.newline()
 
-    # Generate static fields.
-    for static_field_obj in file_layout.statics:
-        h.write(static_field_obj.node.label + ':')
-        h.write('dd 0')
-
     # Generate methods.
     for method_obj in file_layout.methods:
         method_code = gen_method(info, method_obj)
@@ -249,6 +259,13 @@ def gen_asm(f, file_layout, ast_list, info):
         start_code = gen_start(info, file_layout)
         h.writelines(start_code)
 
+    h.write('section .data')
+
+    # Generate static fields.
+    for static_field_obj in file_layout.statics:
+        h.write(static_field_obj.node.label + ':')
+        h.write('dd 0')
+
 def lookup_by_decl(vars_dict, item):
     for (var_name, (i, var_decl)) in node.env.names.items():
         if item.obj == var_decl.obj and item.obj != None:
@@ -259,6 +276,19 @@ def lookup_by_decl(vars_dict, item):
 def gen_constructor(info, constructor_obj):
     node = constructor_obj.node
     assert node.name == 'ConstructorDeclaration'
+
+    # Assign frame offsets to each parameter and local variable declaration.
+    param_start_index = len(node.find_child('Parameters').children) + 1
+    for decl in node.find_child('Parameters'):
+        decl.frame_offset = param_start_index
+        param_start_index -= 1
+
+    local_var_start_index = -1
+    num_vars = 0
+    for decl in utils.node.find_nodes(node, utils.node.Node('LocalVariableDeclaration')):
+        decl.frame_offset = local_var_start_index
+        local_var_start_index -= 1
+        num_vars += 1
 
     output = []
 
@@ -271,19 +301,13 @@ def gen_constructor(info, constructor_obj):
         "mov ebp, esp",
     ])
 
-    # Assign frame offsets to each parameter and local variable declaration.
-    start_index = len(node.find_child('Parameters').children) + 1
-    for decl in node.find_child('Parameters'):
-        decl.frame_offset = start_index
-        start_index -= 1
 
-    start_index = -1
-    num_vars = 0
-    for decl in utils.node.find_nodes(node, utils.node.Node('LocalVariableDeclaration')):
-        decl.frame_offset = start_index
-        start_index -= 1
-        num_vars += 1
-
+    # restore ebp & esp
+    output.extend([
+        "END~%s:" % (method_obj.node.label),
+        "mov esp, ebp",
+        "pop ebp"
+    ])
 
     return output
 
@@ -361,7 +385,6 @@ def gen_start(info, file_layout):
     for other_type in file_layout.other_types:
         output.append('extern %s' % get_static_init_label(other_type))
 
-    output.append('global _start')
     output.append('_start:')
 
     # Call call the static initialization labels.
