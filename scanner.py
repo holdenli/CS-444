@@ -50,6 +50,41 @@ SINGLELINE_PATTERNS = {
     'StringLiteral': [r'("(?:(?!\\|\"|\r|\n)[\x00-\x7F]|'+ESCAPE_SEQUENCE+')*")'],
 }
 
+def unescape_str(s):
+
+    def unescape_chr(seq):
+        sequences = {
+            '\\b': "\b",
+            '\\t': "\t",
+            '\\n': "\n",
+            '\\f': "\f",
+            '\\r': "\r",
+            '\\"': "\"",
+            "\\'": "'",
+            '\\\\': "\\",
+        }
+
+        if seq in sequences:
+            return sequences[seq]
+
+        # octal escapes:
+        return chr(int(s[1:], 8))
+
+    seq_re = re.compile("(%s)" % ESCAPE_SEQUENCE)
+
+    consumed = 0
+    new_s = ''
+    while consumed < len(s):
+        matches = seq_re.match(s, consumed)
+        if matches != None:
+            new_s += unescape_chr(matches.group(0))
+            consumed += len(matches.group(0))
+        else:
+            new_s += s[consumed]
+            consumed += 1
+
+    return new_s
+
 # this is a token string -> token label mapping
 # Commented lines are specific to Java, but not in Joos.
 STRINGS = {
@@ -229,6 +264,9 @@ def scan(program: "Joos program as a string") -> "list of tokens":
            
             # ignore whitespace and comments
             if (token_label not in THROWAWAY_TOKENS):
+
+                if token_label in ['StringLiteral', 'CharacterLiteral']:
+                    token_value = unescape_str(token_value[1:-1])
                 tokens.append(Token(token_label, token_value, pos, line))
         else:
             logging.error("LEXER FAILURE: pos = %d, line = %d; next few chars:\n%s"
