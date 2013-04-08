@@ -44,14 +44,18 @@ class CodegenInfo:
             logging.error("get_field_offset")
             sys.exit(1)
 
+        receiver_type = node.find_child("FieldReceiver")[0].typ
         field_name = node.find_child("FieldName")[0].value.value
 
-        return self.get_field_offset_from_field_name(field_name)
+        return self.get_field_offset_from_field_name(receiver_type, field_name)
 
-    def get_field_offset_from_field_name(self, field_name):
+    def get_field_offset_from_field_name(self, receiver_type, field_name):
         field = class_hierarchy.Temp_Field(field_name)
 
-        field_list = self.field_index[self.class_obj.name]
+        field_list = self.field_index[receiver_type]
+        print(receiver_type)
+        print(field_list)
+        print(field)
         offset = field_list.index(field) * 4
         return offset
 

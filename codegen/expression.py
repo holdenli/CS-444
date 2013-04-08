@@ -244,11 +244,11 @@ def gen_creation_expr(info, node, method_obj):
         output.extend(gen_expr(info, arg, method_obj))
         output.append("push eax")
 
-        if typecheck.is_array_type(arg[0].typ) == True:
+        if typecheck.is_array_type(arg.typ) == True:
             # '[]'s replaced with '@', so that it can be accepted.
-            arg_types.append(arg[0].typ[:-2] + '@')
+            arg_types.append(arg.typ[:-2] + '@')
         else:
-            arg_types.append(arg[0].typ)
+            arg_types.append(arg.typ)
 
     constructor_name = canon.split(".")[-1]
     label = 'CONSTRUCTOR~%s.%s~%s' % (canon, constructor_name, '~'.join(arg_types))
@@ -684,7 +684,7 @@ def gen_field_access_addr(info, node, method_obj):
     
     output.extend(util.gen_null_check())
 
-    if typecheck.is_array_type(node[1].typ) == True: # Array
+    if typecheck.is_array_type(node[1][0].typ) == True: # Array
         output.append('add eax, %d' % 12)
 
     else: # Object.
@@ -761,8 +761,9 @@ def gen_ambiguous_name_addr(info, node, method_obj):
             offset = 12
             prev_type = 'Int' # Generic type.
         else:
+            receiver_type = info.class_obj.name
             field_name = id_node.decl.obj.name
-            offset = info.get_field_offset_from_field_name(info, field_name)
+            offset = info.get_field_offset_from_field_name(receiver_type, field_name)
             offset += 12
             prev_type = id_node.decl[1].canon # Get type from Type node
 

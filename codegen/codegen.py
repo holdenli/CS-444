@@ -313,7 +313,7 @@ def gen_constructor(info, constructor_obj):
             len(field_node[3].children) == 1: # Initializer
 
             # Evaluate initializer.
-            output.extend(expression.gen_expr(info, field_node[3][0], None))
+            output.extend(expression.gen_expr(info, field_node[3][0], constructor_obj))
 
             # Get the address of 'this'.
             this_offset = (len(constructor_obj.params) * 4) + 8 
@@ -322,8 +322,9 @@ def gen_constructor(info, constructor_obj):
             output.append('mov ebx, [ebx]')
 
             # Assign to field offset.
+            receiver_type = info.class_obj.name
             field_name = field_obj.name
-            field_offset = info.get_field_offset_from_field_name(field_name)
+            field_offset = info.get_field_offset_from_field_name(receiver_type, field_name)
             field_offset += 12
             output.append('mov [ebx+%d], eax' % field_offset)
 
