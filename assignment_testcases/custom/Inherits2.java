@@ -2,7 +2,7 @@ import apple.*;
 
 public class Inherits2 extends Inherits {
 
-    public int z1;
+    public static int z1;
     public int z2;
     public int j;
     public int z;
@@ -14,7 +14,13 @@ public class Inherits2 extends Inherits {
     }
 
     public Inherits2() {
-        test(this.z);
+        java.lang.String s = new java.lang.String("fat");
+        java.lang.String.valueOf(s).concat("2");
+        int i = Inherits2.z1;
+        i = apple.Inherits.foo;
+        i = Inherits.foo;
+        i = z2;
+        i = i;
     }
 
 }

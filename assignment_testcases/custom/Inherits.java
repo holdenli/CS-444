@@ -2,6 +2,7 @@ package apple;
 
 public class Inherits {
 
+    public static int foo;
     public int i;
     public int j;
 

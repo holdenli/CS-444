@@ -144,6 +144,10 @@ class Node:
         if not isinstance(self, ASTNode):
             if self.value != None:
                 s += "='%s'" % (self.value.value)
+            if hasattr(self, 'decl'):
+                s += " decl='%s'" % (self.decl.name)
+            if hasattr(self, 'canon'):
+                s += " canon='%s'" % (self.canon)
 
         if self.name == "LocalVariableDeclaration":
             id_node = self.find_child("Identifier")

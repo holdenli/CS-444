@@ -10,8 +10,6 @@ from codegen import util
 # Code generation for expressions.
 
 def gen_expr(info, node, method_obj):
-    logging.warning("gen_expr: %s" % node)
-    
     if node.name == 'Assignment':
         return gen_assignment(info, node, method_obj)
     elif node.name == 'PostfixExpression':

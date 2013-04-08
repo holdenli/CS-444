@@ -82,8 +82,8 @@ def gen(options, ast_list, class_index, type_index):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     if os.listdir(output_dir) != []:
-        logging.error('FATAL ERROR: Output directory not empty')
-        sys.exit(2) # Not a programming error or a compiler error... use 2?
+        #logging.error('FATAL ERROR: Output directory not empty')
+        #sys.exit(2) # Not a programming error or a compiler error... use 2?
         pass
 
     # Generate the code for the files.
@@ -98,7 +98,7 @@ def gen(options, ast_list, class_index, type_index):
             gen_asm(f, layout, ast_list, info)
 
     # Copy the stdlib runtime.s file.
-    shutil.copyfile('lib/stdlib/5.1/runtime.s', '%s/runtime.s' % output_dir)
+    #shutil.copyfile('lib/stdlib/5.1/runtime.s', '%s/runtime.s' % output_dir)
 
     # Utility files.
     with open('%s/misc.s' % output_dir, 'w') as f:

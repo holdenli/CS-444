@@ -146,6 +146,9 @@ def run_joosc(joosc_options, path, q):
         q.put([-1, path, ""]) 
 
 if __name__ == "__main__":
+    import shutil
+    shutil.copyfile('lib/stdlib/5.1/runtime.s', 'output/runtime.s')
+
     from subprocess import call
     ret = call("rm output/*.o", shell=True)
 
