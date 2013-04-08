@@ -164,7 +164,7 @@ def gen_method_invocation(info, node, method_obj):
     output.append("call eax")
     
     # pop obj addr and args
-    output.append("add esp %i" % (4 + num_args*4))
+    output.append("add esp, %i" % (4 + num_args*4))
 
     return output
 
@@ -183,7 +183,7 @@ def gen_static_method_invocation(info, node, method_obj):
 
     output.append("call %s" % node.decl.label)
 
-    output.append("add esp %i" % (num_args*4))
+    output.append("add esp, %i" % (num_args*4))
 
     return output
 
@@ -252,7 +252,7 @@ def gen_creation_expr(info, node, method_obj):
     output.append("call %s" % label)
 
     # pop args
-    output.append("add esp %i" % (num_args*4))
+    output.append("add esp, %i" % (num_args*4))
 
     # put "this" on eax
     output.append("pop eax")
