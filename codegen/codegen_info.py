@@ -46,7 +46,7 @@ class CodegenInfo:
 
         field_name = node.find_child("FieldName")[0].value.value
 
-        field = Temp_Field(field_name)
+        field = class_hierarchy.Temp_Field(field_name)
 
         offset = self.field_index[self.class_obj.name].index(field) * 4
         return offset

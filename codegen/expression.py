@@ -1,5 +1,7 @@
 import sys
 
+import typecheck
+
 from utils import logging
 from utils import primitives
 
@@ -67,7 +69,7 @@ def gen_expr(info, node, method_obj):
     elif node.name == 'NotExpression':
         return gen_not_expr(info, node, method_obj)
     elif node.name == 'NegateExpression':
-        return gen_negate_expr(info, node, method_obj)
+        return []#gen_negate_expr(info, node, method_obj)
 
     elif node.name == 'Name':
         return gen_ambiguous_name(info, node, method_obj)
@@ -141,7 +143,7 @@ def gen_method_invocation(info, node, method_obj):
     if len(receiver.children) != 0:
         obj_output = gen_expr(info, receiver[0], method_obj)
     else:
-        obj_output = gen_this(info, None) 
+        obj_output = gen_this(info, None, method_obj) 
     output.extend(obj_output)
     output.extend(util.gen_null_check())
     output.append("push eax")
@@ -186,10 +188,10 @@ def gen_static_method_invocation(info, node, method_obj):
     return output
 
 # Return addr of field access
-def gen_field_access(info, node):
+def gen_field_access(info, node, method_obj):
     output = ["; gen_field_access"]
 
-    obj_output = gen_expr(info, node.find_child("FieldReceiver"))
+    obj_output = gen_expr(info, node.find_child("FieldReceiver")[0], method_obj)
     output.extend(obj_output)
     
     output.extend(util.gen_null_check())
@@ -237,14 +239,14 @@ def gen_creation_expr(info, node, method_obj):
     num_args = len(args)
     arg_types = []
     for arg in args:
-        output.extend(gen_expr(arg, method_obj))
+        output.extend(gen_expr(info, arg, method_obj))
         output.append("push eax")
 
-        if typecheck.is_array_type(arg[0].canon) == True:
+        if typecheck.is_array_type(arg[0].typ) == True:
             # '[]'s replaced with '@', so that it can be accepted.
-            arg_types.append(arg[0].canon[:-2] + '@')
+            arg_types.append(arg[0].typ[:-2] + '@')
         else:
-            arg_types.append(arg[0].canon)
+            arg_types.append(arg[0].typ)
 
     label = 'CONSTRUCTOR~%s.%s~%s' % (canon, canon, '~'.join(arg_types))
     output.append("call %s" % label)
@@ -520,7 +522,7 @@ def gen_ambiguous_name(info, node, method_obj):
 
     return output
 
-def gen_this(info, node):
+def gen_this(info, node, method_obj):
     output = []
     # TODO
     return output
@@ -530,14 +532,14 @@ def gen_this(info, node):
 #
 
 # Preamble for method call.
-def gen_method_call(info, node):
+def gen_method_call(info, node, method_obj):
     output = []
     # TODO
     return output
 
 # Helper for generating code common for all binary expressions.
 # After calling this function, LHS is in ebx, RHS is in eax.
-def gen_binary_expr_common(info, node):
+def gen_binary_expr_common(info, node, method_obj):
     output = []
 
     # Code for left node.
@@ -547,7 +549,7 @@ def gen_binary_expr_common(info, node):
     output.append('push eax')
 
     # Code for right node.
-    output.extend(gen_expr(info, node[1, method_obj]))
+    output.extend(gen_expr(info, node[1], method_obj))
 
     # LHS is in ebx.
     output.append('pop ebx')
@@ -574,7 +576,7 @@ def gen_array_access_addr(info, node, method_obj):
     output.append('pop eax')
 
     # Check that index is within array bounds.
-    output.extend(util.gen_array_bounds_check(info))
+    output.extend(util.gen_array_bounds_check())
 
     # Skip SIT pointer and length field.
     # Note: java.lang.Object has no fields.
