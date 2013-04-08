@@ -317,7 +317,7 @@ def gen_method(info, method_obj):
         "mov ebp, esp",
     ])
     # make room for local vars in the stack
-    output.append("add esp, %d" %  (num_vars*4))
+    output.append("sub esp, %d" %  (num_vars*4))
 
     body = node[4] # methodbody or constructorbody
     if len(body.children) != 0:
@@ -327,7 +327,8 @@ def gen_method(info, method_obj):
     output.extend([
         "END~%s:" % (method_obj.node.label),
         "mov esp, ebp",
-        "pop ebp"
+        "pop ebp",
+        "ret"
     ])
 
     return output

@@ -146,12 +146,19 @@ def run_joosc(joosc_options, path, q):
         q.put([-1, path, ""]) 
 
 if __name__ == "__main__":
+    from subprocess import call
+    ret = call("rm output/*.o", shell=True)
+
     for name in os.listdir("output"):
         path = os.path.join("output", name)
         print(path)
-        from subprocess import call
         ret = call("/u/cs444/bin/nasm -O1 -f elf -g -F dwarf %s" % (path), shell=True)
         if ret != 0:
             logging.warning("nasm on %s failed" % (path))
             sys.exit(1)
+    
+    ret = call("ld -melf_i386 -o main output/*.o", shell=True)
+    if ret != 0:
+        logging.warning("ld on failed")
+        sys.exit(1)
 
