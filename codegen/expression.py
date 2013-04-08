@@ -383,7 +383,7 @@ def gen_add_expr(info, node, method_obj):
     # If they are objects, we do the following:
     # 1. Use String.valueOf() on each operand.
     # 2. Do a LHS.concat(RHS), which returns a new string.
-    else:
+    elif node[0].typ == 'java.lang.String' or node[1].typ == 'java.lang.String':
 
         # Convert LHS to a string.
         output.extend(gen_string_valueof(info, node[0], method_obj))
@@ -396,9 +396,13 @@ def gen_add_expr(info, node, method_obj):
         # Receiver is LHS, Argument is RHS (already done!), just need to call
         # the correct method.
         output.append('call METHOD~java.lang.String.concat~java.lang.String')
-
+        
         # Jump back.
         output.append('add esp, 8')
+
+    else:
+        logging.error('FATAL ERROR: invalid add')
+        sys.exit(1)
 
     return output
 
@@ -413,12 +417,14 @@ def gen_string_valueof(info, node, method_obj):
     # Based on the type, call the correct method. Primitives have their own
     # version, objects all use the java.lang.Object version.
     valueof_method_lbl = ''
-    if primitives.is_numeric(node.typ) or node.typ == 'Boolean':
-        valueof_method_lbl = 'STATICMETHOD~java.lang.String.valueOf~%s' % node[0].typ
+    if primitives.is_numeric(node.typ) or node.typ == 'Boolean' or \
+        node.typ == 'java.lang.String':
+        valueof_method_lbl = 'STATICMETHOD~java.lang.String.valueOf~%s' % node.typ
     else:
         valueof_method_lbl = 'STATICMETHOD~java.lang.String.valueOf~java.lang.Object'
     output.append('push eax')
-    output.append('call %s' % valueof_method_lbl)
+    output.append('call %s' % valueof_method_lbl) # resulting string is in eax
+    output.append('add esp, 4')
 
     return output # result is in eax
 
@@ -873,9 +879,6 @@ def gen_new_string(info, init_str):
     # First we make a char array with length equal to size of init_str
     num_chars = len(init_str)
 
-    # Make a new array.
-    output = ["; gen_new_string"]
-
     # Put number of bytes in eax.
     output.append('mov eax, %d' % ((num_chars + 4) * 4))
 
@@ -887,8 +890,6 @@ def gen_new_string(info, init_str):
     # Zero out array.
     output.append('mov ebx, %d' % (num_chars + 4))
     output.extend(util.gen_zero_out(info)) # eax = ptr, ebx = num words
-
-    output.append('pop ebx') # Restore array length.
 
     # Object metadata.
     output.append("mov dword [eax], SIT~java.lang.Object")

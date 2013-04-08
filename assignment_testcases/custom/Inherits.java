@@ -19,9 +19,10 @@ public class Inherits {
     }
 
     public static int test() {
-        int[] i = new int[5];
-        i[4] = 4; 
-        return i[4];
+        String s = "false";
+        String t = s + "fdsa";
+        System.out.println(t);
+        return 1;
     }
 
 }

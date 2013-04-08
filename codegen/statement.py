@@ -33,7 +33,7 @@ def gen_stmt(info, node, method_obj):
         sys.exit(1)
 
 def gen_local_variable_decl(info, node, method_obj):
-    output = ["; gen_local_variable_decl on %s" % node]
+    output = ["; gen_local_variable_decl"]
 
     # Generate the initialization code.
     output.extend(expression.gen_expr(info, node[2][0], method_obj))
