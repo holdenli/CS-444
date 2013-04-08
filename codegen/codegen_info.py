@@ -53,9 +53,6 @@ class CodegenInfo:
         field = class_hierarchy.Temp_Field(field_name)
 
         field_list = self.field_index[receiver_type]
-        print(receiver_type)
-        print(field_list)
-        print(field)
         offset = field_list.index(field) * 4
         return offset
 
