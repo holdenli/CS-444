@@ -14,16 +14,15 @@ public class Inherits {
 
     public int foo(int a) { return 1; }
 
-    public static int func(int i) {
-        return i;
+    public static boolean func() {
+        apple.Inherits.foo = 25;
+        return true;
     }
 
     public static int test() {
-        Inherits s = new Inherits2();
-        Object t = (Object)"hello";
-        if ("hello" == "hello")
+        if (false || apple.Inherits.func())
         {
-            return 25;
+            return Inherits.foo;
         }
         return 1;
     }

@@ -450,6 +450,9 @@ def gen_multiply_expr(info, node, method_obj):
 def gen_divide_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
 
+    output.append('cmp eax, 0')
+    output.append('je __exception')
+
     # E1 is in ebx, E2 is in eax
     # We want eax = E1 / E2
     output.append('mov ecx, eax') # ecx = E2
@@ -464,6 +467,9 @@ def gen_divide_expr(info, node, method_obj):
 
 def gen_modulo_expr(info, node, method_obj):
     output = gen_binary_expr_common(info, node, method_obj)
+
+    output.append('cmp eax, 0')
+    output.append('je __exception')
 
     # E1 is in ebx, E2 is in eax
     # We want eax = E1 % E2
@@ -592,7 +598,7 @@ def gen_and_expr(info, node, method_obj):
 
 # Short circuits on E1, don't use gen_binary_expr_common().
 def gen_or_expr(info, node, method_obj):
-    output = []
+    output = ["; START gen_or_expr"]
     label = info.get_jump_label()
 
     output.extend(gen_expr(info, node[0], method_obj))
@@ -605,7 +611,7 @@ def gen_or_expr(info, node, method_obj):
     output.append('mov ecx, 1') # result is true by default
     output.append('cmp eax, 0') # now we test..
     output.append('jne %s' % label) # jump to the bottom if true
-    output.append('mov eax, 0')
+    output.append('mov ecx, 0')
 
     output.append('%s:' % label) # BOTTOM
     output.append('mov eax, ecx');
@@ -818,13 +824,10 @@ def gen_ambiguous_name_addr(info, node, method_obj):
 
         # If the field type is array, we must get the array field.
         offset = 0
-        if typecheck.is_array_type(id_node.decl[1].canon):
-            offset = 12
-        else:
-            receiver_type = info.class_obj.name
-            field_name = id_node.decl.obj.name
-            offset = info.get_field_offset_from_field_name(receiver_type, field_name)
-            offset += 12
+        receiver_type = info.class_obj.name
+        field_name = id_node.decl.obj.name
+        offset = info.get_field_offset_from_field_name(receiver_type, field_name)
+        offset += 12
         prev_type = id_node.decl[1].canon # Generic type.
 
         # Load the field address offset.
@@ -876,7 +879,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
 # Creates a new string from the input (or empty string) and puts the reference
 # in eax.
 def gen_new_string(info, init_str):
-    output = ['; gen_new_string = %s' % init_str]
+    output = ['; gen_new_string']
 
     # First we make a char array with length equal to size of init_str
     num_chars = len(init_str)
