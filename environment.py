@@ -326,7 +326,7 @@ def build_block_env(tree, carry, new_block=True):
                 for_vars = list(block.select(['ForStatement', 'ForInit',
                     'LocalVariableDeclaration']))
 
-                if len(for_vars) != 0:
+                if len(for_vars) != 0 and block[0][0] == Node('LocalVariableDeclaration'):
                     name = for_vars[0][1].value.value
                     if name in new_carry:
                         logging.error("No two local variables=%s with overlapping scope have the same name"
@@ -338,11 +338,15 @@ def build_block_env(tree, carry, new_block=True):
 
                 env.children.extend(build_block_env(block[3], new_carry))
         else:
-            for stmt in find_nodes(block, [Node('Block'), Node('ForStatement'),
+
+            for stmt in find_nodes(block, [Node('Block'),
+                Node('ForStatement'),
                 Node('LocalVariableDeclaration')]):
+
                 # are we making a new block?
                 if stmt == Node('Block') or stmt == Node('ForStatement'):
-                    env.children.extend(build_block_env(block, new_carry))
+                    env.children.extend(
+                        build_block_env(Node(children=[stmt]), new_carry))
 
                 # are we declaring a variable?
                 elif stmt == Node('LocalVariableDeclaration'):
