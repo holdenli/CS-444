@@ -293,7 +293,7 @@ def gen_creation_expr_array(info, node, method_obj):
     output.append('pop ebx') # Restore array length.
 
     # Object metadata.
-    output.append("mov [eax], SIT~%s" % util.object_class_name) # java.lang.object
+    output.append("mov [eax], SIT~java.lang.Object")
     output.append("mov [eax+4], SBM~%s" % canon)
     output.append("mov [eax+8], 1")
     output.append("mov [eax+12], ebx") # Length
