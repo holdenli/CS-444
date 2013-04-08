@@ -743,7 +743,7 @@ def gen_ambiguous_name_addr(info, node, method_obj):
     return [] # OH NOOOOOOOOOOOOOOOOOOO
     assert node.name == 'Name'
 
-    output = []
+    output = ['; gen_ambiguous_name_addr']
 
     # Loop through each identifier node, looking for a significant node.
     significant_node = None
@@ -852,14 +852,15 @@ def gen_ambiguous_name_addr(info, node, method_obj):
             prev_type = field_node.decl[1].canon
 
         output.append('add eax, %d' % offset)
-            
+    
+    output.append('; end of gen_ambiguous_name_addr')    
 
     return output
 
 # Creates a new string from the input (or empty string) and puts the reference
 # in eax.
 def gen_new_string(info, init_str):
-    output = []    
+    output = ['; gen_new_string = %s' % init_str]
 
     # First we make a char array with length equal to size of init_str
     num_chars = len(init_str)
@@ -893,5 +894,42 @@ def gen_new_string(info, init_str):
         output.append('mov dword [eax+%d], %d' % (((offset + 4) * 4), ord(c)))
         offset += 1
 
+    # Back up array.
+    output.append('push eax')
+
+    # Call a new string.
+
+    # Number of bytes we will malloc (including metadata).
+    num_bytes = info.get_size('java.lang.String')
+
+    output.append("mov eax, %i" % num_bytes)
+    output.append("call __malloc")
+
+    # Zero out fields.
+    output.append('mov ebx, %d' % (num_bytes / 4))
+    output.extend(util.gen_zero_out(info))
+
+    output.append("mov dword [eax], SIT~java.lang.String")
+    output.append("mov dword [eax+4], SBM~java.lang.String")
+    output.append("mov dword [eax+8], 0") # Not an array, so 0.
+
+    # Get the char array.
+    output.append('pop ebx')
+
+    # Push the string addr, and the char array as an argument.
+    output.append("push eax ; this pointer")
+    output.append('push ebx')
+
+    # Call the constructor.
+    constructor_label = 'CONSTRUCTOR~java.lang.String.String~Char@'
+    output.append("call %s" % constructor_label)
+
+    # pop args (only 1)
+    output.append("add esp, 4")
+
+    # put "this" on eax
+    output.append("pop eax")
+
+    output.append("; END gen_new_string")
     return output
 
