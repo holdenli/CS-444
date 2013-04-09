@@ -9,6 +9,8 @@ def gen_assignability_check(info, canon):
     normal_lbl = info.get_jump_label()
 
     output = ["; assignability check"]
+    
+    output.append("push eax")
 
     # array check
     # if array then make sure canon is array type or
@@ -35,6 +37,8 @@ def gen_assignability_check(info, canon):
 
     # normal code: look up SBM
     output.append(normal_lbl + ":")
+    
+    output.append("pop eax")
 
     output.append("mov eax, [eax + 4] ; SBM")
 
@@ -51,8 +55,8 @@ def gen_assignability_check(info, canon):
         offset = len(info.class_list) + 4
     else:
         c = info.class_index[canon]
-        offset = info.class_list.index(c) * 4
-    output.append("mov eax, [eax + %i]" % offset)
+        offset = info.class_list.index(c)
+    output.append("mov eax, [eax + %i]" % (offset*4))
 
     output.append(end_lbl + ":")
 

@@ -345,7 +345,7 @@ def gen_cast_expr(info, node, method_obj):
     output.append("push eax")
 
     canon = node[0].canon
-    util.gen_assignability_check(info, canon)
+    output.extend(util.gen_assignability_check(info, canon))
 
     output.append("cmp eax, 0")
     output.append("je __exception")
@@ -653,7 +653,7 @@ def gen_instanceof_expr(info, node, method_obj):
 
     canon = node[1].canon
 
-    util.gen_assignability_check(info, canon)
+    output.extend(util.gen_assignability_check(info, canon))
 
     output.append(end_lbl + ":")
 
