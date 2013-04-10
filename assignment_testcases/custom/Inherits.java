@@ -20,10 +20,20 @@ public class Inherits {
     }
 
     public static int test() {
-        if (false || apple.Inherits.func())
-        {
-            return Inherits.foo;
-        }
+        String[] a = new String[5];
+        a[4] = "hello";
+        System.out.println(a[4]);
+        java.io.Serializable o = a;
+        Cloneable o2 = a;
+        Object o3 = a;
+        System.out.println(o3);
+
+        a = (String[])o;
+        System.out.println(a[4]);
+        a = (String[])o2;
+        System.out.println(a[4]);
+        a = (String[])o3;
+        System.out.println(a[4]);
         return 1;
     }
 
